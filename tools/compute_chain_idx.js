@@ -50,23 +50,54 @@ function computeKind(e) {
 
 db.forEach(function (e) { e.kind = computeKind(e); });
 
+// 预取 kind（后继里要频繁用）
+var kindMap = Object.create(null);
+db.forEach(function (e) { kindMap[e.w] = e.kind != null ? e.kind : 0.9; });
+
 var maxChain = 0;
 var rawDist = [];   // 观测 chain_raw 分布以校验 REF
-db.forEach(function (e) {
-  var succ = store.candidates(e.w, {}).filter(function (s) { return s.w !== e.w; });
-  e.succ_cnt = succ.length;
-  e.c_cnt = 0;
-  var sum = 0;
-  succ.forEach(function (s) {
-    var f = (s.f || 0);
-    if (f >= COMMON_THRESHOLD) e.c_cnt++;
-    sum += ((s.kind != null ? s.kind : 0.9)) * Math.pow(f, F_POW);
-  });
-  e.has_succ = succ.length > 0;
+var total = db.length;
+
+// 快路径：直接遍历 by2/by3 前缀桶，避免 candidates() 里对每个候选做 canChain 正则
+// 前缀桶里的词开头已对上，只需再校验"结尾元音 + 禁止结尾"两条（纯字符串操作）
+function isChainable(prev, s) {
+  var w = s.w;
+  if (w === prev) return false;
+  // 结尾最多3字母须含元音
+  var tail = w.length <= 3 ? w : w.slice(-3);
+  var hasV = false;
+  for (var i = 0; i < tail.length; i++) { if (VOWELS.indexOf(tail.charAt(i)) !== -1) { hasV = true; break; } }
+  if (!hasV) return false;
+  // 禁止结尾 ry/ht/ck
+  var c1 = w.charCodeAt(w.length - 1), c2 = w.charCodeAt(w.length - 2);
+  if ((c2 === 114 && c1 === 121) || (c2 === 104 && c1 === 116) || (c2 === 99 && c1 === 107)) return false; // ry/ht/ck
+  return true;
+}
+
+db.forEach(function (e, idx) {
+  var w = e.w;
+  var seen = Object.create(null);
+  var succ_cnt = 0, c_cnt = 0, sum = 0;
+  var p2 = w.slice(-2), p3 = w.length >= 3 ? w.slice(-3) : null;
+
+  var bucket = store.by2[p2]; var b, s;
+  if (bucket) for (b = 0; b < bucket.length; b++) { s = bucket[b]; if (!isChainable(w, s)) continue; if (seen[s.w]) continue; seen[s.w] = 1; succ_cnt++; var f = (s.f || 0); if (f >= COMMON_THRESHOLD) c_cnt++; sum += kindMap[s.w] * Math.pow(f, F_POW); }
+  if (p3) { bucket = store.by3[p3]; if (bucket) for (b = 0; b < bucket.length; b++) { s = bucket[b]; if (!isChainable(w, s)) continue; if (seen[s.w]) continue; seen[s.w] = 1; succ_cnt++; var f2 = (s.f || 0); if (f2 >= COMMON_THRESHOLD) c_cnt++; sum += kindMap[s.w] * Math.pow(f2, F_POW); } }
+
+  e.succ_cnt = succ_cnt;
+  e.c_cnt = c_cnt;
+  e.has_succ = succ_cnt > 0;
   e.chain_raw = sum;
   rawDist.push(sum);
   if (sum > maxChain) maxChain = sum;
+
+  // 进度条：每 1% 打印一次
+  if (idx % 5000 === 0 || idx === total - 1) {
+    var pctDone = ((idx + 1) / total * 100).toFixed(1);
+    process.stdout.write('\r  进度: ' + (idx + 1) + '/' + total + ' (' + pctDone + '%)');
+  }
 });
+process.stdout.write('\n');
 
 db.forEach(function (e) {
   e.chain = e.chain_raw > 0 ? (1 - Math.exp(-e.chain_raw / REF)) : 0;
