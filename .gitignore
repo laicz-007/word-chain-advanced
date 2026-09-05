@@ -1,0 +1,25 @@
+# 依赖
+node_modules/
+
+# 生成/下载的数据（可用 `npm run build` 重新生成，大文件不入库）
+data/*.csv
+data/*.json
+data/kyle/
+data/sync/
+data/.secret
+
+# 打包产物
+dist-store/
+*.zip
+word-chain-standalone.html
+
+# 系统/编辑器
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/
+
+# 临时/调试残留
+wc_records_*.json
+start.bat

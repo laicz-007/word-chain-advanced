@@ -1,0 +1,83 @@
+/* ===== 主题 B：柔和渐变 · 无衬线（粉彩玻璃感） =====
+ * 只覆盖外观，不改布局。加载于 style.css 之后。 */
+:root {
+  --bg: #eef3fb;
+  --card: rgba(255,255,255,.86);
+  --ink: #33404f;
+  --muted: #748399;
+  --line: rgba(147,163,190,.24);
+  --primary: #7c6cf0;
+  --primary-dark: #6455d6;
+  --danger: #e0657c;
+  --good: #3aa47f;
+  --ai: #a06cf0;
+  --gold: #e0a53e;
+}
+body {
+  background: linear-gradient(135deg, #e3edff 0%, #efe6ff 45%, #ffe9f3 100%);
+  background-attachment: fixed;
+  font-family: "Inter", "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+}
+.header h1 { color: #3b3b6b; }
+.header .sub { background: linear-gradient(90deg, #7c6cf0, #e0657c); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+.card { background: rgba(255,255,255,.86); border: 1px solid rgba(255,255,255,.7); border-radius: 18px; box-shadow: 0 8px 30px rgba(120,130,220,.12); backdrop-filter: blur(6px); }
+
+.mode-option { border-color: rgba(150,160,220,.25); border-radius: 14px; }
+.mode-option:hover { border-color: rgba(124,108,240,.5); }
+.mode-option:has(input:checked) { border-color: #8f80f0; background: linear-gradient(135deg,#f1edff,#ffeaf3); }
+
+.btn { border-radius: 12px; border-color: rgba(150,160,220,.25); color: #4a5570; }
+.btn-primary { background: linear-gradient(90deg, #8f7bf0, #e0657c); border: none; }
+.btn-primary:hover { filter: brightness(1.05); }
+.btn-danger { border-color: #f6c8d2; color: #d04a64; }
+.btn-warn { background: linear-gradient(90deg,#f2b04c,#ed8f5a); border: none; color: #fff; }
+
+.player-card { background: rgba(255,255,255,.7); border-color: rgba(150,160,220,.22); border-radius: 14px; }
+.player-card.active { border-color: #8f80f0; background: linear-gradient(135deg,#f6f2ff,#fff0f7); }
+.player-card .score { color: #6a5cd8; }
+.player-card .turn-tag { background: linear-gradient(90deg,#8f7bf0,#e0657c); }
+.player-card .badge { background: #a06cf0; }
+
+.turn-banner b { color: #6a5cd8; }
+.turn-banner .hint { color: #8390a8; }
+
+.ai-info { background: linear-gradient(90deg,#f2efff,#fdeef6); border-color: #dcd3fb; color: #5b48b8; }
+
+.chain-panel .cur-word { background: linear-gradient(135deg,#8f7bf0,#c66bd6,#f28cad); color: #fff; }
+.chain-panel .cur-word .zh { color: #ffeef5; }
+.chain-panel .prev-word { background: rgba(255,255,255,.78); border: 1px solid rgba(160,170,220,.25); color: #3d4a5e; border-radius: 12px; }
+.chain-panel .tag { background: #fff; color: #6a5cd8; }
+.chain-panel .cur-word .tag { background: rgba(255,255,255,.24); color: #fff; }
+.chain-panel .phonetic { color: #f4d6e6; }
+.prev-word .phonetic, .log-entry .phonetic { color: #8a95ab; }
+.chain-panel .note-line { background: rgba(255,255,255,.2); color: #fff; }
+.prev-word .note-line { background: #f0ecff; color: #5a4a9a; }
+.note-full { background: rgba(255,255,255,.22); color: #fff; }
+.prev-word .note-full { background: #efeafa; color: #4a4570; }
+.note-toggle { border-color: rgba(255,255,255,.6); color: #fff; background: rgba(255,255,255,.18); }
+.prev-word .note-toggle { border-color: #8f80f0; color: #6a5cd8; background: #fff; }
+
+.input-row input, .config input, .config select { border-color: rgba(150,160,220,.3); border-radius: 12px; background: rgba(255,255,255,.9); }
+#word-input:focus { border-color: #8f80f0; box-shadow: 0 0 0 4px rgba(124,108,240,.15); }
+
+.confirm-row { background: #fff7e8; border-color: #f2d8a8; border-radius: 12px; }
+.confirm-row .confirm-msg { color: #9a6a14; }
+.ai-confirm { background: #ffeef1; border-color: #f6c8d2; color: #c8354f; border-radius: 12px; }
+
+.log-entry { border-color: rgba(150,160,220,.22); background: rgba(255,255,255,.72); border-radius: 10px; }
+.log-entry.concede { background: #ffeef1; border-color: #f6c8d2; }
+.log-entry .zh { color: #4a5670; }
+
+/* 难度徽章：粉彩渐变 */
+.d-badge.d0 { background: #9aa6bb; }
+.d-badge.d1, .d-badge.d2 { background: #6fca9b; }
+.d-badge.d3, .d-badge.d4 { background: #8fd07c; }
+.d-badge.d5, .d-badge.d6 { background: #f0b95a; }
+.d-badge.d7, .d-badge.d8 { background: #f4916e; }
+.d-badge.d9, .d-badge.d10 { background: #ef6a88; }
+
+/* 学习画像面板：粉彩玻璃（配合渐变主题） */
+.profile-box { background: linear-gradient(135deg, #f2efff, #ffeaf3); border: 1px solid #e3dcf7; color: #5a4a86; }
+.profile-box .profile-row b { color: #6a5cd8; }
+.profile-box .profile-row:last-child b { color: #d04a64; }

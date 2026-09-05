@@ -1,0 +1,90 @@
+/* ===== 主题 A：Claude 风格（暖白 · 陶土橙 · 极简阅读感） =====
+ * 只覆盖外观，不改布局。加载于 style.css 之后。 */
+:root {
+  --bg: #faf8f3;
+  --card: #fffdf8;
+  --ink: #38342c;
+  --muted: #8a8374;
+  --line: #e8e2d4;
+  --primary: #c15f3c;
+  --primary-dark: #a34e30;
+  --danger: #b0382f;
+  --good: #44765a;
+  --ai: #c15f3c;
+  --gold: #a8881f;
+}
+body {
+  background: #faf8f3;
+  font-family: "Avenir Next", "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+}
+.header h1 { color: #3b342b; letter-spacing: .2px; }
+.header .sub { color: var(--primary); }
+
+.card {
+  background: #fffdf8;
+  border: 1px solid #e9e3d5;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(90, 70, 40, .05), 0 6px 24px rgba(90, 70, 40, .04);
+}
+
+.mode-option { border-color: #e5dfd0; }
+.mode-option:has(input:checked) { border-color: var(--primary); background: #fbf3ec; }
+
+.btn { border-radius: 7px; border-color: #ddd5c2; color: #4a4539; }
+.btn-primary { background: var(--primary); border-color: var(--primary); }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-danger { border-color: #eec8c2; color: var(--danger); }
+.btn-warn { background: var(--gold); border-color: var(--gold); }
+
+.player-card { background: #fffdf8; border-color: #e7e0cf; }
+.player-card.active { border-color: var(--primary); background: #fcf3ec; }
+.player-card .score { color: var(--primary); }
+.player-card .turn-tag { background: var(--primary); }
+.player-card .badge { background: var(--ai); }
+
+.turn-banner b { color: var(--primary); }
+.turn-banner .hint { color: #9a927f; }
+
+.ai-info { background: #fbf3ec; border-color: #eed2c4; color: #7d3b24; }
+
+.chain-panel .cur-word { background: linear-gradient(135deg, #cf6f4e, #b4543a); color: #fff7f1; }
+.chain-panel .cur-word .zh { color: #ffe9de; }
+.chain-panel .prev-word { background: #f4efe4; border: 1px solid #e7e0ce; color: #3f3a30; }
+.chain-panel .tag { background: #e9e1cf; color: #5a5140; }
+.chain-panel .cur-word .tag { background: rgba(255,255,255,.2); color: #fff; }
+.chain-panel .who { opacity: .8; }
+.chain-panel .phonetic { color: #f6d9c9; }
+.prev-word .phonetic, .log-entry .phonetic { color: #8a8273; }
+.chain-panel .note-line { background: rgba(255,255,255,.14); color: #fff; }
+.prev-word .note-line { background: #efe9da; color: #4a4437; }
+.prev-word .note-full { background: #f0ebdd; color: #44403a; }
+.note-full { background: rgba(255,255,255,.2); color: #fff; }
+.note-toggle { border-color: rgba(255,255,255,.5); color: #fff; background: rgba(255,255,255,.12); }
+.prev-word .note-toggle { border-color: var(--primary); color: var(--primary); background: #fff; }
+.dead-warn { background: #f7ddd6; color: #9a2f22; }
+.dead-warn.soft { background: #f6ecd3; color: #8a6a14; }
+
+.input-row input, .config input, .config select { border-color: #ddd5c0; background: #fffefb; }
+#word-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(193,95,60,.14); }
+
+.confirm-row { background: #fbf3ec; border-color: #e8cdbf; }
+.confirm-row .confirm-msg { color: #7d3b24; }
+.ai-confirm { background: #fbeae6; border-color: #efc9c0; color: #8c2e22; }
+
+.log-entry { border-color: #e7e0cf; background: #fffdf8; }
+.log-entry.concede { background: #fdf1ee; border-color: #edcfc8; }
+.log-entry .who { color: #8a8273; }
+.log-entry .zh { color: #4a4437; }
+
+/* 难度徽章：暖色调 */
+.d-badge.d0 { background: #bdb6a6; }
+.d-badge.d1, .d-badge.d2 { background: #7a9b6b; }
+.d-badge.d3, .d-badge.d4 { background: #a39a4e; }
+.d-badge.d5, .d-badge.d6 { background: #c68a3a; }
+.d-badge.d7, .d-badge.d8 { background: #c96a44; }
+.d-badge.d9, .d-badge.d10 { background: #b3453a; }
+
+/* 学习画像面板：暖白陶土（配合 Claude 主题） */
+.profile-box { background: #fbf3ec; border: 1px solid #eed2c4; color: #6b5230; }
+.profile-box .profile-row b { color: var(--primary); }
+.profile-box .profile-row:last-child b { color: #9a5a3a; }

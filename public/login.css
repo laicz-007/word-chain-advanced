@@ -1,0 +1,77 @@
+/* login.css — 登录页（#auth）样式
+ * 设计语言借鉴开源项目 Pico CSS（https://picocss.com）：
+ * Copyright 2019-2025 Pico, 依据 MIT 许可（https://github.com/picocss/pico）。
+ * 样式作用域限定在 #auth，不影响游戏其它界面。
+ */
+
+#auth {
+  min-height: calc(100vh - 48px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: -8px -16px 24px;      /* 突破 #app 内边距，登录区更宽 */
+  padding: 44px 16px;
+  border: 0;
+  border-radius: 18px;
+  background:
+    radial-gradient(1100px 520px at 12% -8%, rgba(255,255,255,.30), transparent 60%),
+    linear-gradient(135deg, #2563eb 0%, #6d28d9 55%, #7c3aed 100%);
+}
+#auth .login-card {
+  width: 100%;
+  max-width: 400px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, .32);
+  padding: 34px 28px;
+}
+#auth .login-brand { text-align: center; margin-bottom: 6px; }
+#auth .login-logo {
+  width: 56px; height: 56px; margin: 0 auto 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; border-radius: 16px;
+  background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, .35);
+}
+#auth .login-brand h1 { margin: 0; font-size: 24px; color: #1f2933; letter-spacing: .5px; }
+#auth .login-brand h1 span {
+  font-weight: 600;
+  background: linear-gradient(90deg, #2563eb, #7c3aed);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+#auth .login-brand p { margin: 8px 0 0; color: #6b7280; font-size: 13px; }
+#auth .login-form { display: block; margin-top: 18px; }
+#auth .login-field { display: block; margin-bottom: 14px; }
+#auth .login-field span { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: #374151; }
+#auth .login-field input {
+  width: 100%; padding: 11px 12px;
+  font-size: 15px; color: #1f2933;
+  background: #f8fafc; border: 1px solid #d1d5db; border-radius: 10px;
+  transition: border-color .15s, box-shadow .15s;
+}
+#auth .login-field input:focus {
+  outline: none; border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, .18);
+}
+#auth .login-actions { display: flex; gap: 10px; margin-top: 4px; }
+#auth .login-btn {
+  flex: 1 1 0; padding: 11px 14px; font-size: 15px; font-weight: 600;
+  border: 1px solid transparent; border-radius: 10px; cursor: pointer;
+  transition: transform .05s, background .15s, border-color .15s;
+}
+#auth .login-btn:active { transform: translateY(1px); }
+#auth .login-btn-primary { background: #2563eb; color: #fff; }
+#auth .login-btn-primary:hover { background: #1d4ed8; }
+#auth .login-btn:not(.login-btn-primary):not(.login-btn-ghost) { background: #f1f5f9; color: #1f2933; border-color: #d1d5db; }
+#auth .login-btn:not(.login-btn-primary):not(.login-btn-ghost):hover { background: #e5e7eb; }
+#auth .login-btn-ghost { width: 100%; flex: none; margin-top: 2px; background: transparent; color: #2563eb; border: 1px dashed #93c5fd; }
+#auth .login-btn-ghost:hover { background: #eff6ff; }
+#auth .login-msg { min-height: 18px; margin: 12px 0 0; font-size: 13px; color: #b91c1c; }
+#auth .login-msg.err { color: #b91c1c; }
+#auth .login-or { display: flex; align-items: center; gap: 12px; margin: 16px 0 12px; color: #9ca3af; font-size: 12px; }
+#auth .login-or::before, #auth .login-or::after { content: ""; flex: 1; height: 1px; background: #e5e7eb; }
+#auth .login-note { margin: 14px 0 0; font-size: 12px; color: #9ca3af; line-height: 1.6; }
+/* 登录/注册 切换标签 */
+#auth .login-tabs { display: flex; gap: 6px; margin-bottom: 16px; background: #f1f5f9; border-radius: 12px; padding: 4px; }
+#auth .login-tab { flex: 1; padding: 9px 12px; font-size: 14px; font-weight: 600; border: 0; border-radius: 9px; cursor: pointer; background: transparent; color: #6b7280; transition: background .15s, color .15s; }
+#auth .login-tab.active { background: #fff; color: #2563eb; box-shadow: 0 1px 3px rgba(15, 23, 42, .12); }

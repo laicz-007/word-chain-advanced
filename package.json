@@ -1,0 +1,16 @@
+{
+  "name": "word-chain",
+  "version": "1.0.0",
+  "description": "基于 LinXueyuanStdio/DictionaryData 词库的英语单词接龙（人机/本地同屏/联机房间）",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "build": "python tools/build_unified_db.py && node tools/compute_chain_idx.js",
+    "test": "node test/test.js && node test/integration.js && node test/api-test.js && node test/account-test.js && node test/room-test.js && node test/track-test.js && node test/security-test.js"
+  },
+  "engines": {
+    "node": ">=14"
+  },
+  "license": "MIT",
+  "private": true
+}

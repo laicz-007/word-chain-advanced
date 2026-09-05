@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>单词接龙 · Word Chain</title>
+  <link rel="stylesheet" href="style.css" />
+  <link id="theme-style" rel="stylesheet" href="" />
+  <link rel="stylesheet" href="login.css" />
+</head>
+<body>
+  <div id="app">
+    <header id="app-header" class="header">
+      <div class="header-row">
+        <div>
+          <h1>单词接龙 <span class="sub">Word Chain</span></h1>
+          <p class="tagline">用词库英语单词接龙，边玩边记单词</p>
+        </div>
+        <label class="theme-pick">主题
+          <select id="theme-select">
+            <option value="">原版</option>
+            <option value="theme-claude.css">Claude 暖白</option>
+            <option value="theme-gradient.css">柔和渐变</option>
+            <option value="theme-own.css">夜读游戏</option>
+          </select>
+        </label>
+      </div>
+    </header>
+
+    <!-- 账号状态条（进入游玩页后显示） -->
+    <div id="account-bar" class="account-bar hidden">
+      <span id="account-bar-text">游客</span>
+      <button id="account-bar-action" class="btn btn-sm">退出</button>
+    </div>
+
+    <!-- 登录页（网站版最先出现，独占一屏；登录/游客后彻底隐藏；离线单文件版自动隐藏） -->
+    <section id="auth">
+      <div class="login-card">
+        <div class="login-brand">
+          <div class="login-logo">🔗</div>
+          <h1>单词接龙 <span>Word Chain</span></h1>
+          <p>边玩边记单词 · 登录后学习画像更懂你</p>
+        </div>
+        <form class="login-form" id="auth-guest" novalidate>
+          <div class="login-tabs">
+            <button id="login-tab" class="login-tab active" type="button">登录</button>
+            <button id="register-tab" class="login-tab" type="button">注册</button>
+          </div>
+          <label class="login-field">
+            <span>用户名</span>
+            <input id="auth-user-in" type="text" placeholder="2-20 位字母 / 数字 / _ / -" maxlength="20" autocomplete="username" />
+          </label>
+          <label class="login-field">
+            <span>密码</span>
+            <input id="auth-pass" type="password" placeholder="4-64 位" maxlength="64" autocomplete="current-password" />
+          </label>
+          <label class="login-field hidden" id="auth-pass2-row">
+            <span>确认密码</span>
+            <input id="auth-pass2" type="password" placeholder="再次输入密码" maxlength="64" autocomplete="new-password" />
+          </label>
+          <div class="login-actions">
+            <button id="auth-submit" class="login-btn login-btn-primary" type="button">登录</button>
+          </div>
+          <p id="auth-msg" class="login-msg"></p>
+          <div class="login-or"><span>或</span></div>
+          <button id="auth-guest-go" class="login-btn login-btn-ghost" type="button">以游客身份继续 →</button>
+          <p class="login-note">登录后画像与对局记录保存到服务端（账户），跨设备可读；游客数据仅存本浏览器。</p>
+        </form>
+      </div>
+    </section>
+
+    <!-- 模式选择（游玩页第一部分；登录/游客后才显示） -->
+    <section id="setup" class="card hidden">
+      <h2>开始游戏</h2>
+      <div class="mode-grid">
+        <label class="mode-option mode-human-vs-ai">
+          <input type="radio" name="mode" value="pve" checked />
+          <div>
+            <strong>人机对战</strong>
+            <p>你 vs AI，AI 会按你的水平出题（登录后更懂你）。</p>
+          </div>
+        </label>
+        <label class="mode-option">
+          <input type="radio" name="mode" value="pvp" />
+          <div>
+            <strong>本地同屏</strong>
+            <p>单设备多人轮流玩，自动计分。</p>
+          </div>
+        </label>
+        <label class="mode-option">
+          <input type="radio" name="mode" value="online" id="mode-online" />
+          <div>
+            <strong>联机房间</strong>
+            <p>多设备在线对战（需登录，创建 / 加入房间）。</p>
+          </div>
+        </label>
+      </div>
+
+      <div id="pve-config" class="config">
+        <label id="pve-name-row">你的昵称 <input id="pve-name" type="text" placeholder="玩家" maxlength="12" /></label>
+        <div id="pve-account-note" class="auth-note hidden">以账户 <b id="pve-account-name"></b> 身份进行人机对战。</div>
+        <label class="checkbox"><input id="pve-explore" type="checkbox" />
+          <span>探索 · 发现（AI 随机选一个有趣的初始词）</span></label>
+      </div>
+
+      <div id="pvp-config" class="config hidden">
+        <label>玩家人数
+          <select id="pvp-count">
+            <option>2</option><option>3</option><option>4</option><option>5</option><option>6</option>
+          </select>
+        </label>
+        <div id="pvp-names"></div>
+        <label class="checkbox"><input id="pvp-track" type="checkbox" />
+          <span>统计我的出词（只把我的接龙计入学习记录，不混入同屏别人）</span></label>
+        <div id="pvp-me-row" class="hidden">
+          <label>我是哪位玩家
+            <select id="pvp-me"></select>
+          </label>
+          <p class="auth-note">对局中你的词会标「我」；保存记录时只统计你这位玩家的出词（防疲劳 / 记录 / 画像）。</p>
+        </div>
+      </div>
+
+      <div id="online-config" class="config hidden">
+        <div id="online-login-req" class="hidden">
+          <p class="auth-note">联机房间需要登录（多设备在线对战）。</p>
+          <button id="online-goto-login" class="btn btn-primary">去登录 / 注册</button>
+        </div>
+        <div id="online-gate">
+          <div class="auth-row">
+            <button id="room-create-btn" class="btn btn-primary">创建房间</button>
+            <button id="room-join-btn" class="btn">加入房间</button>
+          </div>
+          <div id="room-join-panel" class="room-join-panel hidden">
+            <div class="auth-row">
+              <input id="room-join-input" type="text" placeholder="输入 6 位房间号" inputmode="numeric" />
+              <button id="room-join-confirm" class="btn btn-primary">进入房间</button>
+              <button id="room-join-cancel" class="btn">取消</button>
+            </div>
+          </div>
+          <div id="online-msg" class="auth-msg"></div>
+        </div>
+        <div id="online-lobby" class="hidden">
+          <div class="room-id"><span class="room-id-label">房间号</span><b id="room-id"></b><button id="room-copy-btn" class="btn btn-sm">复制</button></div>
+          <div id="room-players" class="room-players"></div>
+          <div id="room-notice" class="auth-msg"></div>
+          <div class="auth-row">
+            <button id="room-start-btn" class="btn btn-primary hidden">开始对战</button>
+            <button id="room-dissolve-btn" class="btn btn-danger hidden">解散房间</button>
+            <button id="room-leave-btn" class="btn hidden">离开房间</button>
+          </div>
+        </div>
+      </div>
+
+      <button id="start-btn" class="btn btn-primary">开始</button>
+      <div id="setup-error" class="error-text hidden"></div>
+    </section>
+
+    <!-- 游戏区 -->
+    <section id="game" class="card hidden">
+      <div id="room-bar" class="room-bar hidden">
+        <span>房间 <b id="room-bar-id"></b></span>
+        <button id="room-bar-terminate" class="btn btn-danger btn-sm hidden">终止对局</button>
+        <button id="room-bar-dissolve" class="btn btn-danger btn-sm hidden">解散房间</button>
+        <button id="room-bar-leave" class="btn btn-sm hidden">离开房间</button>
+      </div>
+
+      <div id="scoreboard"></div>
+
+      <div id="ai-info" class="ai-info hidden"></div>
+
+      <div id="turn-banner" class="turn-banner"></div>
+
+      <div id="last-word" class="last-word"></div>
+
+      <div class="input-row">
+        <input id="word-input" type="text" placeholder="输入英文单词" autocomplete="off" autocapitalize="off" spellcheck="false" />
+        <button id="submit-btn" class="btn btn-primary">出词</button>
+        <button id="concede-btn" class="btn btn-danger">认输</button>
+      </div>
+      <div id="confirm-row" class="confirm-row hidden">
+        <span id="confirm-msg" class="confirm-msg"></span>
+        <button id="confirm-yes" class="btn btn-warn">确认使用</button>
+        <button id="confirm-no" class="btn">重新输入</button>
+      </div>
+      <div id="game-msg" class="game-msg"></div>
+
+      <div id="ai-confirm" class="ai-confirm hidden">
+        <span id="ai-confirm-msg"></span>
+        <button id="ai-confirm-go" class="btn btn-primary">确认继续</button>
+      </div>
+
+      <div class="actions-row">
+        <button id="hint-btn" class="btn">提示</button>
+        <button id="restart-btn" class="btn">重新开始本局</button>
+        <button id="back-btn" class="btn">返回模式选择</button>
+      </div>
+
+      <div id="hint-box" class="hint-box hidden"></div>
+      <div id="milestone" class="milestone"></div>
+
+      <!-- 详细记录(按局) 详情弹层 -->
+      <div id="report-modal" class="report-modal hidden">
+        <div class="report-inner">
+          <div id="report-popup" class="report-popup"></div>
+          <div class="report-actions">
+            <button id="report-proceed" class="btn btn-primary">关闭</button>
+          </div>
+        </div>
+      </div>
+
+      <details class="rules">
+        <summary>查看规则</summary>
+        <ol>
+          <li>新词开头 2 字母 = 上词末尾 2 字母，或 开头 3 字母 = 上词末尾 3 字母（任一方长度 &lt;3 时只考虑 2 字母匹配）。</li>
+          <li>结尾最多 3 个字母必须含 1 个元音（a e i o u y）。</li>
+          <li>不能以 <code>ry</code> / <code>ht</code> / <code>ck</code> 结尾（数据驱动的"常见却难接"结尾）。</li>
+          <li>单词至少 2 个长度。</li>
+          <li>同一轮内单词不得重复；认输后换下一轮清空。</li>
+        </ol>
+      </details>
+    </section>
+
+    <!-- 记录区：一局一个条目（游玩页第二部分） -->
+    <section id="log" class="card hidden">
+      <h2>对战记录</h2>
+      <p class="record-hint">每一局为一条记录，点开可看本局单词，右侧可查看详细报告。</p>
+      <div id="profile-box" class="profile-box hidden"></div>
+      <div id="log-list" class="log-list">
+        <p class="empty">还没有记录，先开始一局吧。</p>
+      </div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
