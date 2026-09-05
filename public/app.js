@@ -34,6 +34,7 @@
   var myName = null;                 // 我在房间中的账户名
   var myTurn = false;
   var turnDeadline = null;          // 联机：当前回合超时时间戳(用于倒计时)
+  var localDeadline = null;         // 本地倒计时基准(避免服务器/浏览器时钟不同步导致的跳变)
   var countdownTimer = null;        // 倒计时本地刷新计时器
   var myLocalIdx = -1;              // 本地同屏"统计我的出词"：我的玩家下标(-1=不统计)
 
@@ -432,6 +433,9 @@
     if (rs.status === 'playing' && rs.game) {
       state = rs.game; myTurn = !!rs.myTurn;
       turnDeadline = rs.turnDeadline || null;
+      // 用"剩余毫秒数"校准本地倒计时基准，避免服务器/浏览器时钟偏差导致跳变
+      if (rs.turnMsLeft != null) localDeadline = Date.now() + rs.turnMsLeft;
+      else localDeadline = null;
       $('setup').classList.add('hidden');
       $('game').classList.remove('hidden');
       $('log').classList.add('hidden');
@@ -906,12 +910,12 @@
     });
   }
 
-  // 联机回合倒计时文本
+  // 联机回合倒计时文本（用本地递减基准，避免跳变）
   function turnCountdown() {
-    if (!(mode === 'online' && onlineActive) || !turnDeadline) return '';
-    var ms = turnDeadline - Date.now();
+    if (!(mode === 'online' && onlineActive) || !localDeadline) return '';
+    var ms = localDeadline - Date.now();
     if (ms < 0) ms = 0;
-    var s = Math.ceil(ms / 1000);
+    var s = Math.floor(ms / 1000);   // 用 floor + 显示剩余整秒，避免 ceil 跳 2 秒
     return ' <span class="turn-timer' + (s <= 10 ? ' danger' : '') + '">⏱ ' + s + 's</span>';
   }
 
