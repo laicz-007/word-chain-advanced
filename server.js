@@ -1,5 +1,5 @@
 /* 单词接龙（服务端入口）
- * Copyright (c) 2026 Word Chain contributors — MIT License（见 LICENSE）
+ * Copyright (c) 2026 laicz-007 — MIT License（见 LICENSE）
  * 组装 src/ 下各模块，启动 HTTP 服务，并导出内部对象供测试/复用。
  * 模块划分：config(配置) / db(词库) / auth(账号) / userdata(账户数据+画像)
  *           usage(防疲劳) / view(快照) / gameplay(对局编排) / api(HTTP 路由)。
