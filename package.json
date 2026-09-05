@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "build": "python tools/build_unified_db.py && node tools/compute_chain_idx.js",
+    "build": "python tools/build_data.py && python tools/build_unified_db.py && node tools/compute_chain_idx.js",
     "test": "node test/test.js && node test/integration.js && node test/api-test.js && node test/account-test.js && node test/room-test.js && node test/track-test.js && node test/security-test.js"
   },
   "engines": {
