@@ -157,30 +157,40 @@ sudo systemctl restart word-chain
 
 之前是手动传文件的，想改成**一条命令更新**？让 VPS 上也装 git，以后代码走 `git pull` 自动同步：
 
-### 一次性迁移（只做一次）
+### 一次性迁移（只做一次，零风险流程：先 clone 新目录，原目录不动）
+
+> ⚠️ **数据安全原则**：玩家数据全部在 `data/`（词库/账号/画像/密钥），它被 `.gitignore` 排除，git **不会碰**。但迁移操作本身要小心——**用"复制"data，不是"移动"；先跑通新的，再停旧的。**
 
 ```bash
 cd /root
 # 1) 安装 git（若没有）
 sudo apt-get install -y git
 
-# 2) 把当前手动部署的目录改名为备份（**保留 data/ 数据**）
-mv word-chain word-chain-backup
+# 2) 【先不动原目录】clone 到独立新目录
+git clone https://github.com/laicz-007/word-chain-advanced.git word-chain-git
 
-# 3) 克隆仓库（新目录 word-chain）
-git clone https://github.com/laicz-007/word-chain-advanced.git word-chain
+# 3) 把原项目的数据目录【复制】过去（cp 复制！不是 mv 移动）
+cp -r /root/word-chain/data /root/word-chain-git/data
 
-# 4) 【关键】把数据目录复制回来（词库/账号/密钥，它们不入 git）
-cp -r word-chain-backup/data word-chain/data
+# 4) 【校验】词库/账号/密钥都过来了再继续
+ls -lh /root/word-chain-git/data/db.json       # 应看到 90+MB 词库
+ls /root/word-chain-git/data/users.json
+ls /root/word-chain-git/data/.secret          # 密钥（有则老用户 token 不失效）
 
-# 5) 确认词库在（98MB 那个）
-ls -lh word-chain/data/db.json
+# 5) 用新目录试启动，浏览器访问确认"老玩家数据还在"
+cd /root/word-chain-git && node server.js     # Ctrl+C 停掉
 
-# 6) 以前用 systemd 的话，重新加载并启动；手动 nohup 的话重新拉起
-cd word-chain && bash update.sh
+# 6) 确认无误后：停掉旧服务，切换 systemd 指向新目录，再启动
+sudo systemctl stop word-chain
+# 修改 /etc/systemd/system/word-chain.service 的 WorkingDirectory 为 /root/word-chain-git，
+# 再：
+sudo systemctl daemon-reload
+sudo systemctl start word-chain
+
+# 7) 旧目录 /root/word-chain 先留着（回滚保险），确认稳定几天后再删
 ```
 
-> `data/`（db.json 词库、users.json 账号、sync/ 画像、.secret 密钥）被 `.gitignore` 排除，**git 永远不碰它**——拉代码不会丢任何玩家数据。但前提是第 4 步把旧 data/ 复制了过来（新 clone 里 data/ 是空的）。
+> `data/`（db.json 词库、users.json 账号、sync/ 画像、.secret 密钥）被 `.gitignore` 排除，git 永远不碰它——新 clone 里 `data/` 是空的，所以**第 3 步的 `cp -r` 复制**是数据不缺的命根子。用"复制"而非"移动"，原目录始终留有备份，出问题能一键回滚。
 
 ### 以后每次更新（一条命令）
 
