@@ -153,58 +153,6 @@ tar -czf backup-$(date +%F).tgz data/
 sudo systemctl restart word-chain
 ```
 
-## 9. 从"手动上传"升级为"git 一键更新"（推荐）
-
-之前是手动传文件的，想改成**一条命令更新**？让 VPS 上也装 git，以后代码走 `git pull` 自动同步：
-
-### 一次性迁移（只做一次，零风险流程：先 clone 新目录，原目录不动）
-
-> ⚠️ **数据安全原则**：玩家数据全部在 `data/`（词库/账号/画像/密钥），它被 `.gitignore` 排除，git **不会碰**。但迁移操作本身要小心——**用"复制"data，不是"移动"；先跑通新的，再停旧的。**
-
-```bash
-cd /root
-# 1) 安装 git（若没有）
-sudo apt-get install -y git
-
-# 2) 【先不动原目录】clone 到独立新目录
-git clone https://github.com/laicz-007/word-chain-advanced.git word-chain-git
-
-# 3) 把原项目的数据目录【复制】过去（cp 复制！不是 mv 移动）
-cp -r /root/word-chain/data /root/word-chain-git/data
-
-# 4) 【校验】词库/账号/密钥都过来了再继续
-ls -lh /root/word-chain-git/data/db.json       # 应看到 90+MB 词库
-ls /root/word-chain-git/data/users.json
-ls /root/word-chain-git/data/.secret          # 密钥（有则老用户 token 不失效）
-
-# 5) 用新目录试启动，浏览器访问确认"老玩家数据还在"
-cd /root/word-chain-git && node server.js     # Ctrl+C 停掉
-
-# 6) 确认无误后：停掉旧服务，切换 systemd 指向新目录，再启动
-sudo systemctl stop word-chain
-# 修改 /etc/systemd/system/word-chain.service 的 WorkingDirectory 为 /root/word-chain-git，
-# 再：
-sudo systemctl daemon-reload
-sudo systemctl start word-chain
-
-# 7) 旧目录 /root/word-chain 先留着（回滚保险），确认稳定几天后再删
-```
-
-> `data/`（db.json 词库、users.json 账号、sync/ 画像、.secret 密钥）被 `.gitignore` 排除，git 永远不碰它——新 clone 里 `data/` 是空的，所以**第 3 步的 `cp -r` 复制**是数据不缺的命根子。用"复制"而非"移动"，原目录始终留有备份，出问题能一键回滚。
-
-### 以后每次更新（一条命令）
-
-```bash
-cd /root/word-chain && bash update.sh
-```
-
-等价于 `git pull origin main && 重启服务`。仓库里带了 `update.sh`，自动做这两步（检测到 systemd 服务就自动 `systemctl restart`，没有则提示手动重启命令）。
-
-### 注意
-
-- 如果以后**词库/数据**也有更新（比如发了新 db.json），git 不会带（被 ignore），需要另传 `data/` 下对应文件。
-- `git pull` 前先确认 VPS 上没有手动改过被 git 跟踪的文件（否则会冲突）；正常只 pull 不会改，不会冲突。
-
 ---
 
 ### 端口/防火墙
