@@ -168,9 +168,37 @@ word-chain/
 
 ## 重新构建词库
 
+词库的生成是**三步链路**，缺一不可。不要混淆：真正生成全量词库的是 **`build_unified_db.py`**（unified = 统一整合），其它两个是它的前/后处理。
+
+| 步骤 | 脚本 | 产出 | 是否联网 |
+|---|---|---|---|
+| 1 | `python tools/build_data.py` | `public/vocab.json`（基础词库，用 `data/word.csv`） | 否 |
+| 2 | `python tools/build_unified_db.py` | `data/db.json`（全量词库，整合 ECDICT/Tofu/Kyle） | 首次需联网，有缓存则离线 |
+| 3 | `node tools/compute_chain_idx.js` | 给 db.json 算可接指数 + 过滤缩写/专名 | 否 |
+
+### 一键重建（推荐）
+
+`build-db.sh` 是上面三步的**一键入口**（内部依次调用 1/2/3），在项目根目录执行：
+
 ```bash
-python tools/build_unified_db.py   # 覆盖写出 data/db.json
+bash build-db.sh
 ```
+
+等价于 `npm run build`（package.json 里已配成这三步）。跑完重启服务生效：
+
+```bash
+sudo systemctl restart word-chain
+```
+
+### 单独跑某一步（维护时用）
+
+```bash
+python tools/build_data.py                 # 只重建基础词库 vocab.json
+python tools/build_unified_db.py           # 只重新整合全量词库 db.json
+node tools/compute_chain_idx.js            # 只重算可接指数/过滤缩写
+```
+
+> 说明：`build_unified_db.py` 输出的是**全量** db.json（33万词）；`compute_chain_idx.js` 会剔除缩写/专名（`kind<=0.1` 且不在常用词白名单）并写入可接指数。离线单文件版用的是 `data/db.lite.json`（轻量 3.6万词，由打包脚本自行选取），与此处全量词库不同。
 
 ## 运行测试
 
