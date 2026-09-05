@@ -94,6 +94,16 @@
     return { ok: true, word: w };
   }
 
+  // 规则复数还原：若 w 是规则复数则返回其原形，否则返回 null
+  // 只做常见规则：ies->y, es(前接 s/x/z/ch/sh/o)->去es, 单 s->去s
+  function pluralBase(w) {
+    if (w.length <= 3) return null;
+    if (/ies$/.test(w)) return w.slice(0, -3) + 'y';
+    if (/(s|x|z|ch|sh|o)es$/.test(w)) return w.slice(0, -2);
+    if (/s$/.test(w) && !/ss$/.test(w)) return w.slice(0, -1);
+    return null;
+  }
+
   /* ---- 词库存储器 ---- */
   function WordStore(vocab) {
     this.byWord = Object.create(null);   // 空原型：避免 "constructor"/"__proto__" 等词撞上继承属性
@@ -408,6 +418,14 @@
 
     if (this.used[w]) return { ok: false, reason: '本回合已出现过这个词。' };
 
+    // 拒绝规则复数：onions -> 提示用原形 onion
+    if (!inVocab) {
+      var base = pluralBase(w);
+      if (base && this.store.lookup(base)) {
+        return { ok: false, reason: '「' + w + '」是复数形式，请用原形「' + base + '」。' };
+      }
+    }
+
     // 非词库词：先提示用户确认，再决定是否接受
     if (!inVocab && !opts.confirmed) {
       return { ok: false, pending: 'non-vocab', word: w, reason: '「' + w + '」不在词库中，不计入难度统计，请确认是否使用。' };
@@ -448,6 +466,15 @@
     if (this.used[w]) return { ok: false, reason: '本回合已出现过这个词，不能重复。' };
 
     var inVocab = !!this.store.lookup(w);
+
+    // 拒绝规则复数：onions -> 提示用原形 onion
+    if (!inVocab) {
+      var base = pluralBase(w);
+      if (base && this.store.lookup(base)) {
+        return { ok: false, reason: '「' + w + '」是复数形式，请用原形「' + base + '」。' };
+      }
+    }
+
     // 非词库词：先提示用户确认，再决定是否接受
     if (!inVocab && !opts.confirmed) {
       return { ok: false, pending: 'non-vocab', word: w, reason: '「' + w + '」不在词库中，不计入难度统计，请确认是否使用。' };

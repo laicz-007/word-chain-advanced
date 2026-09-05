@@ -109,9 +109,22 @@ var KEEP = new Set([
   'ok', 'tv', 'vs', 'am', 'is', 'etc', 'dna', 'who', 'dr', 'pc', 'id', 'asap',
   'diy', 'faq', 'gps', 'hiv', 'mp3', 'pdf', 'vip', 'app', 'ai', 'usa', 'uk', 'la'
 ]);
+// 精确黑名单：拟声/网络用语/罗马数字/明显拼写错误
+var JUNK = new Set([
+  'aaaaa', 'aaaargh', 'ahhhh', 'awww', 'awwww', 'ooo', 'ummm', 'yyy', 'grrrr', 'shhhh', 'tsktsk',
+  'iii', 'vii', 'viii', 'xi', 'xii', 'xiii', 'xiv', 'xvi', 'xvii', 'xviii', 'xix',
+  'xxi', 'xxii', 'xxviii', 'xxix', 'xxxi', 'xxxiii', 'xxxiv', 'xxxvii', 'xxxviii', 'xxxix',
+  'lxviii', 'lxxxiv', 'lxxxviii', 'xciii', 'xcviii', 'xlviii',
+  'processsor', 'messsage', 'narcisssus', 'excesssive', 'bosss', 'eyewitnesss'
+]);
 var before = db.length;
-db = db.filter(function (e) { return e.kind > 0.1 || KEEP.has(e.w); });
-console.log('过滤缩写/专名: ' + before + ' -> ' + db.length + '（保留白名单 ' + KEEP.size + ' 个常用词）');
+db = db.filter(function (e) {
+  if (JUNK.has(e.w)) return false;                    // 明确垃圾黑名单
+  if (e.kind <= 0.1) return KEEP.has(e.w);            // 缩写/专名：只留白名单常用词
+  if (e.w.length >= 4 && !/[aeiouy]/.test(e.w)) return false;  // 无元音长串(代码/缩写碎片)
+  return true;
+});
+console.log('过滤缩写/专名/无元音碎片/黑名单: ' + before + ' -> ' + db.length + '（保留白名单 ' + KEEP.size + ' 个常用词）');
 
 fs.writeFileSync(dbPath, JSON.stringify(db), 'utf8');
 
