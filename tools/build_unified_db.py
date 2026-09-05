@@ -326,8 +326,11 @@ def compute_difficulty(sig, f):
 def load_ecd_map():
     p = os.path.join(DATA, 'ecdict.csv')
     m = {}
+    # 无缓存先尝试联网下载（有缓存则直接用，不再"跳过"）
     if not os.path.exists(p) or os.path.getsize(p) < 1000000:
-        print('[ECDICT] 无缓存,跳过'); return m
+        print('[ECDICT] 无缓存，开始下载 ecdict.csv ...')
+        if not download(ECD_URL, p, expect_min=10 * 1024 * 1024):
+            print('[ECDICT] 下载失败，跳过 ECDICT 兜底'); return m
     with io.open(p, 'r', encoding='utf-8', errors='replace') as f:
         for row in csv.DictReader(f):
             raw = (row.get('word') or '').strip()
@@ -351,8 +354,11 @@ def load_ecd_map():
 
 def enrich_tofu(entries):
     p = os.path.join(DATA, 'tofu_words.csv')
+    # 无缓存先尝试联网下载
     if not os.path.exists(p) or os.path.getsize(p) < 1000000:
-        print('[Tofu] 无缓存,跳过'); return
+        print('[Tofu] 无缓存，开始下载 words.csv ...')
+        if not download(TOFU_URL, p, expect_min=2 * 1024 * 1024):
+            print('[Tofu] 下载失败，跳过 Tofu 补充'); return
     print('[Tofu] 使用缓存...')
     with io.open(p, 'r', encoding='utf-8', errors='replace') as f:
         for row in csv.reader(f):
