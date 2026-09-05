@@ -73,6 +73,15 @@ db.forEach(function (e) {
   e.chain_idx = e.kind * e.chain;
 });
 
+// 过滤缩写/专名：剔除 kind<=0.1 的词，但保留常用词白名单
+var KEEP = new Set([
+  'ok', 'tv', 'vs', 'am', 'is', 'etc', 'dna', 'who', 'dr', 'pc', 'id', 'asap',
+  'diy', 'faq', 'gps', 'hiv', 'mp3', 'pdf', 'vip', 'app', 'ai', 'usa', 'uk', 'la'
+]);
+var before = db.length;
+db = db.filter(function (e) { return e.kind > 0.1 || KEEP.has(e.w); });
+console.log('过滤缩写/专名: ' + before + ' -> ' + db.length + '（保留白名单 ' + KEEP.size + ' 个常用词）');
+
 fs.writeFileSync(dbPath, JSON.stringify(db), 'utf8');
 
 function pct(a, p) {
