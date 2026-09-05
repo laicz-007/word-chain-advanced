@@ -28,7 +28,9 @@ function clearTurnTimer(r) {
 
 function armTurnTimer(r) {
   clearTurnTimer(r);
+  r.turnDeadline = null;
   if (r.status !== 'playing' || !r.game || !r.game.roundActive) return;
+  if (r.game.needsStart()) return;   // 开局词阶段不计时（开局者需思考，且避免超时后空转反复认输）
   var cur = r.game.players[r.game.turn];
   if (!cur || cur.type !== 'human') return;
   var ms = turnTimeoutMs();

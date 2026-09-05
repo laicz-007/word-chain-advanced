@@ -95,12 +95,16 @@ async function reg(name) {
   await post('/api/room/start', { token: E.token, roomId: crT.roomId });
   var st0 = await get('/api/room/state?token=' + encodeURIComponent(E.token) + '&roomId=' + crT.roomId);
   check('开局后 E 是回合方', st0.myTurn === true);
-  check('roomState 返回倒计时 turnDeadline', !!st0.turnDeadline && st0.turnMsLeft >= 0);
-  await new Promise(function (r) { setTimeout(r, 900); });   // 等待超时触发
+  check('开局词阶段不计时(turnDeadline 为空)', !st0.turnDeadline);
+  // E 出开局词 -> 轮到 F 接龙，F 开始计时
+  await post('/api/room/action', { token: E.token, roomId: crT.roomId, kind: 'start', word: 'cat' });
+  var st1 = await get('/api/room/state?token=' + encodeURIComponent(F.token) + '&roomId=' + crT.roomId);
+  check('接龙阶段开始计时(F 的 turnDeadline 有值)', st1.myTurn === true && !!st1.turnDeadline && st1.turnMsLeft >= 0);
+  await new Promise(function (r) { setTimeout(r, 900); });   // F 超时未出词
   var stT = await get('/api/room/state?token=' + encodeURIComponent(E.token) + '&roomId=' + crT.roomId);
   check('超时后自动认输(notice 提示)', /超时/.test(stT.notice || ''));
   check('超时后游戏日志含认输记录', stT.game && stT.game.log.some(function (e) { return e.kind === 'concede'; }));
-  check('超时后仍在对局中(进入新一轮继续计时)', stT.status === 'playing' && !!stT.turnDeadline);
+  check('认输后回到开局词阶段(不再计时)', stT.status === 'playing' && !stT.turnDeadline);
   await post('/api/room/dissolve', { token: E.token, roomId: crT.roomId });
   delete process.env.TURN_TIMEOUT_MS;
 
