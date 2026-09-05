@@ -38,6 +38,8 @@ body {
 
 .player-card { background: #fffdf8; border-color: #e7e0cf; }
 .player-card.active { border-color: var(--primary); background: #fcf3ec; }
+.player-card.active.mine { border-color: #c9942a; background: #fdf6e8; box-shadow: 0 0 0 3px rgba(200,148,42,.18); }
+.player-card.active.mine .turn-tag { background: #a8881f; }
 .player-card .score { color: var(--primary); }
 .player-card .turn-tag { background: var(--primary); }
 .player-card .badge { background: var(--ai); }

@@ -35,6 +35,8 @@ body {
 
 .player-card { background: rgba(255,255,255,.7); border-color: rgba(150,160,220,.22); border-radius: 14px; }
 .player-card.active { border-color: #8f80f0; background: linear-gradient(135deg,#f6f2ff,#fff0f7); }
+.player-card.active.mine { border-color: #e0a53e; background: linear-gradient(135deg,#fff8e8,#fff0d6); box-shadow: 0 0 0 3px rgba(224,165,62,.2); }
+.player-card.active.mine .turn-tag { background: linear-gradient(90deg,#e0a53e,#ed8f5a); }
 .player-card .score { color: #6a5cd8; }
 .player-card .turn-tag { background: linear-gradient(90deg,#8f7bf0,#e0657c); }
 .player-card .badge { background: #a06cf0; }
