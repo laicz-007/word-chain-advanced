@@ -153,6 +153,48 @@ tar -czf backup-$(date +%F).tgz data/
 sudo systemctl restart word-chain
 ```
 
+## 9. 从"手动上传"升级为"git 一键更新"（推荐）
+
+之前是手动传文件的，想改成**一条命令更新**？让 VPS 上也装 git，以后代码走 `git pull` 自动同步：
+
+### 一次性迁移（只做一次）
+
+```bash
+cd /root
+# 1) 安装 git（若没有）
+sudo apt-get install -y git
+
+# 2) 把当前手动部署的目录改名为备份（**保留 data/ 数据**）
+mv word-chain word-chain-backup
+
+# 3) 克隆仓库（新目录 word-chain）
+git clone https://github.com/laicz-007/word-chain-advanced.git word-chain
+
+# 4) 【关键】把数据目录复制回来（词库/账号/密钥，它们不入 git）
+cp -r word-chain-backup/data word-chain/data
+
+# 5) 确认词库在（98MB 那个）
+ls -lh word-chain/data/db.json
+
+# 6) 以前用 systemd 的话，重新加载并启动；手动 nohup 的话重新拉起
+cd word-chain && bash update.sh
+```
+
+> `data/`（db.json 词库、users.json 账号、sync/ 画像、.secret 密钥）被 `.gitignore` 排除，**git 永远不碰它**——拉代码不会丢任何玩家数据。但前提是第 4 步把旧 data/ 复制了过来（新 clone 里 data/ 是空的）。
+
+### 以后每次更新（一条命令）
+
+```bash
+cd /root/word-chain && bash update.sh
+```
+
+等价于 `git pull origin main && 重启服务`。仓库里带了 `update.sh`，自动做这两步（检测到 systemd 服务就自动 `systemctl restart`，没有则提示手动重启命令）。
+
+### 注意
+
+- 如果以后**词库/数据**也有更新（比如发了新 db.json），git 不会带（被 ignore），需要另传 `data/` 下对应文件。
+- `git pull` 前先确认 VPS 上没有手动改过被 git 跟踪的文件（否则会冲突）；正常只 pull 不会改，不会冲突。
+
 ---
 
 ### 端口/防火墙
