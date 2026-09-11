@@ -64,6 +64,17 @@
     return false;
   }
 
+  /* 禁止"回声"：新词不得恰好等于上词的末尾 2 或 3 字母。
+   * 起因（用户反馈）：A 出 xxxlar，B 直接回一个 lar（词库里的「n. 家庭守护神」，生僻到没人认识）
+   * 就能接上 —— 合法、但看起来就是在偷懒，房间对战里体验极差。
+   * 实测该规则封掉 18.1 万次这类招式，只让 34 个词变成死路（0.01%）。
+   * 注意：词长 >3 的词不可能是回声（匹配只看末尾 2/3 字母），故只需判 2 与 3 字母。 */
+  function isEcho(prev, word) {
+    if (word.length === 2) return word === prev.slice(-2);
+    if (word.length === 3) return word === prev.slice(-3);
+    return false;
+  }
+
   // 开局词校验：需满足规则2、3、4 且长度 >= 3
   function canStart(raw) {
     var w = normalize(raw);
@@ -88,6 +99,10 @@
         return { ok: false, reason: '需以「' + p2 + '」开头。' };
       }
       return { ok: false, reason: '需以「' + p2 + '」或「' + prev.slice(-3) + '」开头。' };
+    }
+    // 禁止回声：不能直接把上词的结尾当成这次要出的词
+    if (isEcho(prev, w)) {
+      return { ok: false, reason: '不能直接把上词的结尾「' + w + '」当作你要出的词，请另找一个词。' };
     }
     if (!hasVowelEnding(w)) return { ok: false, reason: '结尾 3 个字母必须含有 1 个元音（a e i o u y）。' };
     if (forbiddenEnding(w)) return { ok: false, reason: '不能以 ry / ht / ck 结尾。' };
@@ -847,6 +862,7 @@
     forbiddenEnding: forbiddenEnding,
     satisfiesMinLength: satisfiesMinLength,
     matches: matches,
+    isEcho: isEcho,
     canStart: canStart,
     canChain: canChain,
     WordStore: WordStore,

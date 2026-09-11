@@ -585,5 +585,54 @@ t('道具: 道具日志不计入长接龙词数（countWords）', function () {
   assert.strictEqual(R.pointsForWin(R.countWords(chain)), R.POINTS.winRound, '道具不应把接龙长度刷长');
 });
 
+/* ---- 禁止回声（用户反馈：xxxlar → 对手回 lar，生僻却能接，像在偷懒）---- */
+t('禁止回声: isEcho 判定', function () {
+  assert.strictEqual(R.isEcho('apple', 'le'), true, '末尾2字母');
+  assert.strictEqual(R.isEcho('apple', 'ple'), true, '末尾3字母');
+  assert.strictEqual(R.isEcho('apple', 'lemon'), false);
+  assert.strictEqual(R.isEcho('apple', 'ap'), false, '不是末尾');
+  assert.strictEqual(R.isEcho('apple', 'apple'), false, '长度>3 不可能是回声');
+  assert.strictEqual(R.isEcho('am', 'am'), true, '整词即末尾2字母');
+});
+
+t('禁止回声: canChain 拒绝回声，放行正常词', function () {
+  var r1 = R.canChain('apple', 'le');
+  assert.strictEqual(r1.ok, false, 'le 是苹果的末尾，应被拒');
+  assert.ok(/结尾/.test(r1.reason), '原因应说明不能拿结尾当词, 实际: ' + r1.reason);
+  // 用户举的场景
+  var r2 = R.canChain('abarticular', 'lar');
+  assert.strictEqual(r2.ok, false, 'lar 是 abarticular 的末尾，应被拒');
+  var r3 = R.canChain('abarticular', 'large');
+  assert.strictEqual(r3.ok, true, 'large 以 lar 开头但不是回声，应放行');
+  var r4 = R.canChain('abate', 'ate');
+  assert.strictEqual(r4.ok, false, 'ate 是 abate 的末尾，应被拒');
+});
+
+t('禁止回声: candidates() 不再把回声列为可接词', function () {
+  var v = new R.WordStore([
+    { w: 'abler', zh: 'x', d: 1, f: 0.5, kind: 0.9, has_succ: true, chain_idx: 0.5 },
+    { w: 'er', zh: 'x', d: 1, f: 0.5, kind: 0.9, has_succ: true, chain_idx: 0.5 },
+    { w: 'erlow', zh: 'x', d: 1, f: 0.5, kind: 0.9, has_succ: true, chain_idx: 0.5 }
+  ]);
+  var ws = v.candidates('abler', null).map(function (x) { return x.w; });
+  assert.strictEqual(ws.indexOf('er'), -1, '回声词 er 不应出现在可接列表');
+  assert.ok(ws.indexOf('erlow') !== -1, '非回声词应保留');
+});
+
+t('禁止回声: 提交回声词被拒且不加分', function () {
+  var v = new R.WordStore([
+    { w: 'abler', zh: 'x', d: 1, f: 0.5, kind: 0.9, has_succ: true, chain_idx: 0.5 },
+    { w: 'er', zh: 'x', d: 1, f: 0.5, kind: 0.9, has_succ: true, chain_idx: 0.5 },
+    { w: 'erlow', zh: 'x', d: 1, f: 0.5, kind: 0.9, has_succ: true, chain_idx: 0.5 }
+  ]);
+  var g = new R.Game(v, [{ name: '我', type: 'human' }]);
+  g.submitStart('abler');
+  var before = g.players[0].points;
+  var r = g.submitChain('er');
+  assert.strictEqual(r.ok, false, '回声词应被拒');
+  assert.strictEqual(g.lastWord, 'abler', '待接词不应改变');
+  assert.strictEqual(g.players[0].points, before, '被拒不应加分');
+});
+
 console.log('\n结果: ' + pass + ' 通过, ' + fail + ' 失败');
 process.exit(fail ? 1 : 0);

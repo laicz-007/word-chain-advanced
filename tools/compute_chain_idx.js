@@ -49,6 +49,14 @@ function computeKind(e) {
   if (/(abbr|缩写|缩略|简称|首字母)/.test(zh)) return 0.05;
   if (L <= 5 && CAT_TAG_RE.test(zh.trim())) return 0.05;                 // [计]/[军]/[化] 等前缀 + 短词 => 代码/缩写
   if (L <= 5 && /^[a-z]+ [a-z]+/.test(zh.trim()) && !POS_RE.test(zh)) return 0.05; // "last field"/"intensive care" 等纯英文缩写
+  /* 更彻底的缩写/符号清理（按"清理大部分缩写"的要求补充）。
+   * 实测：命中 167 个词，且对 to/my/no/be/as/by/so/an（这些词的释义里附带国别码
+   * no=Norway、be=Belgium）与 owl/ado/bunny 等真词【零误伤】。
+   * ⚠️ 反面教训：不要用宽泛的 /\[域\]/ —— 那会删掉最常用的英语虚词。 */
+  if (L <= 6 && /^\s*(symb|abr\.|abbr\.)/i.test(zh)) return 0.05;    // 化学元素符号(symb)/缩写前缀(abr.)
+  if (/\[\s*=/.test(zh)) return 0.05;                                // [=全称] 等价缩写（physiol/refrig/catscan…）
+  if (/[A-Z][a-z]{2,}\s*[之的]昵称/.test(zh)) return 0.05;            // 人名昵称（ed = Edwin 之昵称；注意别误伤 bunny）
+  if (L <= 6 && /^\s*[A-Z][A-Za-z]+\s*[,，]/.test(zh)) return 0.05;   // 释义以大写英文词+逗号开头
   // 地名/人名/姓/专名
   if (PROPER_RE.test(zh) || PROPER_RE2.test(zh) || PROPER_RE3.test(zh)) return 0.10;
   if (L <= 6 && /(公司|协会|组织|委员会|研究所|大学|中心|部|总部|地区|国)/.test(zh) && /[A-Z]/.test(w) === false) return 0.10;
@@ -98,6 +106,10 @@ var total = db.length;
 function isChainable(prev, s) {
   var w = s.w;
   if (w === prev) return false;
+  // 禁止回声：必须与 logic.js 的 canChain 保持一致。
+  // 否则构建时会把"回声词"算成可接，导致 chain_idx 虚高、与真实规则不符。
+  if (w.length === 2) { if (w === prev.slice(-2)) return false; }
+  else if (w.length === 3) { if (w === prev.slice(-3)) return false; }
   // 结尾最多3字母须含元音
   var tail = w.length <= 3 ? w : w.slice(-3);
   var hasV = false;

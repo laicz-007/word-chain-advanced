@@ -208,5 +208,21 @@ t('回归: 探索·发现开局必须稳定成功（曾约 10% 概率失败且�
   assert.strictEqual(failN, 0, '120 次探索开局不应失败, 实际失败 ' + failN + ' 次 (' + sample + ')');
 });
 
+t('禁止回声: 词库构建与引擎规则一致（apteryx 只剩回声可接 → 应为死路）', function () {
+  // apteryx(几维鸟) 结尾 -yx，全库只有 "yx" 能接；而 yx 是回声词 → 禁回声后它应是死路。
+  // 这同时验证了 tools/compute_chain_idx.js 的 isChainable 与 logic.js 的 canChain 保持一致。
+  var e = S.store.lookup('apteryx');
+  assert.ok(e, 'apteryx 应在词库');
+  assert.strictEqual(e.has_succ, false, 'apteryx 已无合法后继，has_succ 应为 false（证明构建期也应用了禁回声）');
+  var cands = S.store.candidates('apteryx', null).map(function (x) { return x.w; });
+  assert.strictEqual(cands.length, 0, '不应有可接词, 实际: ' + cands.join(','));
+});
+
+t('禁止回声: 真实词库中回声词被 canChain 拒绝', function () {
+  assert.strictEqual(S.R.canChain('abarticular', 'lar').ok, false, 'lar 是回声');
+  // 换一个以 lar 开头、且满足"末尾含元音"的词（larch 结尾 rch 无元音，会被元音规则先拒掉）
+  assert.strictEqual(S.R.canChain('abarticular', 'large').ok, true, 'large 不是回声，应放行');
+});
+
 console.log('\n结果: ' + pass + ' 通过, ' + fail + ' 失败');
 process.exit(fail ? 1 : 0);
