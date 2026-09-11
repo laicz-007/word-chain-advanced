@@ -158,9 +158,67 @@ tar -czf backup-$(date +%F).tgz data/
 
 ## 8. 更新代码
 
+### 8.1 用 git 更新（VPS 上已有仓库时，推荐）
+
 ```bash
-# 重新上传 server.js / src / public，然后
+cd /home/user/word-chain      # 你的项目目录
+
+# ① 先备份账户数据（git 不会碰它们，但改版前留个底总没错）
+cp data/users.json data/users.json.bak 2>/dev/null; cp -r data/sync data/sync.bak 2>/dev/null
+
+# ② 拉代码
+git pull
+
+# ③ 重启
 sudo systemctl restart word-chain
+node healthcheck.js           # 26 项自检，确认真的活着
+```
+
+> ### ⚠️ 三个必须知道的坑
+>
+> **① 词库不会跟着 git 走。** `data/db.json` 约 96MB，被 `.gitignore` 排除（太大，且受多个开源词典
+> 许可约束）。所以 `git pull` **只带来代码，不带来词库**。词库变了就得单独传一次（见 8.2）。
+>
+> **② 从 2026-09 之前的版本升级时，`git pull` 会删掉 `data/db.lite.json`。**
+> 那个文件已被移除，而旧版的服务在没有 `data/db.json` 时会退回去用它 ——
+> 拉完代码它没了，服务就**起不来**了（会报"找不到词库文件"）。
+> **正确顺序：先把 `data/db.json` 传上去，再 `git pull`，最后重启。**
+>
+> **③ `word-chain-standalone.html`（离线便携版）已废弃**，旧部署目录里若有这个文件，可以手动删掉，
+> 它不再被维护。
+
+### 8.2 单独更新词库（词库变了时）
+
+在本机重新生成后，只传词库这一个文件：
+
+```bash
+# 本机：先压缩（96MB → 约 20MB，慢网络下省很多时间）
+gzip -c data/db.json > db.json.gz
+
+# 本机：上传（用你自己的用户名和 IP）
+scp db.json.gz user@你的VPS:/home/user/word-chain/data/
+
+# VPS：解压并重启
+cd /home/user/word-chain/data
+gunzip -f db.json.gz
+node ../tools/check_db.js      # 体检：20 项硬指标 + 规则指纹
+sudo systemctl restart word-chain
+```
+
+> VPS 上**不需要** Python，也不建议在服务器上跑 `npm run build`（要下载 130MB 数据源、耗时数分钟）。
+> 在本机构建好、传成品，是更省事也更可控的做法。
+>
+> 如果体检报 `⚠️ 词库是用【旧规则】构建的`，说明本机代码更新了但词库还是旧的 —— 本机重跑
+> `npm run build`，再按上面传一次。
+
+### 8.3 不用 git 的更新方式
+
+```bash
+# 本机打包（注意必须带 data/db.json）
+tar -czf update.tgz server.js package.json src public data/db.json
+scp update.tgz user@你的VPS:/home/user/
+# VPS 上解压覆盖后重启
+cd /home/user/word-chain && tar -xzf ../update.tgz && sudo systemctl restart word-chain
 ```
 
 ---
