@@ -109,7 +109,7 @@ node server.js        # 存在 data/db.json 时会自动优先使用它
 
 | 情况 | 使用的词库 | 词量 |
 |---|---|---|
-| `data/db.json` 存在（跑过 `npm run build`） | 全量 `data/db.json` | 约 28 万 |
+| `data/db.json` 存在（跑过 `npm run build`） | 全量 `data/db.json` | 约 30 万 |
 | 否则 `data/db.lite.json` 存在（默认情况） | 轻量 `data/db.lite.json` | 约 3.7 万 |
 | 两份都没有 | 启动时报错，并提示你运行 `npm run build` | — |
 

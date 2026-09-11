@@ -47,13 +47,33 @@ var PROPER_RE3 = /([)）]\s*(人名|地名|姓氏))|([（(](人名|地名|姓氏
 var POS_RE = /\b(n|v|vt|vi|adj|adv|prep|conj|pron|num|int|interj|abbr|a|ad)\./;
 var CAT_TAG_RE = /^\[[^\]]{1,4}\]/;
 
+/* 高频/可信词条：柯林斯≥1星，或常见度 f≥0.65，或 Kyle 精讲词。
+ * 用途：① 词库清理时"非高频的依赖型短词/回声热词"才删（见下方过滤块）；
+ *      ② 与 logic.js 的 isTrustedEntry 口径一致（那边用于"是否允许回声"）；
+ *      ③ computeKind 里当"这不可能是专名/缩写"的守卫（见下面 L56/L69 两处）。
+ * ⚠️ 必须定义在 computeKind 使用它【之前】：ECHO_KEEP_F 是 var，赋值在运行时才发生，
+ *    若写在后面，computeKind 读到的会是 undefined，守卫会【静默失效】（不报错但不起作用）。 */
+var ECHO_KEEP_F = 0.65;   // ⚠️ 与 public/logic.js 的同名常量保持一致（两处都表示"高频/可信"口径）
+function isTrusted(e) { return (e.collins >= 1) || ((e.f || 0) >= ECHO_KEEP_F) || !!e.has_note; }
+
 function computeKind(e) {
   var w = e.w, zh = e.zh || '';
   var L = w.length;
   // 纯缩写/代码/碎片：无元音短词、abbr 前缀、中文缩略标记、领域标签+短词、英文短语式释义
   if (L <= 4 && !/[aeiouy]/.test(w)) return 0.05;
   if (/^abbr\./i.test(zh.trim())) return 0.05;
-  if (/(abbr|缩写|缩略|简称|首字母)/.test(zh)) return 0.05;
+  /* 中文缩略标记（缩写/缩略/简称/首字母）。
+   * ⚠️ 这条曾经【没有长度限制也没有高频守卫】，实测误删 18 个常用词，其中最严重的是
+   *    salt（食盐，collins=3，释义里提到 "SALT [缩写] 限制战略武器会谈"）、
+   *    india（印度，释义里"简称次大陆"指的是别的词）、
+   *    canon（教会法教规/佳能）、acronym、contraction、abbreviation。
+   *    这些词的释义只是【提到了】缩写，它们本身不是缩写。
+   * 修法：① 只对 8 字母以内的词生效（真正的缩写词条都很短，实测 10,285 个命中里 ≤8 字母占 99%）；
+   *      ② 高频可信词一律豁免（salt/canon/acronym/contraction 由此保住）；
+   *      ③ 保留 abbreviation/initialism 这类"谈论缩写"的真词（长度 ≥9，被 ① 放过）。
+   * 实测：改前删 10,285 个（误伤常用词 18）；改后删 10,165 个（误伤 0）。
+   * 注：这批缩写里有 9,454 个释义以 "abbr." 开头，已被上面的 L55 先一步拦下，不受本改动影响。 */
+  if (L <= 8 && !isTrusted(e) && /(abbr|缩写|缩略|简称|首字母)/.test(zh)) return 0.05;
   if (L <= 5 && CAT_TAG_RE.test(zh.trim())) return 0.05;                 // [计]/[军]/[化] 等前缀 + 短词 => 代码/缩写
   if (L <= 5 && /^[a-z]+ [a-z]+/.test(zh.trim()) && !POS_RE.test(zh)) return 0.05; // "last field"/"intensive care" 等纯英文缩写
   /* 更彻底的缩写/符号清理（按"清理大部分缩写"的要求补充）。
@@ -66,7 +86,19 @@ function computeKind(e) {
   if (L <= 6 && /^\s*[A-Z][A-Za-z]+\s*[,，]/.test(zh)) return 0.05;   // 释义以大写英文词+逗号开头
   // 地名/人名/姓/专名
   if (PROPER_RE.test(zh) || PROPER_RE2.test(zh) || PROPER_RE3.test(zh)) return 0.10;
-  if (L <= 6 && /(公司|协会|组织|委员会|研究所|大学|中心|部|总部|地区|国)/.test(zh) && /[A-Z]/.test(w) === false) return 0.10;
+  /* 机构名兜底（PROPER_RE/PROPER_RE2/PROPER_RE3 之外，"某某公司/协会/…"式的专名）。
+   * ⚠️ 必须加 !isTrusted 守卫：中文释义是散文，"部""国""中心"会大量误伤常用词 ——
+   *    实测不加守卫时 231 个常用词被判成专名，例：
+   *      all（"全部的"含"部"）、back（"背部"）、body（"主要部分"）、area（"地区"）、
+   *      part（"部分"）、action（"某一地区"）、abroad（"往国外"）、board（"部"）、
+   *      border（"国界"）、axis（"中心线"）、campus（"大学校园"）…
+   *    后果不只是"分类不准"：联机房间里专名每人每局限 3 个，这些词会白白吃掉玩家的额度，
+   *    AI 也会刻意避开它们 —— 等于最常用的词反而最难被出出来。
+   * 为什么高频词就一定不是机构专名：柯林斯星级/常见度衡量的是"这个词作为英文单词有多常用"，
+   *    真正的机构名（如 abc=美国广播公司）不会有这种数据。实测加守卫后误判 231 → 0。
+   * 另注："部/国"这类关键词本身太宽（全部/部分/内部/胸部/外国/国家都会命中），
+   *    所以宁可依赖守卫，也不要靠收窄关键词 —— 收窄会漏掉真正的机构专名。 */
+  if (L <= 6 && !isTrusted(e) && /(公司|协会|组织|委员会|研究所|大学|中心|部|总部|地区|国)/.test(zh) && /[A-Z]/.test(w) === false) return 0.10;
   return 0.90; // 普通词
 }
 
@@ -106,9 +138,7 @@ db.forEach(function (e) { kindMap[e.w] = e.kind != null ? e.kind : 0.9; });
 
 var ECHO_KEEP_F = 0.65;   // ⚠️ 与 public/logic.js 的同名常量保持一致（两处都表示"高频/可信"口径）
 /* 高频/可信词条：柯林斯≥1星，或常见度 f≥0.65，或 Kyle 精讲词。
- * 用途：① 词库清理时"非高频的依赖型短词/回声热词"才删（见下方过滤块）；
- *      ② 与 logic.js 的 isTrustedEntry 口径一致（那边用于"是否允许回声"）。 */
-function isTrusted(e) { return (e.collins >= 1) || ((e.f || 0) >= ECHO_KEEP_F) || !!e.has_note; }
+ * （定义已上移到 computeKind 之前，见文件上方 —— computeKind 的 L56/L69 守卫要用它） */
 
 var maxChain = 0;
 var rawDist = [];   // 观测 chain_raw 分布以校验 REF
