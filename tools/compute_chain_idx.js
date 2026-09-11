@@ -471,6 +471,7 @@ fs.writeFileSync(BUILD_META_PATH, JSON.stringify({
   rawWords: before,
   finalWords: db.length,
   rulesFingerprint: fingerprint.compute(),
+  buildFingerprint: fingerprint.buildFingerprint(),
   constants: { F_POW: F_POW, COMMON_THRESHOLD: COMMON_THRESHOLD, REF: REF, ECHO_KEEP_F: ECHO_KEEP_F }
 }, null, 2), 'utf8');
 

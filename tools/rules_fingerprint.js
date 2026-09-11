@@ -15,6 +15,8 @@
  */
 'use strict';
 var crypto = require('crypto');
+var fs = require('fs');
+var path = require('path');
 var R = require('../public/logic.js');
 
 // 探针词：覆盖元音结尾、禁结尾、短词、边界情况
@@ -66,9 +68,51 @@ function compute() {
   return crypto.createHash('sha1').update(signature()).digest('hex').slice(0, 12);
 }
 
+/* ---- 构建指纹：这次构建用的三个脚本，是不是还是现在这三个 ----
+ *
+ * 为什么需要它：规则指纹（上面的 compute）只盯住 logic.js 导出的那几条规则，
+ * 盯不住**构建脚本自己**。而改一下 `compute_chain_idx.js` 里的过滤规则
+ * （比如"哪类词该删"）同样会让词库变样 —— 那种改动规则指纹**察觉不到**。
+ *
+ * 做法：把三个构建脚本的源码规范化（去注释、压空白）后一起哈希。
+ * 去注释是为了避免"只改了一句说明就误报要重建"。
+ */
+function normalizeJs(src) {
+  return src
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')       // 块注释
+    .replace(/(^|[^:])\/\/[^\n]*/g, '$1')    // 行注释（[^:] 是为了不误伤 https:// 里的 //）
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+function normalizePy(src) {
+  return src
+    .replace(/"""[\s\S]*?"""/g, ' ')         // 文档字符串
+    .replace(/(^|[^:"'])#[^\n]*/g, '$1')     // 行注释（避开字符串里的 #）
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+var BUILD_FILES = [
+  { f: 'compute_chain_idx.js', kind: 'js' },
+  { f: 'build_unified_db.py', kind: 'py' },
+  { f: 'build_data.py', kind: 'py' }
+];
+
+function buildSignature() {
+  var h = crypto.createHash('sha1');
+  BUILD_FILES.forEach(function (x) {
+    var p = path.join(__dirname, x.f);
+    var src = fs.existsSync(p) ? fs.readFileSync(p, 'utf8') : '(缺失)';
+    h.update(x.f + '=' + (x.kind === 'js' ? normalizeJs(src) : normalizePy(src)) + '\n');
+  });
+  return h.digest('hex').slice(0, 12);
+}
+
 module.exports = {
   compute: compute,
   signature: signature,
+  buildFingerprint: buildSignature,
+  BUILD_FILES: BUILD_FILES.map(function (x) { return x.f; }),
   PROBE_WORDS: PROBE_WORDS,
   PROBE_ENTRIES: PROBE_ENTRIES
 };

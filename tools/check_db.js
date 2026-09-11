@@ -96,6 +96,19 @@ if (!fs.existsSync(META_PATH)) {
       '构建时指纹 ' + meta.rulesFingerprint + '，当前代码指纹 ' + nowPrint +
       ' → 请重跑 npm run build（否则 AI 会按旧规则的可接指数出词）');
   }
+  /* 构建脚本是否变过：规则指纹只盯 logic.js 的规则，盯不住构建脚本自己。
+   * 改了 tools/compute_chain_idx.js 的过滤规则同样会让词库变样，这里补上。
+   * 源码做了"去注释"规范化，所以只改说明文字不会误报。 */
+  var nowBuild = fingerprint.buildFingerprint();
+  if (!meta || !meta.buildFingerprint) {
+    info('构建脚本指纹', '这份元数据是旧版生成的，没有该字段（重跑一次 npm run build 后即可对比）');
+  } else if (meta.buildFingerprint === nowBuild) {
+    ok('词库与构建脚本同版', '指纹一致 ' + nowBuild);
+  } else {
+    warn('词库是用【旧版构建脚本】产出的',
+      '构建时 ' + meta.buildFingerprint + '，当前代码 ' + nowBuild +
+      ' → 构建脚本变过（过滤规则/参数），请重跑 npm run build；若线上用了这份词库，需要重新上传 data/db.json');
+  }
 }
 if (typeof list[0] !== 'object' || list[0] === null) {
   bad('顶层结构', '应该是词条数组，实际拿到 ' + typeof list[0]);
