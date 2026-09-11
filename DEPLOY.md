@@ -35,7 +35,7 @@ word-chain/
 
 ```bash
 # 本机执行（打包上传再解压）。注意必须带上 data/db.json —— 没有词库服务起不来
-tar -czf word-chain.tgz server.js package.json src public data/db.json
+tar -czf word-chain.tgz server.js package.json src public data/db.json data/db.build.json
 scp word-chain.tgz user@你的VPS:/home/user/
 # VPS 上解压
 cd /home/user && tar -xzf word-chain.tgz
@@ -45,6 +45,10 @@ cd /home/user && tar -xzf word-chain.tgz
 > - 先在本机跑 `npm run build` 生成它（需要 Python 3），再传上去
 > - **VPS 上不需要安装 Python**：`npm run build` 只在你自己的机器上执行，`db.json` 只是一个普通数据文件
 > - 没传词库时服务启动会直接报错，并提示你运行 `npm run build`
+>
+> **`data/db.build.json`**（274 字节）是它的构建元数据，建议一起传 ——
+> 有了它，`node tools/check_db.js` 才能回答"这份词库是不是用当前代码构建的"。
+> 不传也能正常玩，只是体检时会提示"无法判断是否同版"。
 >
 > **不需要传** `data/db.raw.json`（33 万词的原始库，54MB）—— 那只是构建时的中间产物，游戏不读它。
 >
@@ -189,27 +193,36 @@ node healthcheck.js           # 26 项自检，确认真的活着
 
 ### 8.2 单独更新词库（词库变了时）
 
-在本机重新生成后，只传词库这一个文件：
+> **怎么知道该不该传？** 在 VPS 上跑 `node tools/check_db.js`，看这两行：
+> - `✅ 词库与规则同版` + `✅ 词库与构建脚本同版` → **不用传**
+> - 出现 `⚠️ 词库是用【旧规则】构建的` 或 `⚠️ 词库是用【旧版构建脚本】产出的` → **要传**
+>
+> 判断依据是构建时写进 `data/db.build.json` 的两个指纹。所以**元数据要跟词库一起传**（见下）。
+
+在本机重新生成后，把**词库 + 它的构建元数据**一起打包上传：
+
+```powershell
+# 本机（Windows 自带 tar，PowerShell 里跑）
+cd "E:\WorkFolder\DSH Desktop\word-chain"
+tar -czf dbpack.tgz -C data db.json db.build.json     # 96MB -> 约 16MB
+scp dbpack.tgz user@你的VPS:/home/user/word-chain/data/
+Remove-Item dbpack.tgz
+```
 
 ```bash
-# 本机：先压缩（96MB → 约 20MB，慢网络下省很多时间）
-gzip -c data/db.json > db.json.gz
-
-# 本机：上传（用你自己的用户名和 IP）
-scp db.json.gz user@你的VPS:/home/user/word-chain/data/
-
-# VPS：解压并重启
+# VPS
 cd /home/user/word-chain/data
-gunzip -f db.json.gz
-node ../tools/check_db.js      # 体检：20 项硬指标 + 规则指纹
+tar -xzf dbpack.tgz && rm dbpack.tgz
+node ../tools/check_db.js      # 体检：应显示两条指纹都一致
 sudo systemctl restart word-chain
 ```
 
+> **`db.build.json` 是什么**：274 字节的构建元数据（构建时间、词条数、两个指纹）。
+> 它让 `check_db.js` 能回答"这份词库是不是用当前代码构建的"。
+> **少了它也不影响游戏运行**，只是体检时会提示"无法判断是否同版"。
+>
 > VPS 上**不需要** Python，也不建议在服务器上跑 `npm run build`（要下载 130MB 数据源、耗时数分钟）。
 > 在本机构建好、传成品，是更省事也更可控的做法。
->
-> 如果体检报 `⚠️ 词库是用【旧规则】构建的`，说明本机代码更新了但词库还是旧的 —— 本机重跑
-> `npm run build`，再按上面传一次。
 
 ### 8.3 不用 git 的更新方式
 
