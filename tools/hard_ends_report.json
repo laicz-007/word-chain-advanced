@@ -1,286 +1,123 @@
 {
   "meta": {
-    "vocabSize": 36809,
+    "vocabSize": 281889,
     "hardMax": 2,
-    "genAt": "2026-08-31T13:59:33.426Z"
+    "genAt": "2026-09-11T17:48:48.921Z"
   },
-  "mnCount": 200,
-  "hardCount": 97,
+  "mnCount": 194,
+  "hardCount": 48,
   "rows": [
     {
-      "mn": "zz",
+      "mn": "dc",
       "cnt2": 0,
       "cnt3": 0,
       "total": 0,
       "maxFreq": 0,
-      "srcWords": 6,
+      "srcWords": 3,
       "xs": {
-        "u": 3,
-        "i": 2,
+        "l": 1,
+        "i": 2
+      },
+      "perX": "l→0(无) i→0(无)",
+      "hard": true
+    },
+    {
+      "mn": "tg",
+      "cnt2": 0,
+      "cnt3": 0,
+      "total": 0,
+      "maxFreq": 0,
+      "srcWords": 1,
+      "xs": {
+        "n": 1
+      },
+      "perX": "n→0(无)",
+      "hard": true
+    },
+    {
+      "mn": "zt",
+      "cnt2": 0,
+      "cnt3": 0,
+      "total": 0,
+      "maxFreq": 0,
+      "srcWords": 2,
+      "xs": {
+        "r": 1,
+        "i": 1
+      },
+      "perX": "r→0(无) i→0(无)",
+      "hard": true
+    },
+    {
+      "mn": "px",
+      "cnt2": 0,
+      "cnt3": 0,
+      "total": 0,
+      "maxFreq": 0,
+      "srcWords": 1,
+      "xs": {
+        "s": 1
+      },
+      "perX": "s→0(无)",
+      "hard": true
+    },
+    {
+      "mn": "zs",
+      "cnt2": 0,
+      "cnt3": 0,
+      "total": 0,
+      "maxFreq": 0,
+      "srcWords": 2,
+      "xs": {
+        "a": 1,
+        "e": 1
+      },
+      "perX": "a→0(无) e→0(无)",
+      "hard": true
+    },
+    {
+      "mn": "hp",
+      "cnt2": 0,
+      "cnt3": 0,
+      "total": 0,
+      "maxFreq": 0,
+      "srcWords": 3,
+      "xs": {
+        "a": 3
+      },
+      "perX": "a→0(无)",
+      "hard": true
+    },
+    {
+      "mn": "rx",
+      "cnt2": 0,
+      "cnt3": 0,
+      "total": 0,
+      "maxFreq": 0,
+      "srcWords": 2,
+      "xs": {
+        "e": 1,
         "a": 1
       },
-      "perX": "u→0(无) i→0(无) a→0(无)",
+      "perX": "e→0(无) a→0(无)",
       "hard": true
     },
     {
-      "mn": "ht",
+      "mn": "tx",
       "cnt2": 0,
       "cnt3": 0,
       "total": 0,
       "maxFreq": 0,
-      "srcWords": 115,
+      "srcWords": 2,
       "xs": {
-        "g": 112,
-        "c": 3
+        "e": 1,
+        "c": 1
       },
-      "perX": "g→0(无) c→0(无)",
+      "perX": "e→0(无) c→0(无)",
       "hard": true
     },
     {
-      "mn": "ws",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 14,
-      "xs": {
-        "e": 5,
-        "o": 7,
-        "a": 2
-      },
-      "perX": "e→0(无) o→0(无) a→0(无)",
-      "hard": true
-    },
-    {
-      "mn": "ks",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 31,
-      "xs": {
-        "c": 14,
-        "n": 5,
-        "r": 7,
-        "o": 2,
-        "s": 1,
-        "a": 1,
-        "e": 1
-      },
-      "perX": "c→0(无) n→0(无) r→0(无) o→0(无) s→0(无) a→0(无) e→0(无)",
-      "hard": true
-    },
-    {
-      "mn": "tz",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 12,
-      "xs": {
-        "i": 5,
-        "n": 1,
-        "a": 1,
-        "r": 2,
-        "u": 2,
-        "l": 1
-      },
-      "perX": "i→0(无) n→0(无) a→0(无) r→0(无) u→0(无) l→0(无)",
-      "hard": true
-    },
-    {
-      "mn": "tl",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 1,
-      "xs": {
-        "o": 1
-      },
-      "perX": "o→0(无)",
-      "hard": true
-    },
-    {
-      "mn": "bt",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 4,
-      "xs": {
-        "(短)": 1,
-        "e": 2,
-        "u": 1
-      },
-      "perX": "e→0(无) u→0(无)",
-      "hard": true
-    },
-    {
-      "mn": "lb",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 3,
-      "xs": {
-        "u": 2,
-        "(短)": 1
-      },
-      "perX": "u→0(无)",
-      "hard": true
-    },
-    {
-      "mn": "cj",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "cm",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "hn",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 3,
-      "xs": {
-        "o": 2,
-        "u": 1
-      },
-      "perX": "o→0(无) u→0(无)",
-      "hard": true
-    },
-    {
-      "mn": "wd",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 4,
-      "xs": {
-        "o": 2,
-        "e": 2
-      },
-      "perX": "o→0(无) e→0(无)",
-      "hard": true
-    },
-    {
-      "mn": "cv",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "hl",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 3,
-      "xs": {
-        "a": 1,
-        "(短)": 1,
-        "o": 1
-      },
-      "perX": "a→0(无) o→0(无)",
-      "hard": true
-    },
-    {
-      "mn": "dg",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "dm",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "rf",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 8,
-      "xs": {
-        "a": 4,
-        "u": 3,
-        "e": 1
-      },
-      "perX": "a→0(无) u→0(无) e→0(无)",
-      "hard": true
-    },
-    {
-      "mn": "fm",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "fn",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "wp",
+      "mn": "wg",
       "cnt2": 0,
       "cnt3": 0,
       "total": 0,
@@ -293,124 +130,99 @@
       "hard": true
     },
     {
-      "mn": "gp",
+      "mn": "vx",
       "cnt2": 0,
       "cnt3": 0,
       "total": 0,
       "maxFreq": 0,
       "srcWords": 1,
       "xs": {
-        "(短)": 1
+        "i": 1
       },
-      "perX": "",
+      "perX": "i→0(无)",
       "hard": true
     },
     {
-      "mn": "hg",
+      "mn": "wp",
+      "cnt2": 0,
+      "cnt3": 0,
+      "total": 0,
+      "maxFreq": 0,
+      "srcWords": 3,
+      "xs": {
+        "a": 2,
+        "o": 1
+      },
+      "perX": "a→0(无) o→0(无)",
+      "hard": true
+    },
+    {
+      "mn": "jj",
       "cnt2": 0,
       "cnt3": 0,
       "total": 0,
       "maxFreq": 0,
       "srcWords": 1,
       "xs": {
-        "(短)": 1
+        "a": 1
       },
-      "perX": "",
+      "perX": "a→0(无)",
       "hard": true
     },
     {
-      "mn": "hq",
+      "mn": "zd",
       "cnt2": 0,
       "cnt3": 0,
       "total": 0,
       "maxFreq": 0,
       "srcWords": 1,
       "xs": {
-        "(短)": 1
+        "a": 1
       },
-      "perX": "",
+      "perX": "a→0(无)",
       "hard": true
     },
     {
-      "mn": "jb",
+      "mn": "gb",
       "cnt2": 0,
       "cnt3": 0,
       "total": 0,
       "maxFreq": 0,
       "srcWords": 1,
       "xs": {
-        "(短)": 1
+        "r": 1
       },
-      "perX": "",
+      "perX": "r→0(无)",
       "hard": true
     },
     {
-      "mn": "jc",
+      "mn": "qs",
       "cnt2": 0,
       "cnt3": 0,
       "total": 0,
       "maxFreq": 0,
       "srcWords": 1,
       "xs": {
-        "(短)": 1
+        "r": 1
       },
-      "perX": "",
+      "perX": "r→0(无)",
       "hard": true
     },
     {
-      "mn": "jp",
+      "mn": "ql",
       "cnt2": 0,
       "cnt3": 0,
       "total": 0,
       "maxFreq": 0,
       "srcWords": 1,
       "xs": {
-        "(短)": 1
+        "s": 1
       },
-      "perX": "",
+      "perX": "s→0(无)",
       "hard": true
     },
     {
-      "mn": "jr",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "js",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "kb",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "ln",
+      "mn": "cq",
       "cnt2": 0,
       "cnt3": 0,
       "total": 0,
@@ -424,46 +236,47 @@
       "hard": true
     },
     {
-      "mn": "km",
+      "mn": "vd",
       "cnt2": 0,
       "cnt3": 0,
       "total": 0,
       "maxFreq": 0,
       "srcWords": 1,
       "xs": {
-        "(短)": 1
+        "c": 1
       },
-      "perX": "",
+      "perX": "c→0(无)",
       "hard": true
     },
     {
-      "mn": "lj",
+      "mn": "tf",
+      "cnt2": 0,
+      "cnt3": 0,
+      "total": 0,
+      "maxFreq": 0,
+      "srcWords": 3,
+      "xs": {
+        "n": 2,
+        "r": 1
+      },
+      "perX": "n→0(无) r→0(无)",
+      "hard": true
+    },
+    {
+      "mn": "hf",
       "cnt2": 0,
       "cnt3": 0,
       "total": 0,
       "maxFreq": 0,
       "srcWords": 1,
       "xs": {
-        "(短)": 1
+        "s": 1
       },
-      "perX": "",
+      "perX": "s→0(无)",
       "hard": true
     },
     {
-      "mn": "lr",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "rx",
+      "mn": "gd",
       "cnt2": 0,
       "cnt3": 0,
       "total": 0,
@@ -476,360 +289,253 @@
       "hard": true
     },
     {
-      "mn": "mk",
+      "mn": "wb",
       "cnt2": 0,
       "cnt3": 0,
       "total": 0,
       "maxFreq": 0,
       "srcWords": 1,
       "xs": {
-        "(短)": 1
+        "o": 1
       },
-      "perX": "",
+      "perX": "o→0(无)",
       "hard": true
     },
     {
-      "mn": "ml",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "nw",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "pb",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 2,
-      "xs": {
-        "(短)": 1,
-        "s": 1
-      },
-      "perX": "s→0(无)",
-      "hard": true
-    },
-    {
-      "mn": "qb",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "qc",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "qt",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "jm",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 1,
-      "xs": {
-        "e": 1
-      },
-      "perX": "e→0(无)",
-      "hard": true
-    },
-    {
-      "mn": "vw",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "wc",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "zn",
-      "cnt2": 0,
-      "cnt3": 0,
-      "total": 0,
-      "maxFreq": 0,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "hd",
+      "mn": "js",
       "cnt2": 0,
       "cnt3": 1,
+      "total": 1,
+      "maxFreq": 0.38,
+      "srcWords": 2,
+      "xs": {
+        "a": 1,
+        "e": 1
+      },
+      "perX": "a→1 e→0(无)",
+      "hard": true
+    },
+    {
+      "mn": "lx",
+      "cnt2": 0,
+      "cnt3": 1,
+      "total": 1,
+      "maxFreq": 0.38,
+      "srcWords": 2,
+      "xs": {
+        "a": 2
+      },
+      "perX": "a→1",
+      "hard": true
+    },
+    {
+      "mn": "zm",
+      "cnt2": 1,
+      "cnt3": 0,
+      "total": 1,
+      "maxFreq": 0.38,
+      "srcWords": 2,
+      "xs": {
+        "i": 2
+      },
+      "perX": "i→0(无)",
+      "hard": true
+    },
+    {
+      "mn": "db",
+      "cnt2": 1,
+      "cnt3": 0,
+      "total": 1,
+      "maxFreq": 0.26,
+      "srcWords": 1,
+      "xs": {
+        "a": 1
+      },
+      "perX": "a→0(无)",
+      "hard": true
+    },
+    {
+      "mn": "bk",
+      "cnt2": 1,
+      "cnt3": 0,
+      "total": 1,
+      "maxFreq": 0.33,
+      "srcWords": 2,
+      "xs": {
+        "k": 1,
+        "u": 1
+      },
+      "perX": "k→0(无) u→0(无)",
+      "hard": true
+    },
+    {
+      "mn": "wd",
+      "cnt2": 0,
+      "cnt3": 1,
+      "total": 1,
+      "maxFreq": 0.38,
+      "srcWords": 6,
+      "xs": {
+        "a": 1,
+        "o": 3,
+        "e": 2
+      },
+      "perX": "a→0(无) o→0(无) e→1",
+      "hard": true
+    },
+    {
+      "mn": "gt",
+      "cnt2": 1,
+      "cnt3": 0,
       "total": 1,
       "maxFreq": 0.26,
       "srcWords": 2,
       "xs": {
-        "d": 1,
-        "p": 1
+        "n": 1,
+        "a": 1
       },
-      "perX": "d→0(无) p→1",
+      "perX": "n→0(无) a→0(无)",
       "hard": true
     },
     {
-      "mn": "ds",
+      "mn": "bt",
       "cnt2": 1,
       "cnt3": 0,
       "total": 1,
-      "maxFreq": 0.671125,
-      "srcWords": 75,
+      "maxFreq": 0.26,
+      "srcWords": 7,
       "xs": {
-        "r": 29,
-        "i": 7,
-        "n": 19,
-        "e": 5,
-        "a": 4,
-        "(短)": 1,
-        "o": 4,
-        "l": 3,
-        "y": 1,
-        "d": 1,
-        "s": 1
+        "u": 4,
+        "e": 3
       },
-      "perX": "r→0(无) i→0(无) n→0(无) e→0(无) a→0(无) o→0(无) l→0(无) y→0(无) d→0(无) s→0(无)",
+      "perX": "u→0(无) e→0(无)",
       "hard": true
     },
     {
-      "mn": "gs",
-      "cnt2": 0,
-      "cnt3": 1,
-      "total": 1,
-      "maxFreq": 0.659925,
-      "srcWords": 47,
-      "xs": {
-        "n": 40,
-        "b": 1,
-        "g": 1,
-        "e": 2,
-        "u": 1,
-        "(短)": 1,
-        "s": 1
-      },
-      "perX": "n→0(无) b→1 g→0(无) e→0(无) u→0(无) s→0(无)",
-      "hard": true
-    },
-    {
-      "mn": "mw",
-      "cnt2": 0,
-      "cnt3": 1,
-      "total": 1,
-      "maxFreq": 0.4293738550506847,
-      "srcWords": 2,
-      "xs": {
-        "b": 1,
-        "(短)": 1
-      },
-      "perX": "b→1",
-      "hard": true
-    },
-    {
-      "mn": "bp",
+      "mn": "hc",
       "cnt2": 1,
       "cnt3": 0,
       "total": 1,
-      "maxFreq": 0.542675,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "dt",
-      "cnt2": 1,
-      "cnt3": 0,
-      "total": 1,
-      "maxFreq": 0.766825,
+      "maxFreq": 0.26,
       "srcWords": 3,
       "xs": {
-        "n": 2,
+        "t": 2,
+        "o": 1
+      },
+      "perX": "t→0(无) o→0(无)",
+      "hard": true
+    },
+    {
+      "mn": "xl",
+      "cnt2": 1,
+      "cnt3": 0,
+      "total": 1,
+      "maxFreq": 0.26,
+      "srcWords": 1,
+      "xs": {
         "i": 1
       },
-      "perX": "n→0(无) i→0(无)",
+      "perX": "i→0(无)",
       "hard": true
     },
     {
-      "mn": "fs",
+      "mn": "hw",
       "cnt2": 1,
       "cnt3": 0,
       "total": 1,
-      "maxFreq": 0.5495749999999999,
-      "srcWords": 3,
-      "xs": {
-        "e": 1,
-        "f": 2
-      },
-      "perX": "e→0(无) f→0(无)",
-      "hard": true
-    },
-    {
-      "mn": "bd",
-      "cnt2": 0,
-      "cnt3": 1,
-      "total": 1,
-      "maxFreq": 0,
+      "maxFreq": 0.38,
       "srcWords": 1,
       "xs": {
-        "c": 1
+        "o": 1
       },
-      "perX": "c→1",
+      "perX": "o→0(无)",
       "hard": true
     },
     {
-      "mn": "cg",
+      "mn": "vn",
       "cnt2": 0,
       "cnt3": 1,
       "total": 1,
-      "maxFreq": 0.5413749999999999,
+      "maxFreq": 0.38,
       "srcWords": 1,
       "xs": {
-        "c": 1
+        "a": 1
       },
-      "perX": "c→1",
+      "perX": "a→1",
       "hard": true
     },
     {
-      "mn": "gb",
-      "cnt2": 0,
-      "cnt3": 1,
+      "mn": "mk",
+      "cnt2": 1,
+      "cnt3": 0,
       "total": 1,
-      "maxFreq": 0.791875,
-      "srcWords": 3,
+      "maxFreq": 0.33,
+      "srcWords": 1,
       "xs": {
-        "e": 1,
-        "(短)": 1,
-        "k": 1
+        "i": 1
       },
-      "perX": "e→0(无) k→1",
+      "perX": "i→0(无)",
       "hard": true
     },
     {
-      "mn": "fc",
+      "mn": "hh",
       "cnt2": 0,
       "cnt3": 1,
       "total": 1,
-      "maxFreq": 0,
+      "maxFreq": 0.38,
+      "srcWords": 1,
+      "xs": {
+        "o": 1
+      },
+      "perX": "o→1",
+      "hard": true
+    },
+    {
+      "mn": "df",
+      "cnt2": 0,
+      "cnt3": 1,
+      "total": 1,
+      "maxFreq": 0.38,
       "srcWords": 2,
       "xs": {
-        "c": 1,
-        "(短)": 1
-      },
-      "perX": "c→1",
-      "hard": true
-    },
-    {
-      "mn": "dh",
-      "cnt2": 1,
-      "cnt3": 0,
-      "total": 1,
-      "maxFreq": 0.730775,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "dj",
-      "cnt2": 1,
-      "cnt3": 0,
-      "total": 1,
-      "maxFreq": 0.5465249999999999,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "qn",
-      "cnt2": 0,
-      "cnt3": 1,
-      "total": 1,
-      "maxFreq": 0.7639,
-      "srcWords": 1,
-      "xs": {
+        "p": 1,
         "e": 1
       },
-      "perX": "e→1",
+      "perX": "p→1 e→0(无)",
       "hard": true
     },
     {
-      "mn": "bh",
+      "mn": "jn",
       "cnt2": 1,
       "cnt3": 0,
       "total": 1,
-      "maxFreq": 0.5472250000000001,
+      "maxFreq": 0.38,
+      "srcWords": 1,
+      "xs": {
+        "i": 1
+      },
+      "perX": "i→0(无)",
+      "hard": true
+    },
+    {
+      "mn": "tv",
+      "cnt2": 1,
+      "cnt3": 0,
+      "total": 1,
+      "maxFreq": 0.38,
+      "srcWords": 1,
+      "xs": {
+        "(短)": 1
+      },
+      "perX": "",
+      "hard": true
+    },
+    {
+      "mn": "mv",
+      "cnt2": 1,
+      "cnt3": 0,
+      "total": 1,
+      "maxFreq": 0.33,
       "srcWords": 1,
       "xs": {
         "m": 1
@@ -838,2242 +544,2576 @@
       "hard": true
     },
     {
-      "mn": "gt",
+      "mn": "gs",
       "cnt2": 0,
-      "cnt3": 1,
-      "total": 1,
-      "maxFreq": 0.7268749999999999,
-      "srcWords": 2,
+      "cnt3": 2,
+      "total": 2,
+      "maxFreq": 0.33,
+      "srcWords": 1423,
       "xs": {
-        "(短)": 1,
-        "s": 1
+        "b": 1,
+        "n": 1203,
+        "a": 59,
+        "o": 48,
+        "r": 6,
+        "u": 39,
+        "g": 6,
+        "e": 28,
+        "i": 31,
+        "w": 1,
+        "d": 1
       },
-      "perX": "s→1",
+      "perX": "b→0(无) n→0(无) a→0(无) o→1 r→0(无) u→1 g→0(无) e→0(无) i→0(无) w→0(无) d→0(无)",
       "hard": true
     },
     {
-      "mn": "hc",
-      "cnt2": 0,
-      "cnt3": 1,
-      "total": 1,
-      "maxFreq": 0.544075,
-      "srcWords": 2,
-      "xs": {
-        "(短)": 1,
-        "m": 1
-      },
-      "perX": "m→1",
-      "hard": true
-    },
-    {
-      "mn": "hp",
-      "cnt2": 0,
-      "cnt3": 1,
-      "total": 1,
-      "maxFreq": 0,
-      "srcWords": 2,
-      "xs": {
-        "(短)": 1,
-        "o": 1
-      },
-      "perX": "o→1",
-      "hard": true
-    },
-    {
-      "mn": "bn",
-      "cnt2": 0,
-      "cnt3": 1,
-      "total": 1,
-      "maxFreq": 0.548475,
-      "srcWords": 1,
-      "xs": {
-        "i": 1
-      },
-      "perX": "i→1",
-      "hard": true
-    },
-    {
-      "mn": "mf",
-      "cnt2": 0,
-      "cnt3": 1,
-      "total": 1,
-      "maxFreq": 0.14339541898494013,
-      "srcWords": 1,
-      "xs": {
-        "i": 1
-      },
-      "perX": "i→1",
-      "hard": true
-    },
-    {
-      "mn": "kg",
-      "cnt2": 1,
+      "mn": "cd",
+      "cnt2": 2,
       "cnt3": 0,
-      "total": 1,
-      "maxFreq": 0.791875,
-      "srcWords": 1,
+      "total": 2,
+      "maxFreq": 0.38,
+      "srcWords": 3,
       "xs": {
-        "(短)": 1
+        "i": 1,
+        "l": 1,
+        "y": 1
       },
-      "perX": "",
+      "perX": "i→0(无) l→0(无) y→0(无)",
       "hard": true
     },
     {
-      "mn": "mg",
-      "cnt2": 1,
+      "mn": "gc",
+      "cnt2": 2,
       "cnt3": 0,
-      "total": 1,
-      "maxFreq": 0.5660499999999999,
+      "total": 2,
+      "maxFreq": 0.38,
       "srcWords": 2,
       "xs": {
-        "p": 1,
-        "(短)": 1
+        "r": 1,
+        "a": 1
       },
-      "perX": "p→0(无)",
-      "hard": true
-    },
-    {
-      "mn": "md",
-      "cnt2": 1,
-      "cnt3": 0,
-      "total": 1,
-      "maxFreq": 0.544375,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "vp",
-      "cnt2": 0,
-      "cnt3": 1,
-      "total": 1,
-      "maxFreq": 0.33018747885267824,
-      "srcWords": 2,
-      "xs": {
-        "m": 1,
-        "s": 1
-      },
-      "perX": "m→1 s→0(无)",
-      "hard": true
-    },
-    {
-      "mn": "nm",
-      "cnt2": 1,
-      "cnt3": 0,
-      "total": 1,
-      "maxFreq": 0.7902750000000001,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "pg",
-      "cnt2": 1,
-      "cnt3": 0,
-      "total": 1,
-      "maxFreq": 0.5609500000000001,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "qv",
-      "cnt2": 0,
-      "cnt3": 1,
-      "total": 1,
-      "maxFreq": 0.658675,
-      "srcWords": 2,
-      "xs": {
-        "q": 1,
-        "(短)": 1
-      },
-      "perX": "q→1",
+      "perX": "r→0(无) a→0(无)",
       "hard": true
     },
     {
       "mn": "rv",
-      "cnt2": 1,
-      "cnt3": 0,
-      "total": 1,
-      "maxFreq": 0.45885,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "ql",
-      "cnt2": 0,
-      "cnt3": 1,
-      "total": 1,
-      "maxFreq": 0.724175,
-      "srcWords": 1,
-      "xs": {
-        "s": 1
-      },
-      "perX": "s→1",
-      "hard": true
-    },
-    {
-      "mn": "tb",
-      "cnt2": 1,
-      "cnt3": 0,
-      "total": 1,
-      "maxFreq": 0.764475,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "vs",
-      "cnt2": 0,
-      "cnt3": 1,
-      "total": 1,
-      "maxFreq": 0.58335,
-      "srcWords": 2,
-      "xs": {
-        "t": 1,
-        "(短)": 1
-      },
-      "perX": "t→1",
-      "hard": true
-    },
-    {
-      "mn": "df",
-      "cnt2": 0,
-      "cnt3": 1,
-      "total": 1,
-      "maxFreq": 0.660975,
-      "srcWords": 1,
-      "xs": {
-        "u": 1
-      },
-      "perX": "u→1",
-      "hard": true
-    },
-    {
-      "mn": "wf",
-      "cnt2": 0,
-      "cnt3": 1,
-      "total": 1,
-      "maxFreq": 0.17948626937667703,
-      "srcWords": 1,
-      "xs": {
-        "w": 1
-      },
-      "perX": "w→1",
-      "hard": true
-    },
-    {
-      "mn": "xv",
-      "cnt2": 1,
-      "cnt3": 0,
-      "total": 1,
-      "maxFreq": 0.478375,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "dz",
       "cnt2": 0,
       "cnt3": 2,
       "total": 2,
-      "maxFreq": 0,
+      "maxFreq": 0.38,
       "srcWords": 1,
       "xs": {
-        "a": 1
-      },
-      "perX": "a→2",
-      "hard": true
-    },
-    {
-      "mn": "hh",
-      "cnt2": 0,
-      "cnt3": 2,
-      "total": 2,
-      "maxFreq": 0.7888399107829791,
-      "srcWords": 2,
-      "xs": {
-        "a": 1,
-        "s": 1
-      },
-      "perX": "a→1 s→1",
-      "hard": true
-    },
-    {
-      "mn": "tp",
-      "cnt2": 0,
-      "cnt3": 2,
-      "total": 2,
-      "maxFreq": 0.554225,
-      "srcWords": 2,
-      "xs": {
-        "a": 1,
-        "l": 1
-      },
-      "perX": "a→1 l→1",
-      "hard": true
-    },
-    {
-      "mn": "wl",
-      "cnt2": 0,
-      "cnt3": 2,
-      "total": 2,
-      "maxFreq": 0.5610620328697409,
-      "srcWords": 22,
-      "xs": {
-        "a": 9,
-        "o": 13
-      },
-      "perX": "a→1 o→1",
-      "hard": true
-    },
-    {
-      "mn": "bb",
-      "cnt2": 1,
-      "cnt3": 1,
-      "total": 2,
-      "maxFreq": 0.4126363126779526,
-      "srcWords": 3,
-      "xs": {
-        "(短)": 1,
-        "e": 2
-      },
-      "perX": "e→1",
-      "hard": true
-    },
-    {
-      "mn": "nz",
-      "cnt2": 0,
-      "cnt3": 2,
-      "total": 2,
-      "maxFreq": 0.37813471123515374,
-      "srcWords": 3,
-      "xs": {
-        "e": 1,
-        "a": 1,
-        "i": 1
-      },
-      "perX": "e→2 a→0(无) i→0(无)",
-      "hard": true
-    },
-    {
-      "mn": "tv",
-      "cnt2": 1,
-      "cnt3": 1,
-      "total": 2,
-      "maxFreq": 0.842925,
-      "srcWords": 3,
-      "xs": {
-        "c": 1,
-        "i": 1,
-        "(短)": 1
-      },
-      "perX": "c→0(无) i→1",
-      "hard": true
-    },
-    {
-      "mn": "cf",
-      "cnt2": 2,
-      "cnt3": 0,
-      "total": 2,
-      "maxFreq": 0.5441,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "vd",
-      "cnt2": 1,
-      "cnt3": 1,
-      "total": 2,
-      "maxFreq": 0.575825,
-      "srcWords": 2,
-      "xs": {
-        "d": 1,
         "e": 1
       },
-      "perX": "d→1 e→0(无)",
-      "hard": true
-    },
-    {
-      "mn": "mt",
-      "cnt2": 1,
-      "cnt3": 1,
-      "total": 2,
-      "maxFreq": 0.812275,
-      "srcWords": 1,
-      "xs": {
-        "g": 1
-      },
-      "perX": "g→1",
+      "perX": "e→2",
       "hard": true
     },
     {
       "mn": "tn",
-      "cnt2": 1,
-      "cnt3": 1,
-      "total": 2,
-      "maxFreq": 0.7031000000000001,
-      "srcWords": 1,
-      "xs": {
-        "i": 1
-      },
-      "perX": "i→1",
-      "hard": true
-    },
-    {
-      "mn": "nr",
-      "cnt2": 1,
-      "cnt3": 1,
-      "total": 2,
-      "maxFreq": 0.7255,
-      "srcWords": 2,
-      "xs": {
-        "j": 1,
-        "(短)": 1
-      },
-      "perX": "j→1",
-      "hard": true
-    },
-    {
-      "mn": "td",
-      "cnt2": 0,
-      "cnt3": 2,
-      "total": 2,
-      "maxFreq": 0.554075,
-      "srcWords": 2,
-      "xs": {
-        "l": 1,
-        "u": 1
-      },
-      "perX": "l→1 u→1",
-      "hard": true
-    },
-    {
-      "mn": "nb",
       "cnt2": 2,
       "cnt3": 0,
       "total": 2,
-      "maxFreq": 0.4523961993425391,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": true
-    },
-    {
-      "mn": "wt",
-      "cnt2": 1,
-      "cnt3": 1,
-      "total": 2,
-      "maxFreq": 0.5576749999999999,
-      "srcWords": 3,
-      "xs": {
-        "e": 1,
-        "o": 2
-      },
-      "perX": "e→0(无) o→1",
-      "hard": true
-    },
-    {
-      "mn": "vq",
-      "cnt2": 0,
-      "cnt3": 2,
-      "total": 2,
-      "maxFreq": 0.7236,
+      "maxFreq": 0.33,
       "srcWords": 2,
-      "xs": {
-        "n": 1,
-        "s": 1
-      },
-      "perX": "n→1 s→1",
-      "hard": true
-    },
-    {
-      "mn": "sb",
-      "cnt2": 1,
-      "cnt3": 1,
-      "total": 2,
-      "maxFreq": 0.5739000000000001,
-      "srcWords": 2,
-      "xs": {
-        "(短)": 1,
-        "t": 1
-      },
-      "perX": "t→1",
-      "hard": true
-    },
-    {
-      "mn": "sr",
-      "cnt2": 1,
-      "cnt3": 1,
-      "total": 2,
-      "maxFreq": 0.853475,
-      "srcWords": 3,
-      "xs": {
-        "(短)": 1,
-        "s": 2
-      },
-      "perX": "s→1",
-      "hard": true
-    },
-    {
-      "mn": "hs",
-      "cnt2": 1,
-      "cnt3": 2,
-      "total": 3,
-      "maxFreq": 0.922875,
-      "srcWords": 11,
-      "xs": {
-        "c": 2,
-        "t": 6,
-        "n": 1,
-        "p": 1,
-        "v": 1
-      },
-      "perX": "c→0(无) t→0(无) n→1 p→0(无) v→1",
-      "hard": false
-    },
-    {
-      "mn": "pd",
-      "cnt2": 1,
-      "cnt3": 2,
-      "total": 3,
-      "maxFreq": 0.72455,
-      "srcWords": 3,
-      "xs": {
-        "b": 1,
-        "(短)": 1,
-        "s": 1
-      },
-      "perX": "b→1 s→1",
-      "hard": false
-    },
-    {
-      "mn": "nx",
-      "cnt2": 0,
-      "cnt3": 3,
-      "total": 3,
-      "maxFreq": 0.6741039914773362,
-      "srcWords": 7,
       "xs": {
         "o": 1,
-        "y": 3,
-        "a": 2,
-        "i": 1
+        "a": 1
       },
-      "perX": "o→0(无) y→0(无) a→3 i→0(无)",
-      "hard": false
+      "perX": "o→0(无) a→0(无)",
+      "hard": true
     },
     {
-      "mn": "rl",
+      "mn": "wm",
+      "cnt2": 1,
+      "cnt3": 1,
+      "total": 2,
+      "maxFreq": 0.38,
+      "srcWords": 2,
+      "xs": {
+        "o": 1,
+        "a": 1
+      },
+      "perX": "o→0(无) a→1",
+      "hard": true
+    },
+    {
+      "mn": "dm",
+      "cnt2": 2,
+      "cnt3": 0,
+      "total": 2,
+      "maxFreq": 0.33,
+      "srcWords": 1,
+      "xs": {
+        "i": 1
+      },
+      "perX": "i→0(无)",
+      "hard": true
+    },
+    {
+      "mn": "mg",
+      "cnt2": 2,
+      "cnt3": 0,
+      "total": 2,
+      "maxFreq": 0.38,
+      "srcWords": 1,
+      "xs": {
+        "i": 1
+      },
+      "perX": "i→0(无)",
+      "hard": true
+    },
+    {
+      "mn": "ws",
       "cnt2": 0,
       "cnt3": 3,
       "total": 3,
-      "maxFreq": 0.6199250000000001,
-      "srcWords": 21,
+      "maxFreq": 0.38,
+      "srcWords": 243,
       "xs": {
-        "a": 5,
-        "u": 7,
-        "i": 8,
-        "o": 1
+        "o": 127,
+        "e": 59,
+        "a": 56,
+        "i": 1
       },
-      "perX": "a→0(无) u→1 i→0(无) o→2",
+      "perX": "o→2 e→0(无) a→1 i→0(无)",
       "hard": false
     },
     {
-      "mn": "pc",
+      "mn": "lh",
+      "cnt2": 3,
+      "cnt3": 0,
+      "total": 3,
+      "maxFreq": 0.38,
+      "srcWords": 1,
+      "xs": {
+        "i": 1
+      },
+      "perX": "i→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "hn",
       "cnt2": 2,
       "cnt3": 1,
       "total": 3,
-      "maxFreq": 0.724075,
-      "srcWords": 3,
+      "maxFreq": 0.33,
+      "srcWords": 17,
       "xs": {
-        "c": 1,
-        "(短)": 1,
-        "r": 1
+        "a": 9,
+        "o": 5,
+        "e": 2,
+        "c": 1
       },
-      "perX": "c→1 r→0(无)",
+      "perX": "a→0(无) o→0(无) e→0(无) c→1",
       "hard": false
     },
     {
-      "mn": "dn",
-      "cnt2": 1,
-      "cnt3": 2,
-      "total": 3,
-      "maxFreq": 0.6877912604876729,
-      "srcWords": 2,
-      "xs": {
-        "e": 1,
-        "y": 1
-      },
-      "perX": "e→2 y→0(无)",
-      "hard": false
-    },
-    {
-      "mn": "wk",
+      "mn": "rq",
       "cnt2": 0,
       "cnt3": 3,
       "total": 3,
-      "maxFreq": 0.6669675686868377,
-      "srcWords": 4,
+      "maxFreq": 0.33,
+      "srcWords": 1,
       "xs": {
-        "a": 4
+        "a": 1
       },
       "perX": "a→3",
       "hard": false
     },
     {
-      "mn": "np",
-      "cnt2": 0,
-      "cnt3": 3,
+      "mn": "mf",
+      "cnt2": 1,
+      "cnt3": 2,
       "total": 3,
-      "maxFreq": 0.6617500000000001,
-      "srcWords": 3,
+      "maxFreq": 0.33,
+      "srcWords": 2,
       "xs": {
-        "g": 1,
-        "p": 1,
-        "s": 1
+        "u": 1,
+        "e": 1
       },
-      "perX": "g→1 p→1 s→1",
+      "perX": "u→2 e→0(无)",
       "hard": false
     },
     {
-      "mn": "hr",
+      "mn": "dp",
       "cnt2": 3,
       "cnt3": 0,
       "total": 3,
-      "maxFreq": 0.26,
+      "maxFreq": 0.38,
       "srcWords": 2,
       "xs": {
-        "(短)": 1,
+        "n": 2
+      },
+      "perX": "n→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "md",
+      "cnt2": 1,
+      "cnt3": 2,
+      "total": 3,
+      "maxFreq": 0.38,
+      "srcWords": 2,
+      "xs": {
+        "c": 2
+      },
+      "perX": "c→2",
+      "hard": false
+    },
+    {
+      "mn": "zl",
+      "cnt2": 3,
+      "cnt3": 0,
+      "total": 3,
+      "maxFreq": 0.33,
+      "srcWords": 2,
+      "xs": {
+        "i": 1,
+        "n": 1
+      },
+      "perX": "i→0(无) n→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "wt",
+      "cnt2": 2,
+      "cnt3": 1,
+      "total": 3,
+      "maxFreq": 0.38,
+      "srcWords": 4,
+      "xs": {
+        "a": 1,
+        "e": 1,
+        "o": 2
+      },
+      "perX": "a→0(无) e→0(无) o→1",
+      "hard": false
+    },
+    {
+      "mn": "pm",
+      "cnt2": 2,
+      "cnt3": 1,
+      "total": 3,
+      "maxFreq": 0.38,
+      "srcWords": 2,
+      "xs": {
+        "d": 1,
+        "a": 1
+      },
+      "perX": "d→1 a→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "nf",
+      "cnt2": 1,
+      "cnt3": 2,
+      "total": 3,
+      "maxFreq": 0.38,
+      "srcWords": 1,
+      "xs": {
+        "o": 1
+      },
+      "perX": "o→2",
+      "hard": false
+    },
+    {
+      "mn": "pc",
+      "cnt2": 3,
+      "cnt3": 0,
+      "total": 3,
+      "maxFreq": 0.33,
+      "srcWords": 2,
+      "xs": {
+        "c": 1,
+        "(短)": 1
+      },
+      "perX": "c→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "vs",
+      "cnt2": 2,
+      "cnt3": 1,
+      "total": 3,
+      "maxFreq": 0.38,
+      "srcWords": 10,
+      "xs": {
+        "a": 3,
+        "e": 1,
+        "u": 2,
+        "i": 2,
+        "o": 1,
+        "(短)": 1
+      },
+      "perX": "a→1 e→0(无) u→0(无) i→0(无) o→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "ks",
+      "cnt2": 1,
+      "cnt3": 3,
+      "total": 4,
+      "maxFreq": 0.38,
+      "srcWords": 822,
+      "xs": {
+        "r": 140,
+        "c": 344,
+        "e": 21,
+        "a": 46,
+        "i": 16,
+        "s": 30,
+        "o": 64,
+        "u": 6,
+        "l": 36,
+        "n": 105,
+        "w": 13,
+        "k": 1
+      },
+      "perX": "r→0(无) c→0(无) e→0(无) a→3 i→0(无) s→0(无) o→0(无) u→0(无) l→0(无) n→0(无) w→0(无) k→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "fs",
+      "cnt2": 2,
+      "cnt3": 2,
+      "total": 4,
+      "maxFreq": 0.38,
+      "srcWords": 154,
+      "xs": {
+        "i": 10,
+        "r": 14,
+        "f": 82,
+        "e": 16,
+        "o": 19,
+        "a": 7,
+        "l": 4,
+        "u": 1,
+        "n": 1
+      },
+      "perX": "i→0(无) r→0(无) f→0(无) e→1 o→0(无) a→1 l→0(无) u→0(无) n→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "wk",
+      "cnt2": 0,
+      "cnt3": 4,
+      "total": 4,
+      "maxFreq": 0.6419,
+      "srcWords": 27,
+      "xs": {
+        "a": 23,
+        "o": 4
+      },
+      "perX": "a→4 o→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "lz",
+      "cnt2": 0,
+      "cnt3": 4,
+      "total": 4,
+      "maxFreq": 0.38,
+      "srcWords": 12,
+      "xs": {
+        "a": 3,
+        "e": 1,
+        "o": 5,
+        "i": 3
+      },
+      "perX": "a→2 e→0(无) o→1 i→1",
+      "hard": false
+    },
+    {
+      "mn": "sz",
+      "cnt2": 4,
+      "cnt3": 0,
+      "total": 4,
+      "maxFreq": 0.33,
+      "srcWords": 5,
+      "xs": {
+        "o": 2,
+        "a": 2,
+        "i": 1
+      },
+      "perX": "o→0(无) a→0(无) i→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "sd",
+      "cnt2": 3,
+      "cnt3": 1,
+      "total": 4,
+      "maxFreq": 0.38,
+      "srcWords": 2,
+      "xs": {
+        "a": 1,
+        "b": 1
+      },
+      "perX": "a→1 b→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "kk",
+      "cnt2": 0,
+      "cnt3": 4,
+      "total": 4,
+      "maxFreq": 0.38,
+      "srcWords": 3,
+      "xs": {
+        "u": 1,
+        "e": 1,
+        "a": 1
+      },
+      "perX": "u→0(无) e→2 a→2",
+      "hard": false
+    },
+    {
+      "mn": "dn",
+      "cnt2": 5,
+      "cnt3": 0,
+      "total": 5,
+      "maxFreq": 0.6341,
+      "srcWords": 2,
+      "xs": {
+        "d": 1,
+        "i": 1
+      },
+      "perX": "d→0(无) i→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "pg",
+      "cnt2": 4,
+      "cnt3": 1,
+      "total": 5,
+      "maxFreq": 0.38,
+      "srcWords": 1,
+      "xs": {
+        "a": 1
+      },
+      "perX": "a→1",
+      "hard": false
+    },
+    {
+      "mn": "sg",
+      "cnt2": 4,
+      "cnt3": 1,
+      "total": 5,
+      "maxFreq": 0.33,
+      "srcWords": 2,
+      "xs": {
+        "m": 2
+      },
+      "perX": "m→1",
+      "hard": false
+    },
+    {
+      "mn": "cc",
+      "cnt2": 6,
+      "cnt3": 0,
+      "total": 6,
+      "maxFreq": 0.33,
+      "srcWords": 1,
+      "xs": {
+        "i": 1
+      },
+      "perX": "i→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "dt",
+      "cnt2": 1,
+      "cnt3": 6,
+      "total": 7,
+      "maxFreq": 0.33,
+      "srcWords": 13,
+      "xs": {
+        "a": 2,
+        "n": 5,
+        "o": 1,
+        "r": 1,
+        "l": 2,
+        "e": 1,
+        "i": 1
+      },
+      "perX": "a→6 n→0(无) o→0(无) r→0(无) l→0(无) e→0(无) i→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "cp",
+      "cnt2": 6,
+      "cnt3": 1,
+      "total": 7,
+      "maxFreq": 0.38,
+      "srcWords": 1,
+      "xs": {
+        "u": 1
+      },
+      "perX": "u→1",
+      "hard": false
+    },
+    {
+      "mn": "zz",
+      "cnt2": 0,
+      "cnt3": 8,
+      "total": 8,
+      "maxFreq": 0.38,
+      "srcWords": 23,
+      "xs": {
+        "u": 6,
+        "a": 7,
+        "i": 9,
+        "e": 1
+      },
+      "perX": "u→0(无) a→6 i→2 e→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "gw",
+      "cnt2": 8,
+      "cnt3": 0,
+      "total": 8,
+      "maxFreq": 0.38,
+      "srcWords": 1,
+      "xs": {
+        "e": 1
+      },
+      "perX": "e→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "tb",
+      "cnt2": 8,
+      "cnt3": 0,
+      "total": 8,
+      "maxFreq": 0.33,
+      "srcWords": 1,
+      "xs": {
         "u": 1
       },
       "perX": "u→0(无)",
       "hard": false
     },
     {
-      "mn": "mr",
-      "cnt2": 3,
-      "cnt3": 0,
-      "total": 3,
-      "maxFreq": 0.916824059705473,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": false
-    },
-    {
-      "mn": "pm",
-      "cnt2": 1,
-      "cnt3": 2,
-      "total": 3,
-      "maxFreq": 0.5702,
-      "srcWords": 3,
-      "xs": {
-        "(短)": 1,
-        "p": 1,
-        "r": 1
-      },
-      "perX": "p→1 r→1",
-      "hard": false
-    },
-    {
-      "mn": "vc",
+      "mn": "lw",
       "cnt2": 2,
-      "cnt3": 1,
-      "total": 3,
-      "maxFreq": 0.4752695781782033,
-      "srcWords": 2,
-      "xs": {
-        "p": 1,
-        "(短)": 1
-      },
-      "perX": "p→1",
-      "hard": false
-    },
-    {
-      "mn": "ck",
-      "cnt2": 0,
-      "cnt3": 4,
-      "total": 4,
-      "maxFreq": 0.5724827494482398,
-      "srcWords": 258,
-      "xs": {
-        "a": 79,
-        "e": 20,
-        "o": 64,
-        "i": 71,
-        "u": 23,
-        "r": 1
-      },
-      "perX": "a→4 e→0(无) o→0(无) i→0(无) u→0(无) r→0(无)",
-      "hard": false
-    },
-    {
-      "mn": "cp",
-      "cnt2": 4,
-      "cnt3": 0,
-      "total": 4,
-      "maxFreq": 0.33813360595943265,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": false
-    },
-    {
-      "mn": "gc",
-      "cnt2": 3,
-      "cnt3": 1,
-      "total": 4,
-      "maxFreq": 0.769775,
-      "srcWords": 2,
-      "xs": {
-        "(短)": 1,
-        "n": 1
-      },
-      "perX": "n→1",
-      "hard": false
-    },
-    {
-      "mn": "lc",
-      "cnt2": 2,
-      "cnt3": 2,
-      "total": 4,
-      "maxFreq": 0.667075,
-      "srcWords": 3,
-      "xs": {
-        "g": 1,
-        "(短)": 1,
-        "p": 1
-      },
-      "perX": "g→1 p→1",
-      "hard": false
-    },
-    {
-      "mn": "bm",
-      "cnt2": 3,
-      "cnt3": 1,
-      "total": 4,
-      "maxFreq": 0.576325,
-      "srcWords": 1,
-      "xs": {
-        "i": 1
-      },
-      "perX": "i→1",
-      "hard": false
-    },
-    {
-      "mn": "sd",
-      "cnt2": 1,
-      "cnt3": 3,
-      "total": 4,
-      "maxFreq": 0.635775,
-      "srcWords": 3,
-      "xs": {
-        "l": 1,
-        "(短)": 1,
-        "s": 1
-      },
-      "perX": "l→1 s→2",
-      "hard": false
-    },
-    {
-      "mn": "sf",
-      "cnt2": 2,
-      "cnt3": 2,
-      "total": 4,
-      "maxFreq": 0.548925,
-      "srcWords": 3,
-      "xs": {
-        "n": 1,
-        "o": 1,
-        "(短)": 1
-      },
-      "perX": "n→1 o→1",
-      "hard": false
-    },
-    {
-      "mn": "rk",
-      "cnt2": 0,
-      "cnt3": 5,
-      "total": 5,
-      "maxFreq": 0.814225,
-      "srcWords": 103,
-      "xs": {
-        "a": 35,
-        "o": 50,
-        "e": 6,
-        "i": 9,
-        "u": 3
-      },
-      "perX": "a→2 o→1 e→0(无) i→2 u→0(无)",
-      "hard": false
-    },
-    {
-      "mn": "bc",
-      "cnt2": 1,
-      "cnt3": 4,
-      "total": 5,
-      "maxFreq": 0.663,
-      "srcWords": 5,
-      "xs": {
-        "a": 1,
-        "b": 1,
-        "(短)": 1,
-        "n": 1,
-        "w": 1
-      },
-      "perX": "a→1 b→1 n→1 w→1",
-      "hard": false
-    },
-    {
-      "mn": "wn",
-      "cnt2": 0,
-      "cnt3": 5,
-      "total": 5,
-      "maxFreq": 0.9376662191957564,
-      "srcWords": 69,
-      "xs": {
-        "o": 56,
-        "a": 11,
-        "e": 2
-      },
-      "perX": "o→4 a→1 e→0(无)",
-      "hard": false
-    },
-    {
-      "mn": "gm",
-      "cnt2": 3,
-      "cnt3": 2,
-      "total": 5,
-      "maxFreq": 0.812275,
-      "srcWords": 7,
-      "xs": {
-        "a": 2,
-        "e": 2,
-        "(短)": 1,
-        "m": 1,
-        "i": 1
-      },
-      "perX": "a→1 e→0(无) m→1 i→0(无)",
-      "hard": false
-    },
-    {
-      "mn": "tm",
-      "cnt2": 1,
-      "cnt3": 4,
-      "total": 5,
-      "maxFreq": 0.8475622402736899,
+      "cnt3": 6,
+      "total": 8,
+      "maxFreq": 0.935,
       "srcWords": 1,
       "xs": {
         "a": 1
       },
-      "perX": "a→4",
+      "perX": "a→6",
       "hard": false
     },
     {
-      "mn": "mn",
-      "cnt2": 2,
-      "cnt3": 3,
-      "total": 5,
-      "maxFreq": 0.5044399896577738,
-      "srcWords": 9,
+      "mn": "nx",
+      "cnt2": 0,
+      "cnt3": 9,
+      "total": 9,
+      "maxFreq": 0.663,
+      "srcWords": 74,
       "xs": {
-        "u": 2,
-        "e": 3,
-        "a": 2,
-        "y": 1,
-        "i": 1
-      },
-      "perX": "u→0(无) e→0(无) a→3 y→0(无) i→0(无)",
-      "hard": false
-    },
-    {
-      "mn": "cb",
-      "cnt2": 4,
-      "cnt3": 1,
-      "total": 5,
-      "maxFreq": 0.7297750000000001,
-      "srcWords": 2,
-      "xs": {
-        "(短)": 1,
-        "p": 1
-      },
-      "perX": "p→1",
-      "hard": false
-    },
-    {
-      "mn": "cd",
-      "cnt2": 2,
-      "cnt3": 3,
-      "total": 5,
-      "maxFreq": 0.79005,
-      "srcWords": 4,
-      "xs": {
-        "(短)": 1,
-        "l": 1,
-        "e": 1,
-        "v": 1
-      },
-      "perX": "l→1 e→1 v→1",
-      "hard": false
-    },
-    {
-      "mn": "dc",
-      "cnt2": 2,
-      "cnt3": 3,
-      "total": 5,
-      "maxFreq": 0.661925,
-      "srcWords": 5,
-      "xs": {
-        "(短)": 1,
-        "l": 1,
-        "d": 1,
-        "m": 1,
+        "y": 21,
+        "i": 47,
+        "a": 5,
         "u": 1
       },
-      "perX": "l→1 d→0(无) m→1 u→1",
+      "perX": "y→0(无) i→1 a→8 u→0(无)",
       "hard": false
     },
     {
-      "mn": "dp",
-      "cnt2": 1,
-      "cnt3": 4,
-      "total": 5,
-      "maxFreq": 0.8421,
-      "srcWords": 5,
-      "xs": {
-        "(短)": 1,
-        "f": 1,
-        "g": 1,
-        "l": 1,
-        "s": 1
-      },
-      "perX": "f→1 g→1 l→1 s→1",
-      "hard": false
-    },
-    {
-      "mn": "cs",
-      "cnt2": 2,
-      "cnt3": 4,
-      "total": 6,
-      "maxFreq": 0.660575,
-      "srcWords": 116,
-      "xs": {
-        "i": 109,
-        "(短)": 1,
-        "d": 1,
-        "n": 1,
-        "p": 1,
-        "r": 1,
-        "e": 2
-      },
-      "perX": "i→0(无) d→1 n→0(无) p→0(无) r→0(无) e→3",
-      "hard": false
-    },
-    {
-      "mn": "ls",
-      "cnt2": 1,
-      "cnt3": 5,
-      "total": 6,
-      "maxFreq": 0.9329622248734284,
-      "srcWords": 53,
-      "xs": {
-        "a": 19,
-        "e": 10,
-        "w": 1,
-        "l": 11,
-        "i": 9,
-        "r": 1,
-        "o": 2
-      },
-      "perX": "a→2 e→3 w→0(无) l→0(无) i→0(无) r→0(无) o→0(无)",
-      "hard": false
-    },
-    {
-      "mn": "kh",
-      "cnt2": 6,
+      "mn": "sr",
+      "cnt2": 9,
       "cnt3": 0,
-      "total": 6,
-      "maxFreq": 0.816675,
+      "total": 9,
+      "maxFreq": 0.38,
+      "srcWords": 2,
+      "xs": {
+        "t": 1,
+        "n": 1
+      },
+      "perX": "t→0(无) n→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "rz",
+      "cnt2": 0,
+      "cnt3": 9,
+      "total": 9,
+      "maxFreq": 0.38,
+      "srcWords": 13,
+      "xs": {
+        "e": 7,
+        "a": 3,
+        "o": 2,
+        "u": 1
+      },
+      "perX": "e→1 a→5 o→3 u→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "gm",
+      "cnt2": 4,
+      "cnt3": 6,
+      "total": 10,
+      "maxFreq": 0.38,
+      "srcWords": 10,
+      "xs": {
+        "e": 4,
+        "a": 4,
+        "i": 2
+      },
+      "perX": "e→0(无) a→6 i→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "kt",
+      "cnt2": 2,
+      "cnt3": 8,
+      "total": 10,
+      "maxFreq": 0.38,
+      "srcWords": 4,
+      "xs": {
+        "i": 1,
+        "o": 1,
+        "r": 1,
+        "e": 1
+      },
+      "perX": "i→2 o→2 r→0(无) e→4",
+      "hard": false
+    },
+    {
+      "mn": "rf",
+      "cnt2": 0,
+      "cnt3": 12,
+      "total": 12,
+      "maxFreq": 0.38,
+      "srcWords": 38,
+      "xs": {
+        "o": 8,
+        "a": 12,
+        "e": 7,
+        "u": 10,
+        "d": 1
+      },
+      "perX": "o→6 a→4 e→1 u→1 d→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "hr",
+      "cnt2": 7,
+      "cnt3": 5,
+      "total": 12,
+      "maxFreq": 0.38,
+      "srcWords": 15,
+      "xs": {
+        "e": 8,
+        "u": 4,
+        "o": 2,
+        "a": 1
+      },
+      "perX": "e→3 u→0(无) o→0(无) a→2",
+      "hard": false
+    },
+    {
+      "mn": "mt",
+      "cnt2": 4,
+      "cnt3": 8,
+      "total": 12,
+      "maxFreq": 0.38,
       "srcWords": 3,
       "xs": {
-        "i": 3
+        "a": 2,
+        "i": 1
+      },
+      "perX": "a→7 i→1",
+      "hard": false
+    },
+    {
+      "mn": "dz",
+      "cnt2": 7,
+      "cnt3": 6,
+      "total": 13,
+      "maxFreq": 0.38,
+      "srcWords": 1,
+      "xs": {
+        "a": 1
+      },
+      "perX": "a→6",
+      "hard": false
+    },
+    {
+      "mn": "cz",
+      "cnt2": 14,
+      "cnt3": 0,
+      "total": 14,
+      "maxFreq": 0.38,
+      "srcWords": 1,
+      "xs": {
+        "i": 1
       },
       "perX": "i→0(无)",
       "hard": false
     },
     {
-      "mn": "ms",
-      "cnt2": 1,
-      "cnt3": 6,
-      "total": 7,
-      "maxFreq": 0.732675,
-      "srcWords": 26,
+      "mn": "cs",
+      "cnt2": 3,
+      "cnt3": 11,
+      "total": 14,
+      "maxFreq": 0.5118,
+      "srcWords": 1231,
       "xs": {
-        "a": 5,
-        "l": 3,
+        "i": 1157,
+        "e": 12,
+        "o": 9,
+        "a": 36,
         "r": 7,
-        "h": 2,
+        "n": 5,
+        "s": 4,
+        "l": 1
+      },
+      "perX": "i→0(无) e→10 o→0(无) a→1 r→0(无) n→0(无) s→0(无) l→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "pf",
+      "cnt2": 12,
+      "cnt3": 2,
+      "total": 14,
+      "maxFreq": 0.38,
+      "srcWords": 5,
+      "xs": {
         "o": 1,
-        "u": 1,
-        "e": 4,
-        "(短)": 1,
-        "p": 1,
+        "m": 3,
+        "a": 1
+      },
+      "perX": "o→0(无) m→0(无) a→2",
+      "hard": false
+    },
+    {
+      "mn": "ht",
+      "cnt2": 3,
+      "cnt3": 12,
+      "total": 15,
+      "maxFreq": 0.38,
+      "srcWords": 346,
+      "xs": {
+        "g": 323,
+        "k": 1,
+        "c": 18,
+        "s": 4
+      },
+      "perX": "g→0(无) k→0(无) c→5 s→7",
+      "hard": false
+    },
+    {
+      "mn": "tz",
+      "cnt2": 14,
+      "cnt3": 1,
+      "total": 15,
+      "maxFreq": 0.38,
+      "srcWords": 103,
+      "xs": {
+        "i": 35,
+        "a": 6,
+        "u": 10,
+        "n": 12,
+        "r": 16,
+        "e": 15,
+        "l": 5,
+        "o": 4
+      },
+      "perX": "i→0(无) a→0(无) u→0(无) n→0(无) r→0(无) e→0(无) l→0(无) o→1",
+      "hard": false
+    },
+    {
+      "mn": "hs",
+      "cnt2": 6,
+      "cnt3": 9,
+      "total": 15,
+      "maxFreq": 0.38,
+      "srcWords": 360,
+      "xs": {
+        "p": 74,
+        "c": 36,
+        "t": 173,
+        "k": 5,
+        "a": 29,
+        "g": 33,
+        "o": 5,
+        "r": 1,
+        "d": 1,
+        "v": 1,
+        "e": 1,
+        "s": 1
+      },
+      "perX": "p→5 c→0(无) t→2 k→0(无) a→1 g→0(无) o→0(无) r→0(无) d→0(无) v→1 e→0(无) s→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "ln",
+      "cnt2": 3,
+      "cnt3": 12,
+      "total": 15,
+      "maxFreq": 0.38,
+      "srcWords": 12,
+      "xs": {
+        "x": 1,
+        "a": 2,
+        "i": 3,
+        "t": 2,
+        "e": 3,
+        "o": 1
+      },
+      "perX": "x→0(无) a→11 i→0(无) t→0(无) e→1 o→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "lv",
+      "cnt2": 3,
+      "cnt3": 12,
+      "total": 15,
+      "maxFreq": 0.4738,
+      "srcWords": 1,
+      "xs": {
+        "e": 1
+      },
+      "perX": "e→12",
+      "hard": false
+    },
+    {
+      "mn": "ms",
+      "cnt2": 4,
+      "cnt3": 12,
+      "total": 16,
+      "maxFreq": 0.4906,
+      "srcWords": 819,
+      "xs": {
+        "s": 109,
+        "i": 36,
+        "o": 111,
+        "u": 221,
+        "a": 137,
+        "r": 114,
+        "e": 46,
+        "h": 9,
+        "l": 21,
+        "y": 8,
+        "g": 3,
+        "t": 1,
+        "m": 2,
+        "w": 1
+      },
+      "perX": "s→0(无) i→0(无) o→1 u→1 a→9 r→0(无) e→1 h→0(无) l→0(无) y→0(无) g→0(无) t→0(无) m→0(无) w→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "cn",
+      "cnt2": 18,
+      "cnt3": 0,
+      "total": 18,
+      "maxFreq": 0.38,
+      "srcWords": 1,
+      "xs": {
+        "y": 1
+      },
+      "perX": "y→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "wl",
+      "cnt2": 0,
+      "cnt3": 19,
+      "total": 19,
+      "maxFreq": 0.5519,
+      "srcWords": 53,
+      "xs": {
+        "o": 32,
+        "a": 20,
+        "e": 1
+      },
+      "perX": "o→15 a→4 e→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "zh",
+      "cnt2": 17,
+      "cnt3": 2,
+      "total": 19,
+      "maxFreq": 0.38,
+      "srcWords": 1,
+      "xs": {
+        "d": 1
+      },
+      "perX": "d→2",
+      "hard": false
+    },
+    {
+      "mn": "wn",
+      "cnt2": 0,
+      "cnt3": 20,
+      "total": 20,
+      "maxFreq": 0.9245,
+      "srcWords": 220,
+      "xs": {
+        "o": 179,
+        "a": 32,
+        "e": 9
+      },
+      "perX": "o→9 a→11 e→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "nj",
+      "cnt2": 0,
+      "cnt3": 24,
+      "total": 24,
+      "maxFreq": 0.8074,
+      "srcWords": 2,
+      "xs": {
+        "e": 1,
+        "o": 1
+      },
+      "perX": "e→24 o→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "tl",
+      "cnt2": 1,
+      "cnt3": 24,
+      "total": 25,
+      "maxFreq": 0.6051,
+      "srcWords": 7,
+      "xs": {
+        "a": 2,
+        "o": 2,
+        "e": 2,
+        "n": 1
+      },
+      "perX": "a→24 o→0(无) e→0(无) n→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "nb",
+      "cnt2": 0,
+      "cnt3": 26,
+      "total": 26,
+      "maxFreq": 0.38,
+      "srcWords": 1,
+      "xs": {
         "i": 1
       },
-      "perX": "a→1 l→1 r→0(无) h→2 o→0(无) u→0(无) e→1 p→1 i→0(无)",
+      "perX": "i→26",
       "hard": false
     },
     {
-      "mn": "lk",
+      "mn": "dl",
+      "cnt2": 7,
+      "cnt3": 19,
+      "total": 26,
+      "maxFreq": 0.38,
+      "srcWords": 4,
+      "xs": {
+        "n": 1,
+        "o": 1,
+        "a": 1,
+        "e": 1
+      },
+      "perX": "n→0(无) o→0(无) a→19 e→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "tc",
+      "cnt2": 7,
+      "cnt3": 20,
+      "total": 27,
+      "maxFreq": 0.5503,
+      "srcWords": 5,
+      "xs": {
+        "e": 2,
+        "i": 2,
+        "n": 1
+      },
+      "perX": "e→13 i→7 n→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "ck",
+      "cnt2": 2,
+      "cnt3": 27,
+      "total": 29,
+      "maxFreq": 0.5766,
+      "srcWords": 1085,
+      "xs": {
+        "a": 369,
+        "e": 100,
+        "o": 325,
+        "i": 191,
+        "u": 92,
+        "l": 1,
+        "d": 1,
+        "y": 1,
+        "n": 3,
+        "r": 2
+      },
+      "perX": "a→17 e→3 o→0(无) i→5 u→2 l→0(无) d→0(无) y→0(无) n→0(无) r→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "rk",
       "cnt2": 0,
-      "cnt3": 7,
-      "total": 7,
-      "maxFreq": 0.5572128637712898,
-      "srcWords": 36,
+      "cnt3": 33,
+      "total": 33,
+      "maxFreq": 0.5682,
+      "srcWords": 376,
       "xs": {
-        "a": 15,
-        "u": 6,
-        "i": 5,
-        "e": 1,
-        "o": 9
-      },
-      "perX": "a→5 u→0(无) i→1 e→1 o→0(无)",
-      "hard": false
-    },
-    {
-      "mn": "ts",
-      "cnt2": 6,
-      "cnt3": 2,
-      "total": 8,
-      "maxFreq": 0.8988563935529212,
-      "srcWords": 111,
-      "xs": {
-        "n": 40,
-        "l": 4,
-        "c": 8,
-        "r": 10,
-        "e": 7,
-        "p": 1,
-        "a": 10,
-        "i": 7,
-        "o": 6,
-        "s": 5,
-        "h": 5,
-        "u": 5,
-        "t": 3
-      },
-      "perX": "n→0(无) l→0(无) c→0(无) r→0(无) e→0(无) p→0(无) a→0(无) i→2 o→0(无) s→0(无) h→0(无) u→0(无) t→0(无)",
-      "hard": false
-    },
-    {
-      "mn": "lf",
-      "cnt2": 1,
-      "cnt3": 7,
-      "total": 8,
-      "maxFreq": 0.68845,
-      "srcWords": 26,
-      "xs": {
-        "o": 7,
-        "a": 4,
+        "a": 129,
+        "o": 217,
         "e": 13,
-        "u": 2
+        "i": 11,
+        "u": 6
       },
-      "perX": "o→2 a→4 e→1 u→0(无)",
+      "perX": "a→19 o→2 e→5 i→7 u→0(无)",
       "hard": false
     },
     {
       "mn": "rp",
       "cnt2": 1,
-      "cnt3": 7,
-      "total": 8,
-      "maxFreq": 0.6106750000000001,
-      "srcWords": 15,
+      "cnt3": 32,
+      "total": 33,
+      "maxFreq": 0.5408,
+      "srcWords": 88,
       "xs": {
-        "e": 2,
-        "u": 3,
-        "a": 6,
-        "i": 1,
-        "o": 1,
-        "c": 1,
-        "(短)": 1
+        "a": 71,
+        "u": 5,
+        "i": 4,
+        "e": 4,
+        "o": 4
       },
-      "perX": "e→1 u→0(无) a→1 i→0(无) o→4 c→1",
+      "perX": "a→10 u→1 i→1 e→0(无) o→20",
       "hard": false
     },
     {
-      "mn": "tc",
+      "mn": "rl",
       "cnt2": 2,
-      "cnt3": 6,
-      "total": 8,
-      "maxFreq": 0.572325,
-      "srcWords": 2,
+      "cnt3": 32,
+      "total": 34,
+      "maxFreq": 0.38,
+      "srcWords": 81,
       "xs": {
-        "e": 1,
-        "(短)": 1
+        "i": 42,
+        "u": 12,
+        "a": 16,
+        "o": 5,
+        "e": 5,
+        "y": 1
       },
-      "perX": "e→6",
+      "perX": "i→0(无) u→0(无) a→15 o→14 e→3 y→0(无)",
       "hard": false
     },
     {
       "mn": "hm",
-      "cnt2": 5,
-      "cnt3": 4,
-      "total": 9,
-      "maxFreq": 0.9677,
-      "srcWords": 8,
+      "cnt2": 4,
+      "cnt3": 32,
+      "total": 36,
+      "maxFreq": 0.38,
+      "srcWords": 39,
       "xs": {
-        "t": 4,
-        "(短)": 1,
-        "m": 1,
-        "o": 1,
+        "t": 12,
+        "o": 17,
+        "e": 1,
+        "u": 1,
+        "c": 4,
+        "a": 3,
         "s": 1
       },
-      "perX": "t→0(无) m→1 o→2 s→1",
+      "perX": "t→1 o→9 e→0(无) u→0(无) c→2 a→11 s→9",
       "hard": false
     },
     {
-      "mn": "lm",
-      "cnt2": 1,
-      "cnt3": 10,
-      "total": 11,
-      "maxFreq": 0.8920444654774708,
-      "srcWords": 22,
+      "mn": "nz",
+      "cnt2": 0,
+      "cnt3": 36,
+      "total": 36,
+      "maxFreq": 0.3964,
+      "srcWords": 15,
       "xs": {
-        "a": 10,
-        "e": 6,
+        "a": 7,
+        "e": 5,
         "i": 2,
-        "o": 3,
-        "(短)": 1
+        "u": 1
       },
-      "perX": "a→8 e→1 i→1 o→0(无)",
+      "perX": "a→4 e→22 i→0(无) u→10",
+      "hard": false
+    },
+    {
+      "mn": "ds",
+      "cnt2": 3,
+      "cnt3": 34,
+      "total": 37,
+      "maxFreq": 0.38,
+      "srcWords": 1459,
+      "xs": {
+        "i": 243,
+        "n": 335,
+        "r": 334,
+        "e": 119,
+        "l": 95,
+        "a": 188,
+        "y": 1,
+        "o": 106,
+        "u": 31,
+        "p": 1,
+        "w": 3,
+        "d": 3
+      },
+      "perX": "i→0(无) n→0(无) r→0(无) e→0(无) l→0(无) a→34 y→0(无) o→0(无) u→0(无) p→0(无) w→0(无) d→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "bb",
+      "cnt2": 0,
+      "cnt3": 39,
+      "total": 39,
+      "maxFreq": 0.5094,
+      "srcWords": 18,
+      "xs": {
+        "a": 7,
+        "i": 3,
+        "o": 6,
+        "e": 1,
+        "u": 1
+      },
+      "perX": "a→30 i→0(无) o→3 e→6 u→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "nq",
+      "cnt2": 0,
+      "cnt3": 39,
+      "total": 39,
+      "maxFreq": 0.5453,
+      "srcWords": 2,
+      "xs": {
+        "i": 1,
+        "a": 1
+      },
+      "perX": "i→37 a→2",
+      "hard": false
+    },
+    {
+      "mn": "nl",
+      "cnt2": 1,
+      "cnt3": 42,
+      "total": 43,
+      "maxFreq": 0.4535,
+      "srcWords": 2,
+      "xs": {
+        "e": 1,
+        "a": 1
+      },
+      "perX": "e→39 a→3",
+      "hard": false
+    },
+    {
+      "mn": "tm",
+      "cnt2": 5,
+      "cnt3": 41,
+      "total": 46,
+      "maxFreq": 0.6162,
+      "srcWords": 1,
+      "xs": {
+        "a": 1
+      },
+      "perX": "a→41",
+      "hard": false
+    },
+    {
+      "mn": "ls",
+      "cnt2": 1,
+      "cnt3": 50,
+      "total": 51,
+      "maxFreq": 0.9205,
+      "srcWords": 1465,
+      "xs": {
+        "a": 539,
+        "u": 85,
+        "e": 248,
+        "i": 161,
+        "y": 11,
+        "l": 266,
+        "o": 87,
+        "t": 2,
+        "w": 29,
+        "r": 32,
+        "s": 1,
+        "d": 1,
+        "c": 1,
+        "x": 1,
+        "h": 1
+      },
+      "perX": "a→28 u→4 e→11 i→2 y→0(无) l→0(无) o→3 t→0(无) w→0(无) r→0(无) s→2 d→0(无) c→0(无) x→0(无) h→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "xs",
+      "cnt2": 0,
+      "cnt3": 53,
+      "total": 53,
+      "maxFreq": 0.33,
+      "srcWords": 4,
+      "xs": {
+        "e": 1,
+        "n": 1,
+        "u": 1,
+        "i": 1
+      },
+      "perX": "e→53 n→0(无) u→0(无) i→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "lf",
+      "cnt2": 0,
+      "cnt3": 60,
+      "total": 60,
+      "maxFreq": 0.5417,
+      "srcWords": 55,
+      "xs": {
+        "o": 11,
+        "u": 12,
+        "a": 7,
+        "e": 25
+      },
+      "perX": "o→17 u→0(无) a→31 e→12",
+      "hard": false
+    },
+    {
+      "mn": "ts",
+      "cnt2": 53,
+      "cnt3": 7,
+      "total": 60,
+      "maxFreq": 0.8915,
+      "srcWords": 3596,
+      "xs": {
+        "n": 871,
+        "o": 169,
+        "t": 29,
+        "c": 168,
+        "e": 417,
+        "s": 878,
+        "r": 179,
+        "u": 141,
+        "p": 47,
+        "i": 214,
+        "a": 211,
+        "l": 66,
+        "h": 132,
+        "f": 63,
+        "x": 5,
+        "b": 4,
+        "w": 1,
+        "d": 1
+      },
+      "perX": "n→0(无) o→2 t→0(无) c→0(无) e→0(无) s→2 r→0(无) u→0(无) p→0(无) i→3 a→0(无) l→0(无) h→0(无) f→0(无) x→0(无) b→0(无) w→0(无) d→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "bh",
+      "cnt2": 42,
+      "cnt3": 18,
+      "total": 60,
+      "maxFreq": 0.38,
+      "srcWords": 1,
+      "xs": {
+        "a": 1
+      },
+      "perX": "a→18",
+      "hard": false
+    },
+    {
+      "mn": "mn",
+      "cnt2": 18,
+      "cnt3": 44,
+      "total": 62,
+      "maxFreq": 0.4783,
+      "srcWords": 24,
+      "xs": {
+        "u": 15,
+        "e": 4,
+        "a": 2,
+        "i": 2,
+        "y": 1
+      },
+      "perX": "u→1 e→0(无) a→42 i→1 y→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "dh",
+      "cnt2": 28,
+      "cnt3": 40,
+      "total": 68,
+      "maxFreq": 0.3814,
+      "srcWords": 6,
+      "xs": {
+        "n": 1,
+        "i": 1,
+        "e": 2,
+        "a": 1,
+        "o": 1
+      },
+      "perX": "n→0(无) i→0(无) e→1 a→39 o→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "kh",
+      "cnt2": 67,
+      "cnt3": 7,
+      "total": 74,
+      "maxFreq": 0.38,
+      "srcWords": 6,
+      "xs": {
+        "n": 1,
+        "i": 3,
+        "a": 1,
+        "e": 1
+      },
+      "perX": "n→0(无) i→0(无) a→7 e→0(无)",
       "hard": false
     },
     {
       "mn": "gh",
-      "cnt2": 10,
-      "cnt3": 2,
-      "total": 12,
-      "maxFreq": 0.7532495011266631,
-      "srcWords": 61,
+      "cnt2": 77,
+      "cnt3": 6,
+      "total": 83,
+      "maxFreq": 0.7153,
+      "srcWords": 141,
       "xs": {
-        "r": 6,
-        "u": 38,
-        "a": 1,
-        "i": 14,
-        "o": 1,
-        "n": 1
+        "r": 8,
+        "u": 75,
+        "i": 39,
+        "a": 6,
+        "o": 8,
+        "e": 2,
+        "y": 1,
+        "n": 2
       },
-      "perX": "r→0(无) u→1 a→1 i→0(无) o→0(无) n→0(无)",
+      "perX": "r→0(无) u→2 i→1 a→2 o→1 e→0(无) y→0(无) n→0(无)",
       "hard": false
     },
     {
-      "mn": "lp",
+      "mn": "rd",
       "cnt2": 0,
-      "cnt3": 12,
-      "total": 12,
-      "maxFreq": 0.6605,
-      "srcWords": 10,
+      "cnt3": 97,
+      "total": 97,
+      "maxFreq": 0.8543,
+      "srcWords": 878,
       "xs": {
-        "d": 1,
-        "u": 2,
-        "e": 4,
-        "i": 1,
-        "(短)": 1,
-        "a": 1
+        "a": 604,
+        "o": 154,
+        "u": 9,
+        "i": 93,
+        "y": 1,
+        "e": 16,
+        "b": 1
       },
-      "perX": "d→1 u→0(无) e→0(无) i→1 a→10",
+      "perX": "a→31 o→59 u→3 i→1 y→0(无) e→3 b→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "lm",
+      "cnt2": 0,
+      "cnt3": 98,
+      "total": 98,
+      "maxFreq": 0.8857,
+      "srcWords": 64,
+      "xs": {
+        "a": 19,
+        "i": 25,
+        "e": 12,
+        "u": 3,
+        "o": 5
+      },
+      "perX": "a→77 i→5 e→7 u→6 o→3",
       "hard": false
     },
     {
       "mn": "rn",
       "cnt2": 1,
-      "cnt3": 12,
-      "total": 13,
-      "maxFreq": 0.8589249999999999,
-      "srcWords": 112,
+      "cnt3": 105,
+      "total": 106,
+      "maxFreq": 0.442,
+      "srcWords": 332,
       "xs": {
-        "o": 40,
-        "u": 24,
-        "e": 33,
-        "i": 4,
-        "a": 10,
-        "(短)": 1
+        "o": 154,
+        "u": 48,
+        "a": 30,
+        "e": 92,
+        "i": 8
       },
-      "perX": "o→7 u→1 e→3 i→0(无) a→1",
+      "perX": "o→48 u→12 a→38 e→7 i→0(无)",
       "hard": false
     },
     {
-      "mn": "nk",
-      "cnt2": 0,
-      "cnt3": 14,
-      "total": 14,
-      "maxFreq": 0.6870797616085028,
-      "srcWords": 72,
+      "mn": "lp",
+      "cnt2": 1,
+      "cnt3": 108,
+      "total": 109,
+      "maxFreq": 0.5599,
+      "srcWords": 28,
       "xs": {
-        "a": 29,
-        "i": 23,
-        "u": 17,
-        "o": 3
-      },
-      "perX": "a→2 i→5 u→7 o→0(无)",
-      "hard": false
-    },
-    {
-      "mn": "gn",
-      "cnt2": 8,
-      "cnt3": 10,
-      "total": 18,
-      "maxFreq": 0.68053663874678,
-      "srcWords": 24,
-      "xs": {
-        "i": 22,
-        "u": 2
-      },
-      "perX": "i→10 u→0(无)",
-      "hard": false
-    },
-    {
-      "mn": "rs",
-      "cnt2": 5,
-      "cnt3": 14,
-      "total": 19,
-      "maxFreq": 0.916824059705473,
-      "srcWords": 113,
-      "xs": {
-        "o": 14,
-        "i": 7,
-        "e": 74,
-        "a": 8,
+        "a": 7,
         "f": 1,
-        "h": 1,
-        "s": 1,
-        "m": 1,
-        "u": 4,
-        "(短)": 1,
-        "p": 1
+        "o": 2,
+        "u": 6,
+        "e": 8,
+        "i": 4
       },
-      "perX": "o→1 i→0(无) e→3 a→5 f→1 h→1 s→0(无) m→1 u→2 p→0(无)",
+      "perX": "a→106 f→0(无) o→0(无) u→0(无) e→2 i→0(无)",
       "hard": false
     },
     {
-      "mn": "ld",
-      "cnt2": 3,
-      "cnt3": 17,
-      "total": 20,
-      "maxFreq": 0.95268686302963,
-      "srcWords": 130,
+      "mn": "dj",
+      "cnt2": 21,
+      "cnt3": 89,
+      "total": 110,
+      "maxFreq": 0.5609,
+      "srcWords": 1,
       "xs": {
-        "e": 42,
-        "r": 3,
-        "o": 51,
-        "a": 16,
-        "u": 7,
-        "i": 11
+        "a": 1
       },
-      "perX": "e→4 r→0(无) o→7 a→6 u→0(无) i→0(无)",
+      "perX": "a→89",
+      "hard": false
+    },
+    {
+      "mn": "lc",
+      "cnt2": 2,
+      "cnt3": 111,
+      "total": 113,
+      "maxFreq": 0.6572,
+      "srcWords": 10,
+      "xs": {
+        "a": 6,
+        "t": 1,
+        "n": 1,
+        "l": 1,
+        "d": 1
+      },
+      "perX": "a→111 t→0(无) n→0(无) l→0(无) d→0(无)",
       "hard": false
     },
     {
       "mn": "ft",
       "cnt2": 1,
-      "cnt3": 20,
-      "total": 21,
-      "maxFreq": 0.9537629444299948,
-      "srcWords": 60,
+      "cnt3": 128,
+      "total": 129,
+      "maxFreq": 0.9382,
+      "srcWords": 219,
       "xs": {
-        "i": 23,
-        "a": 21,
-        "o": 7,
-        "e": 7,
-        "(短)": 1,
-        "u": 1
+        "a": 113,
+        "i": 66,
+        "o": 24,
+        "e": 13,
+        "u": 2,
+        "l": 1
       },
-      "perX": "i→0(无) a→16 o→3 e→1 u→0(无)",
+      "perX": "a→116 i→1 o→8 e→3 u→0(无) l→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "ld",
+      "cnt2": 1,
+      "cnt3": 128,
+      "total": 129,
+      "maxFreq": 0.9373,
+      "srcWords": 404,
+      "xs": {
+        "o": 161,
+        "e": 144,
+        "r": 17,
+        "a": 30,
+        "i": 34,
+        "u": 18
+      },
+      "perX": "o→25 e→19 r→0(无) a→82 i→2 u→0(无)",
       "hard": false
     },
     {
       "mn": "gg",
       "cnt2": 0,
-      "cnt3": 24,
-      "total": 24,
-      "maxFreq": 0.7174947548495354,
-      "srcWords": 5,
+      "cnt3": 132,
+      "total": 132,
+      "maxFreq": 0.7179,
+      "srcWords": 29,
       "xs": {
-        "a": 1,
-        "e": 3,
-        "o": 1
+        "a": 5,
+        "i": 5,
+        "o": 8,
+        "u": 6,
+        "e": 5
       },
-      "perX": "a→20 e→4 o→0(无)",
+      "perX": "a→108 i→0(无) o→1 u→0(无) e→23",
       "hard": false
     },
     {
-      "mn": "rd",
-      "cnt2": 1,
-      "cnt3": 24,
-      "total": 25,
-      "maxFreq": 0.8779910767285151,
-      "srcWords": 263,
+      "mn": "nk",
+      "cnt2": 0,
+      "cnt3": 133,
+      "total": 133,
+      "maxFreq": 0.86,
+      "srcWords": 243,
       "xs": {
-        "a": 172,
-        "u": 7,
-        "o": 59,
-        "i": 21,
-        "y": 1,
-        "e": 3
+        "i": 86,
+        "u": 40,
+        "a": 97,
+        "o": 18,
+        "e": 2
       },
-      "perX": "a→7 u→0(无) o→17 i→0(无) y→0(无) e→0(无)",
-      "hard": false
-    },
-    {
-      "mn": "rb",
-      "cnt2": 1,
-      "cnt3": 28,
-      "total": 29,
-      "maxFreq": 0.5517377713083083,
-      "srcWords": 20,
-      "xs": {
-        "o": 3,
-        "e": 8,
-        "a": 3,
-        "u": 6
-      },
-      "perX": "o→5 e→1 a→13 u→9",
+      "perX": "i→37 u→28 a→57 o→3 e→8",
       "hard": false
     },
     {
       "mn": "dd",
       "cnt2": 0,
-      "cnt3": 29,
-      "total": 29,
-      "maxFreq": 0.870525,
-      "srcWords": 7,
+      "cnt3": 136,
+      "total": 136,
+      "maxFreq": 0.7771,
+      "srcWords": 17,
       "xs": {
-        "a": 1,
-        "o": 3,
-        "e": 1,
-        "i": 1,
-        "u": 1
+        "a": 3,
+        "o": 4,
+        "e": 3,
+        "u": 5,
+        "i": 2
       },
-      "perX": "a→19 o→7 e→2 i→1 u→0(无)",
+      "perX": "a→100 o→18 e→12 u→5 i→1",
       "hard": false
     },
     {
       "mn": "rm",
       "cnt2": 0,
-      "cnt3": 29,
-      "total": 29,
-      "maxFreq": 0.9967,
-      "srcWords": 76,
+      "cnt3": 140,
+      "total": 140,
+      "maxFreq": 0.8407,
+      "srcWords": 976,
       "xs": {
-        "i": 7,
-        "a": 12,
-        "e": 19,
-        "o": 38
+        "o": 745,
+        "i": 12,
+        "a": 47,
+        "e": 166,
+        "t": 1,
+        "u": 5
       },
-      "perX": "i→0(无) a→27 e→1 o→1",
+      "perX": "o→5 i→0(无) a→126 e→6 t→0(无) u→3",
       "hard": false
     },
     {
-      "mn": "rg",
+      "mn": "nm",
+      "cnt2": 1,
+      "cnt3": 140,
+      "total": 141,
+      "maxFreq": 0.4557,
+      "srcWords": 1,
+      "xs": {
+        "u": 1
+      },
+      "perX": "u→140",
+      "hard": false
+    },
+    {
+      "mn": "rs",
       "cnt2": 0,
-      "cnt3": 31,
-      "total": 31,
-      "maxFreq": 0.853175,
-      "srcWords": 20,
+      "cnt3": 157,
+      "total": 157,
+      "maxFreq": 0.5091,
+      "srcWords": 4540,
       "xs": {
-        "e": 9,
-        "u": 10,
-        "o": 1
+        "i": 62,
+        "o": 563,
+        "e": 3514,
+        "a": 224,
+        "u": 161,
+        "r": 10,
+        "h": 3,
+        "y": 3
       },
-      "perX": "e→3 u→6 o→22",
-      "hard": false
-    },
-    {
-      "mn": "mc",
-      "cnt2": 30,
-      "cnt3": 2,
-      "total": 32,
-      "maxFreq": 0.812425,
-      "srcWords": 3,
-      "xs": {
-        "b": 1,
-        "(短)": 1,
-        "m": 1
-      },
-      "perX": "b→1 m→1",
+      "perX": "i→0(无) o→8 e→5 a→124 u→20 r→0(无) h→0(无) y→0(无)",
       "hard": false
     },
     {
       "mn": "nh",
-      "cnt2": 1,
-      "cnt3": 33,
-      "total": 34,
-      "maxFreq": 0.922875,
+      "cnt2": 0,
+      "cnt3": 176,
+      "total": 176,
+      "maxFreq": 0.5673,
+      "srcWords": 4,
+      "xs": {
+        "a": 2,
+        "i": 2
+      },
+      "perX": "a→73 i→103",
+      "hard": false
+    },
+    {
+      "mn": "lk",
+      "cnt2": 0,
+      "cnt3": 178,
+      "total": 178,
+      "maxFreq": 0.5231,
+      "srcWords": 104,
+      "xs": {
+        "o": 20,
+        "a": 56,
+        "u": 10,
+        "i": 15,
+        "e": 3
+      },
+      "perX": "o→0(无) a→165 u→0(无) i→3 e→10",
+      "hard": false
+    },
+    {
+      "mn": "rb",
+      "cnt2": 0,
+      "cnt3": 179,
+      "total": 179,
+      "maxFreq": 0.544,
+      "srcWords": 75,
+      "xs": {
+        "o": 21,
+        "e": 11,
+        "a": 35,
+        "u": 8
+      },
+      "perX": "o→42 e→2 a→104 u→31",
+      "hard": false
+    },
+    {
+      "mn": "lb",
+      "cnt2": 3,
+      "cnt3": 183,
+      "total": 186,
+      "maxFreq": 0.6297,
+      "srcWords": 9,
+      "xs": {
+        "a": 1,
+        "i": 3,
+        "u": 5
+      },
+      "perX": "a→183 i→0(无) u→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "kr",
+      "cnt2": 193,
+      "cnt3": 6,
+      "total": 199,
+      "maxFreq": 0.38,
       "srcWords": 2,
       "xs": {
-        "i": 1,
-        "e": 1
+        "a": 1,
+        "c": 1
       },
-      "perX": "i→29 e→4",
-      "hard": false
-    },
-    {
-      "mn": "pt",
-      "cnt2": 5,
-      "cnt3": 32,
-      "total": 37,
-      "maxFreq": 0.6519670845349577,
-      "srcWords": 56,
-      "xs": {
-        "u": 8,
-        "e": 15,
-        "a": 6,
-        "o": 2,
-        "m": 7,
-        "i": 12,
-        "y": 3,
-        "r": 1,
-        "(短)": 1,
-        "l": 1
-      },
-      "perX": "u→8 e→0(无) a→4 o→20 m→0(无) i→0(无) y→0(无) r→0(无) l→0(无)",
-      "hard": false
-    },
-    {
-      "mn": "rh",
-      "cnt2": 36,
-      "cnt3": 1,
-      "total": 37,
-      "maxFreq": 0.77345,
-      "srcWords": 1,
-      "xs": {
-        "h": 1
-      },
-      "perX": "h→1",
-      "hard": false
-    },
-    {
-      "mn": "sq",
-      "cnt2": 38,
-      "cnt3": 0,
-      "total": 38,
-      "maxFreq": 0.7462270715515256,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": false
-    },
-    {
-      "mn": "ct",
-      "cnt2": 0,
-      "cnt3": 41,
-      "total": 41,
-      "maxFreq": 0.940825,
-      "srcWords": 154,
-      "xs": {
-        "u": 18,
-        "e": 67,
-        "a": 34,
-        "i": 20,
-        "n": 11,
-        "o": 2,
-        "r": 1,
-        "l": 1
-      },
-      "perX": "u→1 e→3 a→27 i→1 n→1 o→8 r→0(无) l→0(无)",
-      "hard": false
-    },
-    {
-      "mn": "mb",
-      "cnt2": 2,
-      "cnt3": 40,
-      "total": 42,
-      "maxFreq": 0.722375,
-      "srcWords": 24,
-      "xs": {
-        "o": 10,
-        "u": 8,
-        "i": 3,
-        "a": 2,
-        "(短)": 1
-      },
-      "perX": "o→1 u→6 i→8 a→25",
-      "hard": false
-    },
-    {
-      "mn": "lt",
-      "cnt2": 2,
-      "cnt3": 45,
-      "total": 47,
-      "maxFreq": 0.791925,
-      "srcWords": 70,
-      "xs": {
-        "u": 18,
-        "a": 11,
-        "e": 12,
-        "o": 11,
-        "i": 17,
-        "(短)": 1
-      },
-      "perX": "u→17 a→27 e→1 o→0(无) i→0(无)",
-      "hard": false
-    },
-    {
-      "mn": "rc",
-      "cnt2": 0,
-      "cnt3": 49,
-      "total": 49,
-      "maxFreq": 0.6751,
-      "srcWords": 8,
-      "xs": {
-        "a": 3,
-        "s": 1,
-        "i": 1,
-        "o": 1,
-        "p": 1,
-        "(短)": 1
-      },
-      "perX": "a→38 s→0(无) i→1 o→9 p→1",
-      "hard": false
-    },
-    {
-      "mn": "rt",
-      "cnt2": 0,
-      "cnt3": 54,
-      "total": 54,
-      "maxFreq": 0.8260985503499108,
-      "srcWords": 154,
-      "xs": {
-        "o": 44,
-        "e": 43,
-        "a": 39,
-        "u": 16,
-        "i": 11,
-        "h": 1
-      },
-      "perX": "o→11 e→0(无) a→41 u→1 i→0(无) h→1",
-      "hard": false
-    },
-    {
-      "mn": "ps",
-      "cnt2": 35,
-      "cnt3": 21,
-      "total": 56,
-      "maxFreq": 0.8703,
-      "srcWords": 28,
-      "xs": {
-        "l": 1,
-        "a": 2,
-        "e": 5,
-        "o": 7,
-        "m": 3,
-        "i": 4,
-        "r": 2,
-        "p": 1,
-        "u": 2,
-        "(短)": 1
-      },
-      "perX": "l→0(无) a→2 e→3 o→0(无) m→1 i→1 r→0(无) p→0(无) u→14",
+      "perX": "a→6 c→0(无)",
       "hard": false
     },
     {
       "mn": "wr",
-      "cnt2": 55,
-      "cnt3": 1,
-      "total": 56,
-      "maxFreq": 0.9390039584858078,
+      "cnt2": 203,
+      "cnt3": 2,
+      "total": 205,
+      "maxFreq": 0.9062,
       "srcWords": 1,
       "xs": {
-        "p": 1
+        "a": 1
       },
-      "perX": "p→1",
+      "perX": "a→2",
+      "hard": false
+    },
+    {
+      "mn": "gn",
+      "cnt2": 122,
+      "cnt3": 87,
+      "total": 209,
+      "maxFreq": 0.6865,
+      "srcWords": 54,
+      "xs": {
+        "n": 2,
+        "i": 47,
+        "u": 3,
+        "a": 1,
+        "e": 1
+      },
+      "perX": "n→0(无) i→50 u→0(无) a→37 e→0(无)",
       "hard": false
     },
     {
       "mn": "tt",
       "cnt2": 0,
-      "cnt3": 59,
-      "total": 59,
-      "maxFreq": 0.848575,
-      "srcWords": 41,
+      "cnt3": 244,
+      "total": 244,
+      "maxFreq": 0.8239,
+      "srcWords": 117,
       "xs": {
+        "e": 36,
+        "u": 8,
+        "a": 29,
+        "i": 21,
+        "o": 22,
+        "g": 1
+      },
+      "perX": "e→3 u→13 a→213 i→2 o→13 g→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "np",
+      "cnt2": 0,
+      "cnt3": 283,
+      "total": 283,
+      "maxFreq": 0.5791,
+      "srcWords": 2,
+      "xs": {
+        "u": 1,
+        "i": 1
+      },
+      "perX": "u→262 i→21",
+      "hard": false
+    },
+    {
+      "mn": "pt",
+      "cnt2": 165,
+      "cnt3": 174,
+      "total": 339,
+      "maxFreq": 0.6622,
+      "srcWords": 157,
+      "xs": {
+        "e": 51,
+        "u": 14,
+        "r": 2,
+        "m": 13,
+        "a": 21,
         "o": 9,
-        "e": 16,
-        "u": 3,
-        "a": 9,
-        "i": 3,
-        "(短)": 1
+        "i": 39,
+        "y": 7,
+        "l": 1
       },
-      "perX": "o→4 e→0(无) u→4 a→51 i→0(无)",
-      "hard": false
-    },
-    {
-      "mn": "mm",
-      "cnt2": 3,
-      "cnt3": 62,
-      "total": 65,
-      "maxFreq": 0.815225,
-      "srcWords": 6,
-      "xs": {
-        "i": 1,
-        "h": 1,
-        "(短)": 1,
-        "m": 2,
-        "u": 1
-      },
-      "perX": "i→58 h→1 m→2 u→1",
-      "hard": false
-    },
-    {
-      "mn": "xt",
-      "cnt2": 0,
-      "cnt3": 70,
-      "total": 70,
-      "maxFreq": 0.7962056040284783,
-      "srcWords": 9,
-      "xs": {
-        "i": 1,
-        "e": 8
-      },
-      "perX": "i→0(无) e→70",
-      "hard": false
-    },
-    {
-      "mn": "sm",
-      "cnt2": 66,
-      "cnt3": 5,
-      "total": 71,
-      "maxFreq": 0.8638105447020503,
-      "srcWords": 281,
-      "xs": {
-        "i": 263,
-        "y": 3,
-        "a": 13,
-        "o": 1,
-        "(短)": 1
-      },
-      "perX": "i→1 y→0(无) a→0(无) o→4",
-      "hard": false
-    },
-    {
-      "mn": "nn",
-      "cnt2": 0,
-      "cnt3": 72,
-      "total": 72,
-      "maxFreq": 0.820675,
-      "srcWords": 19,
-      "xs": {
-        "a": 6,
-        "e": 4,
-        "o": 1,
-        "u": 2,
-        "i": 3,
-        "y": 3
-      },
-      "perX": "a→37 e→2 o→0(无) u→11 i→22 y→0(无)",
-      "hard": false
-    },
-    {
-      "mn": "sk",
-      "cnt2": 74,
-      "cnt3": 5,
-      "total": 79,
-      "maxFreq": 0.9363108948430998,
-      "srcWords": 25,
-      "xs": {
-        "a": 9,
-        "i": 7,
-        "u": 6,
-        "e": 1,
-        "o": 1,
-        "v": 1
-      },
-      "perX": "a→4 i→0(无) u→0(无) e→1 o→0(无) v→0(无)",
+      "perX": "e→5 u→30 r→0(无) m→0(无) a→27 o→112 i→0(无) y→0(无) l→0(无)",
       "hard": false
     },
     {
       "mn": "bs",
-      "cnt2": 3,
-      "cnt3": 78,
-      "total": 81,
-      "maxFreq": 0.8480326577196079,
-      "srcWords": 11,
+      "cnt2": 2,
+      "cnt3": 347,
+      "total": 349,
+      "maxFreq": 0.8288,
+      "srcWords": 177,
       "xs": {
-        "a": 2,
-        "(短)": 1,
-        "c": 1,
-        "u": 1,
-        "b": 3,
-        "o": 2,
-        "r": 1
+        "r": 23,
+        "l": 3,
+        "a": 31,
+        "b": 4,
+        "u": 33,
+        "m": 27,
+        "e": 10,
+        "o": 32,
+        "i": 14
       },
-      "perX": "a→40 c→1 u→0(无) b→0(无) o→37 r→0(无)",
+      "perX": "r→0(无) l→0(无) a→210 b→0(无) u→0(无) m→0(无) e→0(无) o→135 i→2",
       "hard": false
     },
     {
-      "mn": "ng",
+      "mn": "nn",
       "cnt2": 2,
-      "cnt3": 84,
-      "total": 86,
-      "maxFreq": 0.8651,
-      "srcWords": 1740,
+      "cnt3": 353,
+      "total": 355,
+      "maxFreq": 0.7624,
+      "srcWords": 66,
       "xs": {
-        "i": 1672,
-        "o": 30,
-        "u": 14,
-        "a": 21,
-        "e": 3
+        "o": 4,
+        "a": 40,
+        "i": 13,
+        "e": 5,
+        "y": 3,
+        "u": 1
       },
-      "perX": "i→21 o→1 u→8 a→28 e→26",
+      "perX": "o→2 a→190 i→85 e→34 y→0(无) u→42",
+      "hard": false
+    },
+    {
+      "mn": "lt",
+      "cnt2": 0,
+      "cnt3": 397,
+      "total": 397,
+      "maxFreq": 0.7861,
+      "srcWords": 248,
+      "xs": {
+        "o": 49,
+        "u": 58,
+        "a": 55,
+        "i": 37,
+        "e": 49
+      },
+      "perX": "o→1 u→254 a→141 i→0(无) e→1",
+      "hard": false
+    },
+    {
+      "mn": "rc",
+      "cnt2": 2,
+      "cnt3": 408,
+      "total": 410,
+      "maxFreq": 0.5692,
+      "srcWords": 21,
+      "xs": {
+        "a": 16,
+        "e": 1,
+        "o": 2,
+        "i": 1,
+        "s": 1
+      },
+      "perX": "a→312 e→4 o→92 i→0(无) s→0(无)",
       "hard": false
     },
     {
       "mn": "ss",
-      "cnt2": 3,
-      "cnt3": 84,
-      "total": 87,
-      "maxFreq": 0.919125,
-      "srcWords": 687,
+      "cnt2": 6,
+      "cnt3": 408,
+      "total": 414,
+      "maxFreq": 0.763,
+      "srcWords": 5164,
       "xs": {
-        "e": 609,
-        "y": 1,
-        "o": 15,
-        "a": 41,
-        "i": 9,
-        "u": 9,
-        "h": 1,
-        "d": 1,
-        "(短)": 1
+        "a": 185,
+        "e": 4828,
+        "i": 37,
+        "y": 3,
+        "c": 1,
+        "o": 65,
+        "u": 43,
+        "r": 1,
+        "s": 1
       },
-      "perX": "e→8 y→0(无) o→2 a→66 i→6 u→1 h→0(无) d→1",
+      "perX": "a→297 e→41 i→17 y→0(无) c→0(无) o→51 u→2 r→0(无) s→0(无)",
       "hard": false
     },
     {
       "mn": "rr",
-      "cnt2": 0,
-      "cnt3": 93,
-      "total": 93,
-      "maxFreq": 0.794373376071829,
-      "srcWords": 10,
+      "cnt2": 1,
+      "cnt3": 432,
+      "total": 433,
+      "maxFreq": 0.7832,
+      "srcWords": 37,
       "xs": {
-        "a": 4,
-        "u": 2,
-        "e": 3,
-        "i": 1
+        "e": 6,
+        "i": 8,
+        "u": 10,
+        "a": 8,
+        "o": 5
       },
-      "perX": "a→28 u→0(无) e→9 i→56",
+      "perX": "e→36 i→214 u→2 a→163 o→17",
       "hard": false
     },
     {
-      "mn": "sw",
-      "cnt2": 99,
-      "cnt3": 0,
-      "total": 99,
-      "maxFreq": 0.912925,
-      "srcWords": 1,
+      "mn": "sm",
+      "cnt2": 361,
+      "cnt3": 90,
+      "total": 451,
+      "maxFreq": 0.8617,
+      "srcWords": 2854,
       "xs": {
-        "(短)": 1
+        "i": 2661,
+        "y": 15,
+        "a": 169,
+        "o": 6,
+        "n": 1,
+        "e": 2
       },
-      "perX": "",
-      "hard": false
-    },
-    {
-      "mn": "pp",
-      "cnt2": 2,
-      "cnt3": 100,
-      "total": 102,
-      "maxFreq": 0.8251514446857204,
-      "srcWords": 6,
-      "xs": {
-        "a": 3,
-        "d": 1,
-        "(短)": 1,
-        "p": 1
-      },
-      "perX": "a→98 d→1 p→1",
-      "hard": false
-    },
-    {
-      "mn": "ll",
-      "cnt2": 5,
-      "cnt3": 103,
-      "total": 108,
-      "maxFreq": 0.9931837582225622,
-      "srcWords": 244,
-      "xs": {
-        "a": 80,
-        "y": 4,
-        "o": 20,
-        "i": 57,
-        "e": 68,
-        "u": 15
-      },
-      "perX": "a→49 y→0(无) o→1 i→38 e→15 u→0(无)",
+      "perX": "i→5 y→0(无) a→5 o→74 n→0(无) e→6",
       "hard": false
     },
     {
       "mn": "ff",
       "cnt2": 0,
-      "cnt3": 110,
-      "total": 110,
-      "maxFreq": 0.9689898589013476,
-      "srcWords": 70,
+      "cnt3": 465,
+      "total": 465,
+      "maxFreq": 0.9511,
+      "srcWords": 228,
       "xs": {
-        "i": 17,
-        "u": 19,
-        "a": 10,
-        "o": 21,
-        "e": 2,
+        "o": 83,
+        "i": 43,
+        "u": 54,
+        "a": 42,
+        "e": 5,
+        "w": 1
+      },
+      "perX": "o→135 i→3 u→0(无) a→187 e→140 w→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "rg",
+      "cnt2": 0,
+      "cnt3": 469,
+      "total": 469,
+      "maxFreq": 0.6934,
+      "srcWords": 87,
+      "xs": {
+        "e": 46,
+        "u": 29,
+        "o": 6,
+        "a": 3,
+        "t": 1,
+        "i": 1,
+        "c": 1
+      },
+      "perX": "e→124 u→14 o→170 a→154 t→1 i→5 c→1",
+      "hard": false
+    },
+    {
+      "mn": "xt",
+      "cnt2": 2,
+      "cnt3": 481,
+      "total": 483,
+      "maxFreq": 0.7848,
+      "srcWords": 31,
+      "xs": {
+        "i": 7,
+        "e": 24
+      },
+      "perX": "i→1 e→480",
+      "hard": false
+    },
+    {
+      "mn": "mm",
+      "cnt2": 2,
+      "cnt3": 493,
+      "total": 495,
+      "maxFreq": 0.7773,
+      "srcWords": 16,
+      "xs": {
+        "a": 8,
+        "u": 4,
+        "i": 1,
+        "o": 2,
+        "e": 1
+      },
+      "perX": "a→94 u→4 i→361 o→9 e→25",
+      "hard": false
+    },
+    {
+      "mn": "pp",
+      "cnt2": 1,
+      "cnt3": 509,
+      "total": 510,
+      "maxFreq": 0.7914,
+      "srcWords": 34,
+      "xs": {
+        "o": 4,
+        "a": 13,
+        "u": 2,
+        "e": 6,
+        "i": 9
+      },
+      "perX": "o→77 a→401 u→29 e→0(无) i→2",
+      "hard": false
+    },
+    {
+      "mn": "sk",
+      "cnt2": 495,
+      "cnt3": 29,
+      "total": 524,
+      "maxFreq": 0.9234,
+      "srcWords": 93,
+      "xs": {
+        "a": 25,
+        "o": 4,
+        "u": 14,
+        "i": 38,
+        "e": 6,
+        "n": 3,
+        "r": 2,
+        "v": 1
+      },
+      "perX": "a→22 o→0(无) u→0(无) i→0(无) e→7 n→0(无) r→0(无) v→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "sn",
+      "cnt2": 522,
+      "cnt3": 4,
+      "total": 526,
+      "maxFreq": 0.7225,
+      "srcWords": 3,
+      "xs": {
+        "o": 1,
+        "c": 1,
+        "s": 1
+      },
+      "perX": "o→3 c→1 s→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "hl",
+      "cnt2": 0,
+      "cnt3": 612,
+      "total": 612,
+      "maxFreq": 0.38,
+      "srcWords": 10,
+      "xs": {
+        "c": 1,
+        "a": 4,
+        "e": 1,
+        "o": 2,
+        "u": 1,
+        "i": 1
+      },
+      "perX": "c→603 a→6 e→0(无) o→0(无) u→3 i→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "ct",
+      "cnt2": 12,
+      "cnt3": 647,
+      "total": 659,
+      "maxFreq": 0.9056,
+      "srcWords": 410,
+      "xs": {
+        "e": 162,
+        "u": 73,
+        "a": 95,
+        "i": 48,
+        "n": 18,
+        "r": 4,
+        "o": 9,
         "l": 1
       },
-      "perX": "i→1 u→0(无) a→38 o→37 e→34 l→0(无)",
+      "perX": "e→205 u→0(无) a→248 i→22 n→0(无) r→0(无) o→172 l→0(无)",
       "hard": false
     },
     {
-      "mn": "cc",
-      "cnt2": 2,
-      "cnt3": 110,
-      "total": 112,
-      "maxFreq": 0.8212817575030293,
-      "srcWords": 9,
+      "mn": "mb",
+      "cnt2": 1,
+      "cnt3": 682,
+      "total": 683,
+      "maxFreq": 0.6706,
+      "srcWords": 83,
       "xs": {
-        "(短)": 1,
-        "g": 1,
-        "i": 1,
-        "l": 2,
-        "m": 1,
-        "n": 1,
-        "p": 1,
-        "a": 1
+        "o": 49,
+        "i": 11,
+        "u": 11,
+        "a": 10,
+        "y": 1,
+        "e": 1
       },
-      "perX": "g→1 i→1 l→1 m→7 n→1 p→0(无) a→99",
+      "perX": "o→19 i→69 u→73 a→209 y→0(无) e→312",
       "hard": false
     },
     {
-      "mn": "wh",
-      "cnt2": 147,
-      "cnt3": 1,
-      "total": 148,
-      "maxFreq": 0.9969191967110942,
-      "srcWords": 2,
+      "mn": "ng",
+      "cnt2": 9,
+      "cnt3": 715,
+      "total": 724,
+      "maxFreq": 0.7754,
+      "srcWords": 13220,
       "xs": {
-        "k": 1,
-        "(短)": 1
+        "a": 135,
+        "i": 12835,
+        "u": 88,
+        "o": 137,
+        "e": 21,
+        "r": 3,
+        "y": 1
       },
-      "perX": "k→1",
+      "perX": "a→363 i→128 u→100 o→4 e→119 r→0(无) y→1",
+      "hard": false
+    },
+    {
+      "mn": "rh",
+      "cnt2": 732,
+      "cnt3": 8,
+      "total": 740,
+      "maxFreq": 0.6165,
+      "srcWords": 5,
+      "xs": {
+        "r": 3,
+        "a": 1,
+        "t": 1
+      },
+      "perX": "r→0(无) a→8 t→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "rt",
+      "cnt2": 1,
+      "cnt3": 744,
+      "total": 745,
+      "maxFreq": 0.8297,
+      "srcWords": 527,
+      "xs": {
+        "e": 112,
+        "o": 220,
+        "u": 31,
+        "a": 131,
+        "i": 33
+      },
+      "perX": "e→5 o→343 u→14 a→381 i→1",
       "hard": false
     },
     {
       "mn": "sl",
-      "cnt2": 145,
-      "cnt3": 6,
-      "total": 151,
-      "maxFreq": 0.8978563100376689,
-      "srcWords": 4,
-      "xs": {
-        "a": 1,
-        "b": 1,
-        "e": 1,
-        "u": 1
-      },
-      "perX": "a→3 b→1 e→1 u→1",
-      "hard": false
-    },
-    {
-      "mn": "nc",
-      "cnt2": 4,
-      "cnt3": 155,
-      "total": 159,
-      "maxFreq": 0.7519704932470468,
+      "cnt2": 783,
+      "cnt3": 31,
+      "total": 814,
+      "maxFreq": 0.8712,
       "srcWords": 6,
       "xs": {
-        "a": 3,
-        "i": 2,
-        "y": 1
+        "s": 2,
+        "a": 1,
+        "r": 1,
+        "e": 1,
+        "i": 1
       },
-      "perX": "a→12 i→143 y→0(无)",
+      "perX": "s→0(无) a→6 r→0(无) e→1 i→24",
       "hard": false
     },
     {
-      "mn": "ph",
-      "cnt2": 149,
-      "cnt3": 11,
-      "total": 160,
-      "maxFreq": 0.944625,
-      "srcWords": 41,
+      "mn": "ll",
+      "cnt2": 12,
+      "cnt3": 857,
+      "total": 869,
+      "maxFreq": 0.7867,
+      "srcWords": 872,
       "xs": {
-        "a": 26,
-        "o": 1,
-        "y": 2,
-        "e": 1,
-        "m": 5,
-        "r": 2,
-        "(短)": 1,
-        "l": 3
+        "a": 269,
+        "e": 226,
+        "o": 84,
+        "i": 200,
+        "u": 41,
+        "y": 52
       },
-      "perX": "a→5 o→3 y→0(无) e→2 m→1 r→0(无) l→0(无)",
+      "perX": "a→640 e→46 o→8 i→158 u→4 y→1",
       "hard": false
     },
     {
       "mn": "dr",
-      "cnt2": 168,
-      "cnt3": 1,
-      "total": 169,
-      "maxFreq": 0.9026149885222682,
-      "srcWords": 2,
+      "cnt2": 882,
+      "cnt3": 96,
+      "total": 978,
+      "maxFreq": 0.8752,
+      "srcWords": 5,
       "xs": {
+        "n": 1,
+        "a": 2,
         "(短)": 1,
-        "g": 1
+        "d": 1
       },
-      "perX": "g→1",
+      "perX": "n→0(无) a→96 d→0(无)",
       "hard": false
     },
     {
       "mn": "ns",
-      "cnt2": 3,
-      "cnt3": 174,
-      "total": 177,
-      "maxFreq": 0.8897623764062724,
-      "srcWords": 107,
+      "cnt2": 1,
+      "cnt3": 1243,
+      "total": 1244,
+      "maxFreq": 0.8782,
+      "srcWords": 3515,
       "xs": {
-        "o": 45,
-        "a": 13,
-        "e": 16,
-        "i": 25,
-        "n": 1,
-        "r": 5,
-        "h": 1,
-        "(短)": 1
+        "o": 1846,
+        "e": 374,
+        "a": 582,
+        "i": 486,
+        "r": 94,
+        "u": 37,
+        "g": 26,
+        "h": 3,
+        "y": 2,
+        "m": 12,
+        "w": 44,
+        "n": 5,
+        "l": 4
       },
-      "perX": "o→4 a→5 e→11 i→154 n→0(无) r→0(无) h→0(无)",
-      "hard": false
-    },
-    {
-      "mn": "fr",
-      "cnt2": 230,
-      "cnt3": 0,
-      "total": 230,
-      "maxFreq": 0.982332892296305,
-      "srcWords": 1,
-      "xs": {
-        "(短)": 1
-      },
-      "perX": "",
-      "hard": false
-    },
-    {
-      "mn": "cl",
-      "cnt2": 235,
-      "cnt3": 1,
-      "total": 236,
-      "maxFreq": 0.913375,
-      "srcWords": 3,
-      "xs": {
-        "(短)": 1,
-        "i": 1,
-        "a": 1
-      },
-      "perX": "i→1 a→0(无)",
+      "perX": "o→15 e→95 a→47 i→598 r→0(无) u→488 g→0(无) h→0(无) y→0(无) m→0(无) w→0(无) n→0(无) l→0(无)",
       "hard": false
     },
     {
       "mn": "mp",
-      "cnt2": 2,
-      "cnt3": 236,
-      "total": 238,
-      "maxFreq": 0.932875,
-      "srcWords": 57,
+      "cnt2": 1,
+      "cnt3": 1309,
+      "total": 1310,
+      "maxFreq": 0.8842,
+      "srcWords": 171,
       "xs": {
-        "a": 20,
-        "i": 12,
-        "u": 15,
-        "o": 5,
-        "e": 3,
-        "(短)": 1,
-        "s": 1
-      },
-      "perX": "a→18 i→179 u→3 o→0(无) e→35 s→1",
-      "hard": false
-    },
-    {
-      "mn": "fl",
-      "cnt2": 245,
-      "cnt3": 1,
-      "total": 246,
-      "maxFreq": 0.8430704092715992,
-      "srcWords": 3,
-      "xs": {
-        "n": 1,
-        "e": 2
-      },
-      "perX": "n→1 e→0(无)",
-      "hard": false
-    },
-    {
-      "mn": "sc",
-      "cnt2": 275,
-      "cnt3": 4,
-      "total": 279,
-      "maxFreq": 0.9185104245901274,
-      "srcWords": 7,
-      "xs": {
-        "b": 1,
-        "i": 2,
-        "u": 1,
-        "m": 1,
-        "p": 1,
+        "a": 73,
+        "u": 60,
+        "i": 15,
+        "o": 12,
+        "e": 7,
+        "y": 2,
+        "j": 1,
         "r": 1
       },
-      "perX": "b→1 i→0(无) u→0(无) m→1 p→1 r→1",
+      "perX": "a→326 u→18 i→737 o→47 e→181 y→0(无) j→0(无) r→0(无)",
       "hard": false
     },
     {
-      "mn": "br",
-      "cnt2": 309,
+      "mn": "ps",
+      "cnt2": 1213,
+      "cnt3": 134,
+      "total": 1347,
+      "maxFreq": 0.7825,
+      "srcWords": 614,
+      "xs": {
+        "i": 154,
+        "e": 54,
+        "o": 141,
+        "m": 70,
+        "l": 9,
+        "r": 17,
+        "p": 3,
+        "s": 13,
+        "a": 82,
+        "u": 64,
+        "w": 2,
+        "g": 1,
+        "y": 4
+      },
+      "perX": "i→7 e→6 o→39 m→0(无) l→0(无) r→0(无) p→0(无) s→0(无) a→14 u→65 w→0(无) g→1 y→2",
+      "hard": false
+    },
+    {
+      "mn": "cl",
+      "cnt2": 1437,
       "cnt3": 0,
-      "total": 309,
-      "maxFreq": 0.9191393382441272,
+      "total": 1437,
+      "maxFreq": 0.875,
       "srcWords": 1,
       "xs": {
-        "(短)": 1
+        "i": 1
       },
-      "perX": "",
+      "perX": "i→0(无)",
       "hard": false
     },
     {
-      "mn": "cr",
-      "cnt2": 305,
-      "cnt3": 5,
-      "total": 310,
-      "maxFreq": 0.9056387488076858,
-      "srcWords": 6,
+      "mn": "bl",
+      "cnt2": 1392,
+      "cnt3": 52,
+      "total": 1444,
+      "maxFreq": 0.8784,
+      "srcWords": 4,
       "xs": {
-        "(短)": 1,
         "e": 1,
-        "n": 1,
-        "p": 1,
-        "t": 1,
-        "v": 1
+        "a": 3
       },
-      "perX": "e→1 n→1 p→1 t→1 v→1",
+      "perX": "e→0(无) a→52",
       "hard": false
     },
     {
-      "mn": "th",
-      "cnt2": 265,
-      "cnt3": 51,
-      "total": 316,
-      "maxFreq": 0.9996071429965062,
-      "srcWords": 204,
+      "mn": "nc",
+      "cnt2": 3,
+      "cnt3": 1550,
+      "total": 1553,
+      "maxFreq": 0.819,
+      "srcWords": 23,
       "xs": {
-        "y": 5,
-        "a": 35,
-        "r": 28,
-        "i": 28,
-        "o": 27,
-        "d": 5,
-        "e": 19,
-        "u": 19,
-        "n": 19,
-        "l": 5,
-        "p": 1,
-        "h": 1,
-        "f": 2,
-        "w": 3,
-        "g": 3,
-        "m": 2,
-        "x": 1,
-        "(短)": 1
+        "u": 3,
+        "y": 4,
+        "a": 7,
+        "e": 3,
+        "s": 1,
+        "i": 5
       },
-      "perX": "y→0(无) a→15 r→0(无) i→0(无) o→6 d→0(无) e→28 u→0(无) n→1 l→0(无) p→0(无) h→0(无) f→0(无) w→0(无) g→0(无) m→1 x→0(无)",
+      "perX": "u→443 y→0(无) a→98 e→326 s→1 i→682",
+      "hard": false
+    },
+    {
+      "mn": "gr",
+      "cnt2": 1620,
+      "cnt3": 7,
+      "total": 1627,
+      "maxFreq": 0.829,
+      "srcWords": 1,
+      "xs": {
+        "o": 1
+      },
+      "perX": "o→7",
       "hard": false
     },
     {
       "mn": "sh",
-      "cnt2": 319,
-      "cnt3": 11,
-      "total": 330,
-      "maxFreq": 0.9907533646624652,
-      "srcWords": 281,
+      "cnt2": 1635,
+      "cnt3": 98,
+      "total": 1733,
+      "maxFreq": 0.9696,
+      "srcWords": 1102,
       "xs": {
-        "a": 43,
-        "i": 186,
-        "e": 10,
-        "u": 27,
-        "o": 10,
-        "r": 2,
-        "(短)": 1,
-        "l": 2
+        "a": 146,
+        "u": 95,
+        "i": 782,
+        "e": 34,
+        "r": 9,
+        "k": 1,
+        "l": 3,
+        "o": 29,
+        "v": 1,
+        "n": 2
       },
-      "perX": "a→10 i→0(无) e→0(无) u→1 o→0(无) r→0(无) l→0(无)",
+      "perX": "a→81 u→8 i→8 e→1 r→0(无) k→0(无) l→0(无) o→0(无) v→0(无) n→0(无)",
       "hard": false
     },
     {
-      "mn": "sp",
-      "cnt2": 330,
-      "cnt3": 19,
-      "total": 349,
-      "maxFreq": 0.8919707424395441,
-      "srcWords": 13,
+      "mn": "fl",
+      "cnt2": 1758,
+      "cnt3": 3,
+      "total": 1761,
+      "maxFreq": 0.86,
+      "srcWords": 2,
       "xs": {
-        "a": 5,
-        "i": 3,
-        "u": 1,
-        "n": 1,
-        "(短)": 1,
-        "b": 1,
+        "e": 2
+      },
+      "perX": "e→3",
+      "hard": false
+    },
+    {
+      "mn": "pl",
+      "cnt2": 1858,
+      "cnt3": 25,
+      "total": 1883,
+      "maxFreq": 0.9287,
+      "srcWords": 3,
+      "xs": {
+        "u": 3
+      },
+      "perX": "u→25",
+      "hard": false
+    },
+    {
+      "mn": "br",
+      "cnt2": 1975,
+      "cnt3": 0,
+      "total": 1975,
+      "maxFreq": 0.9088,
+      "srcWords": 1,
+      "xs": {
+        "u": 1
+      },
+      "perX": "u→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "cr",
+      "cnt2": 2045,
+      "cnt3": 0,
+      "total": 2045,
+      "maxFreq": 0.8598,
+      "srcWords": 2,
+      "xs": {
+        "d": 1,
         "t": 1
       },
-      "perX": "a→17 i→0(无) u→0(无) n→1 b→0(无) t→1",
+      "perX": "d→0(无) t→0(无)",
       "hard": false
     },
     {
       "mn": "nd",
-      "cnt2": 0,
-      "cnt3": 371,
-      "total": 371,
-      "maxFreq": 0.9984955012656463,
-      "srcWords": 332,
+      "cnt2": 2,
+      "cnt3": 2410,
+      "total": 2412,
+      "maxFreq": 0.9762,
+      "srcWords": 963,
       "xs": {
-        "u": 70,
-        "o": 25,
-        "e": 67,
-        "a": 141,
-        "i": 27,
-        "c": 1,
-        "(短)": 1
+        "a": 424,
+        "u": 226,
+        "i": 90,
+        "o": 83,
+        "e": 136,
+        "n": 1,
+        "y": 3
       },
-      "perX": "u→174 o→0(无) e→44 a→16 i→136 c→1",
+      "perX": "a→192 u→994 i→610 o→12 e→602 n→0(无) y→0(无)",
       "hard": false
     },
     {
-      "mn": "tr",
-      "cnt2": 409,
-      "cnt3": 0,
-      "total": 409,
-      "maxFreq": 0.9348733367821079,
-      "srcWords": 1,
+      "mn": "sc",
+      "cnt2": 2280,
+      "cnt3": 340,
+      "total": 2620,
+      "maxFreq": 0.9082,
+      "srcWords": 15,
       "xs": {
-        "(短)": 1
+        "i": 11,
+        "e": 1,
+        "u": 2,
+        "a": 1
       },
-      "perX": "",
+      "perX": "i→70 e→144 u→1 a→125",
+      "hard": false
+    },
+    {
+      "mn": "th",
+      "cnt2": 2461,
+      "cnt3": 530,
+      "total": 2991,
+      "maxFreq": 0.9772,
+      "srcWords": 739,
+      "xs": {
+        "e": 48,
+        "n": 58,
+        "i": 230,
+        "r": 57,
+        "a": 118,
+        "w": 15,
+        "u": 58,
+        "o": 93,
+        "d": 20,
+        "l": 11,
+        "g": 17,
+        "y": 2,
+        "p": 5,
+        "h": 2,
+        "f": 2,
+        "s": 1,
+        "x": 1,
+        "m": 1
+      },
+      "perX": "e→392 n→0(无) i→5 r→0(无) a→104 w→0(无) u→0(无) o→20 d→0(无) l→0(无) g→0(无) y→0(无) p→0(无) h→0(无) f→0(无) s→9 x→0(无) m→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "sp",
+      "cnt2": 2762,
+      "cnt3": 242,
+      "total": 3004,
+      "maxFreq": 0.8857,
+      "srcWords": 25,
+      "xs": {
+        "u": 4,
+        "a": 14,
+        "i": 4,
+        "o": 1,
+        "e": 2
+      },
+      "perX": "u→0(无) a→167 i→2 o→19 e→54",
+      "hard": false
+    },
+    {
+      "mn": "ph",
+      "cnt2": 3256,
+      "cnt3": 370,
+      "total": 3626,
+      "maxFreq": 0.8772,
+      "srcWords": 865,
+      "xs": {
+        "a": 685,
+        "e": 3,
+        "r": 68,
+        "y": 22,
+        "o": 43,
+        "l": 5,
+        "i": 6,
+        "m": 32,
+        "n": 1
+      },
+      "perX": "a→141 e→63 r→0(无) y→0(无) o→166 l→0(无) i→0(无) m→0(无) n→0(无)",
       "hard": false
     },
     {
       "mn": "nt",
-      "cnt2": 1,
-      "cnt3": 496,
-      "total": 497,
-      "maxFreq": 0.9619651783428332,
-      "srcWords": 997,
+      "cnt2": 0,
+      "cnt3": 4597,
+      "total": 4597,
+      "maxFreq": 0.9452,
+      "srcWords": 3645,
       "xs": {
-        "e": 619,
-        "a": 259,
-        "u": 33,
-        "i": 60,
-        "o": 21,
-        "r": 3,
-        "(短)": 1,
-        "t": 1
+        "e": 2123,
+        "a": 1015,
+        "i": 216,
+        "u": 72,
+        "o": 202,
+        "y": 2,
+        "r": 10,
+        "n": 1,
+        "t": 2,
+        "g": 1,
+        "c": 1
       },
-      "perX": "e→59 a→119 u→35 i→278 o→4 r→0(无) t→1",
-      "hard": false
-    },
-    {
-      "mn": "ch",
-      "cnt2": 434,
-      "cnt3": 73,
-      "total": 507,
-      "maxFreq": 0.972575,
-      "srcWords": 216,
-      "xs": {
-        "a": 30,
-        "r": 24,
-        "u": 18,
-        "n": 41,
-        "t": 51,
-        "e": 10,
-        "l": 7,
-        "s": 2,
-        "o": 10,
-        "(短)": 1,
-        "i": 20,
-        "y": 2
-      },
-      "perX": "a→10 r→0(无) u→0(无) n→0(无) t→1 e→8 l→0(无) s→48 o→3 i→3 y→0(无)",
+      "perX": "e→564 a→1849 i→1983 u→173 o→26 y→0(无) r→0(无) n→0(无) t→0(无) g→1 c→1",
       "hard": false
     },
     {
       "mn": "st",
-      "cnt2": 634,
-      "cnt3": 87,
-      "total": 721,
-      "maxFreq": 0.970525,
-      "srcWords": 600,
+      "cnt2": 3996,
+      "cnt3": 863,
+      "total": 4859,
+      "maxFreq": 0.9406,
+      "srcWords": 3957,
       "xs": {
-        "i": 347,
-        "a": 56,
-        "o": 41,
-        "u": 31,
-        "n": 3,
-        "y": 8,
-        "d": 2,
-        "g": 2,
-        "e": 95,
-        "r": 12,
-        "b": 1,
-        "(短)": 1,
-        "l": 1
+        "i": 1954,
+        "e": 1051,
+        "a": 528,
+        "o": 146,
+        "r": 45,
+        "y": 120,
+        "u": 88,
+        "n": 9,
+        "l": 2,
+        "d": 8,
+        "g": 3,
+        "w": 2,
+        "m": 1
       },
-      "perX": "i→2 a→43 o→13 u→0(无) n→0(无) y→0(无) d→0(无) g→0(无) e→28 r→0(无) b→1 l→0(无)",
+      "perX": "i→21 e→196 a→333 o→302 r→0(无) y→1 u→9 n→0(无) l→1 d→0(无) g→0(无) w→0(无) m→0(无)",
+      "hard": false
+    },
+    {
+      "mn": "tr",
+      "cnt2": 4160,
+      "cnt3": 903,
+      "total": 5063,
+      "maxFreq": 0.9221,
+      "srcWords": 9,
+      "xs": {
+        "s": 2,
+        "t": 5,
+        "i": 1,
+        "o": 1
+      },
+      "perX": "s→899 t→0(无) i→2 o→2",
+      "hard": false
+    },
+    {
+      "mn": "ch",
+      "cnt2": 4473,
+      "cnt3": 935,
+      "total": 5408,
+      "maxFreq": 0.9082,
+      "srcWords": 785,
+      "xs": {
+        "e": 34,
+        "i": 66,
+        "a": 107,
+        "n": 137,
+        "r": 95,
+        "t": 208,
+        "o": 32,
+        "y": 7,
+        "u": 45,
+        "s": 37,
+        "l": 14,
+        "h": 1,
+        "c": 2
+      },
+      "perX": "e→137 i→96 a→176 n→0(无) r→1 t→5 o→38 y→0(无) u→0(无) s→482 l→0(无) h→0(无) c→0(无)",
       "hard": false
     },
     {
       "mn": "pr",
-      "cnt2": 736,
-      "cnt3": 42,
-      "total": 778,
-      "maxFreq": 0.9264787978464954,
+      "cnt2": 5557,
+      "cnt3": 0,
+      "total": 5557,
+      "maxFreq": 0.9065,
       "srcWords": 4,
       "xs": {
-        "a": 1,
-        "(短)": 1,
-        "q": 1,
-        "s": 1
+        "p": 3,
+        "l": 1
       },
-      "perX": "a→5 q→1 s→36",
+      "perX": "p→0(无) l→0(无)",
       "hard": false
     }
   ]
