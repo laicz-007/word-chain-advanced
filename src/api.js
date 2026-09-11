@@ -239,6 +239,24 @@ function handleApi(req, res, pathname) {
     });
     return;
   }
+  /* ---- 1v1 单挑（房间内发起；拒绝不判负）---- */
+  if (pathname === '/api/room/challenge' && req.method === 'POST') {
+    readBody(req, function (body) {
+      var n = roomName(body); if (!n) return;
+      var rr = rooms.challengeRoom(n, body.roomId, String(body.target || ''));
+      if (rr.error) json(res, 400, rr); else json(res, 200, rr);
+    });
+    return;
+  }
+  if (pathname === '/api/room/challenge/respond' && req.method === 'POST') {
+    readBody(req, function (body) {
+      var n = roomName(body); if (!n) return;
+      var rr = rooms.respondChallenge(n, body.roomId, !!body.accept);
+      if (rr.error) json(res, 400, rr); else json(res, 200, rr);
+    });
+    return;
+  }
+
   if (pathname === '/api/room/action' && req.method === 'POST') {
     readBody(req, function (body) {
       var n = roomName(body); if (!n) return;

@@ -478,25 +478,69 @@
       if (force || rs.seq !== roomSeq) { roomSeq = rs.seq; applyRoomState(rs); }
     });
   }
-  function renderRoomPlayers(players, host) {
+  function renderRoomPlayers(players, host, status) {
     var box = $('room-players');
     box.innerHTML = players.map(function (p, i) {
+      // 等待中才能发起单挑；不能单挑自己
+      var canDuel = (status === 'waiting') && p !== myName;
+      var btn = canDuel ? '<button class="btn btn-sm duel-btn" data-target="' + esc(p) + '">单挑</button>' : '';
       return '<div class="room-player' + (p === host ? ' host' : '') + '">' +
         '<span class="badge">' + (p === host ? '房主' : ('P' + (i + 1))) + '</span>' +
-        '<span>' + esc(p) + (p === myName ? '（我）' : '') + '</span></div>';
+        '<span>' + esc(p) + (p === myName ? '（我）' : '') + '</span>' + btn + '</div>';
     }).join('');
+    Array.prototype.forEach.call(box.querySelectorAll('.duel-btn'), function (b) {
+      b.addEventListener('click', function () { onChallenge(b.getAttribute('data-target')); });
+    });
+  }
+
+  /* ---- 1v1 单挑 ---- */
+  function onChallenge(target) {
+    if (!target) return;
+    onlineMsg('已发起单挑，等待对方回应…');
+    api('/api/room/challenge', { roomId: roomId, target: target }).then(function (res) {
+      if (res.error) { onlineMsg('✗ ' + res.error); return; }
+      pollRoom(true);
+    }).catch(function () { onlineMsg('✗ 网络错误'); });
+  }
+  function respondChallenge(accept) {
+    api('/api/room/challenge/respond', { roomId: roomId, accept: !!accept }).then(function (res) {
+      if (res.error) { onlineMsg('✗ ' + res.error); return; }
+      pollRoom(true);
+    }).catch(function () { onlineMsg('✗ 网络错误'); });
+  }
+  function renderDuelPrompt(rs) {
+    var box = $('duel-prompt');
+    if (!box) return;
+    var c = rs.challenge;
+    if (c && c.to === rs.me) {
+      box.classList.remove('hidden');
+      box.innerHTML = '<span><b>' + esc(c.from) + '</b> 向你发起单挑</span>' +
+        '<button id="duel-accept" class="btn btn-primary btn-sm">接受</button>' +
+        '<button id="duel-decline" class="btn btn-sm">拒绝</button>';
+      $('duel-accept').addEventListener('click', function () { respondChallenge(true); });
+      $('duel-decline').addEventListener('click', function () { respondChallenge(false); });
+    } else if (c && c.from === rs.me) {
+      box.classList.remove('hidden');
+      box.innerHTML = '<span>已向 <b>' + esc(c.to) + '</b> 发起单挑，等待回应…（60 秒内有效）</span>' +
+        '<button id="duel-cancel" class="btn btn-sm">撤回</button>';
+      $('duel-cancel').addEventListener('click', function () { respondChallenge(false); });
+    } else {
+      box.classList.add('hidden');
+      box.innerHTML = '';
+    }
   }
   function applyRoomState(rs) {
     roomIsHost = rs.isHost; roomStatus = rs.status; myName = rs.me;
     $('room-id').textContent = rs.roomId;
-    renderRoomPlayers(rs.players, rs.host);
+    renderRoomPlayers(rs.players, rs.host, rs.status);
+    renderDuelPrompt(rs);
     if (rs.notice) $('room-notice').textContent = rs.notice;
     // 大厅按钮：房主=开始对战/解散房间；其他人=离开房间
     $('room-start-btn').classList.toggle('hidden', !(rs.isHost && rs.status === 'waiting'));
     $('room-start-btn').disabled = !(rs.isHost && rs.status === 'waiting' && rs.players.length >= 2);
     $('room-dissolve-btn').classList.toggle('hidden', !rs.isHost);
     $('room-leave-btn').classList.toggle('hidden', rs.isHost);
-    if (rs.status === 'playing' && rs.game) {
+    if ((rs.status === 'playing' || rs.status === 'duel') && rs.game) {
       state = rs.game; myTurn = !!rs.myTurn;
       turnDeadline = rs.turnDeadline || null;
       // 用"剩余毫秒数"校准本地倒计时基准，避免服务器/浏览器时钟偏差导致跳变

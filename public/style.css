@@ -440,6 +440,13 @@ input, select { font-size: 16px; }
 .item-btn[disabled] { opacity: .45; cursor: not-allowed; }
 /* 反转卡生效提示 */
 .rev-badge { margin-left: 6px; padding: 1px 8px; border-radius: 9px; background: #dbeafe; color: #1d4ed8; font-size: 12px; }
+/* 1v1 单挑：邀请提示 + 玩家列表里的单挑按钮 */
+.duel-prompt {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin: 8px 0 0; padding: 10px 12px;
+  border: 1px solid #bfdbfe; border-radius: 10px; background: #eff6ff; font-size: 13.5px;
+}
+.room-player .duel-btn { margin-left: 6px; padding: 2px 10px; font-size: 12px; }
 .proper-badge {
   display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 9px;
   background: #fff3cd; color: #92400e; font-size: 11px; vertical-align: middle;

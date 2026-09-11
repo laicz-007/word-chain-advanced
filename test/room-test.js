@@ -108,6 +108,61 @@ async function reg(name) {
   await post('/api/room/dissolve', { token: E.token, roomId: crT.roomId });
   delete process.env.TURN_TIMEOUT_MS;
 
+  /* ---- 1v1 单挑（房间内发起；按用户要求：拒绝不判负）---- */
+  var cD = await post('/api/room/create', { token: A.token });
+  var did = cD.roomId;
+  await post('/api/room/join', { token: B.token, roomId: did });
+  await post('/api/room/join', { token: C.token, roomId: did });
+
+  check('单挑: 未登录发起被拒', !!(await post('/api/room/challenge', { roomId: did, target: B.name })).error);
+  check('单挑: 不能向自己发起', !!(await post('/api/room/challenge', { token: A.token, roomId: did, target: A.name })).error);
+  check('单挑: 不能向不在房的人发起', !!(await post('/api/room/challenge', { token: A.token, roomId: did, target: 'nobody_x' })).error);
+  var ch = await post('/api/room/challenge', { token: A.token, roomId: did, target: B.name });
+  check('单挑: 发起成功', ch.ok === true && ch.challenge.from === A.name && ch.challenge.to === B.name);
+  check('单挑: 同时只能有一个待应答邀请',
+    !!(await post('/api/room/challenge', { token: C.token, roomId: did, target: B.name })).error);
+  var sCh = await get('/api/room/state?token=' + encodeURIComponent(B.token) + '&roomId=' + did);
+  check('单挑: 房间状态暴露邀请给被邀请人', sCh.challenge && sCh.challenge.to === B.name);
+  check('单挑: 非当事人不能应答', !!(await post('/api/room/challenge/respond', { token: C.token, roomId: did, accept: true })).error);
+
+  // 关键：拒绝不判负
+  var ptsABefore = (await get('/api/me?token=' + encodeURIComponent(A.token))).points;
+  var dec = await post('/api/room/challenge/respond', { token: B.token, roomId: did, accept: false });
+  check('单挑: 拒绝成功且无任何惩罚', dec.ok === true && dec.accepted === false);
+  var sDec = await get('/api/room/state?token=' + encodeURIComponent(A.token) + '&roomId=' + did);
+  check('单挑: 拒绝后房间回到等待、无结果记录', sDec.status === 'waiting' && !sDec.lastDuel && !sDec.challenge);
+  check('单挑: 拒绝后发起者积分不变（未判负）',
+    (await get('/api/me?token=' + encodeURIComponent(A.token))).points === ptsABefore);
+
+  // 接受 → 进入单挑
+  await post('/api/room/challenge', { token: A.token, roomId: did, target: B.name });
+  var acc = await post('/api/room/challenge/respond', { token: B.token, roomId: did, accept: true });
+  check('单挑: 接受后进入 duel 状态', acc.ok === true && acc.accepted === true);
+  var sDuel = await get('/api/room/state?token=' + encodeURIComponent(A.token) + '&roomId=' + did);
+  check('单挑: 状态为 duel 且对局含两位单挑者',
+    sDuel.status === 'duel' && sDuel.game && sDuel.game.players.length === 2 &&
+    sDuel.duel.players.indexOf(A.name) >= 0 && sDuel.duel.players.indexOf(B.name) >= 0);
+  check('单挑: 发起者先手（轮到 A 给开局词）', sDuel.myTurn === true || sDuel.game.players[sDuel.game.turn].name === A.name);
+  check('单挑: 旁观者不能出词',
+    !!(await post('/api/room/action', { token: C.token, roomId: did, kind: 'start', word: 'cat' })).error);
+
+  // 打完：B 认输 → A 获胜，单人局结束
+  var ptsABefore2 = (await get('/api/me?token=' + encodeURIComponent(A.token))).points;
+  await post('/api/room/action', { token: A.token, roomId: did, kind: 'start', word: 'apple' });
+  var endRes = await post('/api/room/action', { token: B.token, roomId: did, kind: 'concede' });
+  check('单挑: 认输即结束本场', endRes.ok === true && endRes.duelEnded === true);
+  var sEnd = await get('/api/room/state?token=' + encodeURIComponent(A.token) + '&roomId=' + did);
+  check('单挑: 结束后回到等待并记录结果',
+    sEnd.status === 'waiting' && sEnd.lastDuel && sEnd.lastDuel.winner === A.name && sEnd.lastDuel.loser === B.name);
+  check('单挑: 胜者获得积分（已结算到账户）',
+    (await get('/api/me?token=' + encodeURIComponent(A.token))).points > ptsABefore2);
+  check('单挑: 结束后可再次发起', (await post('/api/room/challenge', { token: C.token, roomId: did, target: A.name })).ok === true);
+  await post('/api/room/challenge/respond', { token: A.token, roomId: did, accept: false });
+  // 注意：必须解散这个单挑房间，否则后面的 "room/mine 为 null" 检查会因 A 仍在房间而失败
+  await post('/api/room/dissolve', { token: A.token, roomId: did });
+  check('单挑: 解散房间后成员都不再属于任何房间',
+    (await get('/api/room/mine?token=' + encodeURIComponent(A.token))).roomId === null);
+
   /* ---- room/mine ---- */
   check('离开后 room/mine 为 null', (await get('/api/room/mine?token=' + encodeURIComponent(A.token))).roomId === null);
 

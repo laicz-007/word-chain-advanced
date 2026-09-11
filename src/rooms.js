@@ -41,15 +41,98 @@ function armTurnTimer(r) {
 }
 
 function onTurnTimeout(r) {
-  if (r.status !== 'playing' || !r.game || !r.game.roundActive) return;
+  if ((r.status !== 'playing' && r.status !== 'duel') || !r.game || !r.game.roundActive) return;
   if (Date.now() < (r.turnDeadline || 0)) return;   // 回合已变，作废
   var cur = r.game.players[r.game.turn];
   if (!cur || cur.type !== 'human') return;
-  r.game.concede('超时 ' + Math.round(turnTimeoutMs() / 1000) + ' 秒未出词，自动认输');
+  var why = '超时 ' + Math.round(turnTimeoutMs() / 1000) + ' 秒未出词，自动认输';
+  r.game.concede(why);
+  if (r.status === 'duel') { finishDuel(r, cur.name, why, true); return; }  // 单挑超时即结束本场
   r.game.newRound();
   r.notice = cur.name + ' 超时未出词，自动认输';
   r.updatedAt = Date.now();
   armTurnTimer(r);   // 新一轮继续计时
+}
+
+// 单挑邀请有效期（过期自动作废，避免"邀请挂着不动"把房间卡死）
+function challengeTtlMs() { return Number(process.env.CHALLENGE_TTL_MS || 60000); }
+var CHALLENGE_TTL_MS = challengeTtlMs();
+
+/* ---- 1v1 单挑（房间内发起）----
+ * 流程：房间成员 A 向 B 发起单挑 → B 选择接受/拒绝。
+ * 按用户要求：**拒绝不判负**（拒绝只是不打，双方无任何惩罚）。
+ * 接受后房间进入 'duel' 状态，A 与 B 进行一场 1v1；其余成员等待（可旁观）。
+ * 单挑在"有人认输 / 超时未出词 / 单挑者离开"时结束，房间回到 'waiting'。
+ */
+
+// 结束单挑：回到房间等待状态并记录结果。
+// alreadyScored=true 表示引擎侧已经计过分（例如认输路径里 gameplay.doAction 已 concede）
+function finishDuel(r, loserName, reason, alreadyScored) {
+  var d = r.duel, g = r.game;
+  if (!d || !g) return;
+  var winner = g.players.filter(function (p) { return p.name !== loserName; })[0];
+  if (!alreadyScored && g.roundActive) g.concede(reason);   // 让引擎给胜者记分
+  points.credit(g);                                        // 结算积分到各自账户（幂等）
+  var winName = winner ? winner.name : '?';
+  r.lastDuel = { winner: winName, loser: loserName, reason: reason, at: Date.now() };
+  r.notice = '单挑结束：' + winName + ' 获胜（' + loserName + ' ' + reason + '）';
+  r.game = null;
+  r.duel = null;
+  r.status = 'waiting';
+  clearTurnTimer(r);
+  r.updatedAt = Date.now();
+}
+
+function challengeRoom(username, roomId, target) {
+  var r = rooms[roomId];
+  if (!r) return { error: '房间不存在' };
+  if (r.players.indexOf(username) < 0) return { error: '你不在该房间中' };
+  if (r.status !== 'waiting') return { error: '房间正在对局中，无法发起单挑' };
+  if (!target) return { error: '请选择单挑对象' };
+  if (target === username) return { error: '不能向自己发起单挑' };
+  if (r.players.indexOf(target) < 0) return { error: '对方不在该房间中' };
+  if (r.challenge && Date.now() - r.challenge.at > CHALLENGE_TTL_MS) r.challenge = null;  // 邀请过期作废，避免永久卡住
+  if (r.challenge) return { error: '已有一个待应答的单挑，请等待对方回应' };
+  r.challenge = { from: username, to: target, at: Date.now() };
+  r.notice = username + ' 向 ' + target + ' 发起了单挑';
+  r.updatedAt = Date.now();
+  return { ok: true, challenge: r.challenge };
+}
+
+function respondChallenge(username, roomId, accept) {
+  var r = rooms[roomId];
+  if (!r) return { error: '房间不存在' };
+  var c = r.challenge;
+  if (!c) return { error: '没有待应答的单挑' };
+  if (c.to !== username && c.from !== username) return { error: '这个单挑与你无关' };
+  // 发起者可以撤回自己的邀请
+  if (c.from === username && !accept) {
+    r.challenge = null;
+    r.notice = username + ' 撤回了单挑邀请';
+    r.updatedAt = Date.now();
+    return { ok: true, accepted: false, cancelled: true };
+  }
+  if (c.to !== username) return { error: '这个单挑不是向你发起的' };
+  r.challenge = null;
+  if (r.status !== 'waiting') { r.notice = '房间状态已变化，单挑已作废'; r.updatedAt = Date.now(); return { ok: true, accepted: false, cancelled: true }; }
+  if (!accept) {
+    // 用户明确要求：拒绝不判负 —— 只是不打，没有任何惩罚
+    r.notice = username + ' 拒绝了 ' + c.from + ' 的单挑';
+    r.updatedAt = Date.now();
+    return { ok: true, accepted: false };
+  }
+  if (r.players.indexOf(c.from) < 0) {
+    r.notice = '发起者已离开，单挑取消';
+    r.updatedAt = Date.now();
+    return { ok: true, accepted: false, cancelled: true };
+  }
+  r.game = gameplay.createGame([{ name: c.from, type: 'human' }, { name: username, type: 'human' }]);
+  r.duel = { players: [c.from, username], at: Date.now() };
+  r.status = 'duel';
+  r.notice = '单挑开始：' + c.from + ' vs ' + username;
+  r.updatedAt = Date.now();
+  armTurnTimer(r);
+  return { ok: true, accepted: true };
 }
 
 function createRoom(username) {
@@ -77,32 +160,34 @@ function joinRoom(username, roomId) {
   return { ok: true, roomId: roomId };
 }
 
+// 把成员移出房间，并处理房主转移 / 空房解散 / 作废与自己相关的待应答单挑
+function removeFromRoom(r, roomId, username, i, notice) {
+  r.players.splice(i, 1);
+  if (userRoom[username] === roomId) delete userRoom[username];
+  r.notice = username + ' ' + notice;
+  if (r.challenge && (r.challenge.from === username || r.challenge.to === username)) r.challenge = null;
+  if (r.players.length === 0) { delete rooms[roomId]; return { ok: true, dissolved: true }; }
+  if (username === r.host) { r.host = r.players[0]; r.notice += '；' + r.host + ' 成为新房主'; }
+  r.status = r.game ? r.status : 'waiting';   // 还有对局在跑就保持原状态，否则回等待
+  r.updatedAt = Date.now();
+  return { ok: true };
+}
+
 function leaveRoom(username, roomId) {
   var r = rooms[roomId];
   if (!r) return { ok: true };
   var i = r.players.indexOf(username);
   if (i < 0) return { ok: true };
-  if (r.status === 'playing') {
-    // 对局中有人离开 → 本局终止，回大厅；离开者被移出
-    clearTurnTimer(r);
-    r.players.splice(i, 1);
-    if (userRoom[username] === roomId) delete userRoom[username];
-    r.status = 'waiting';
-    r.game = null;
-    r.notice = username + ' 离开，对局已终止';
-    if (r.players.length === 0) { delete rooms[roomId]; return { ok: true, dissolved: true }; }
-    if (username === r.host) { r.host = r.players[0]; r.notice += '；' + r.host + ' 成为新房主'; }
-    r.updatedAt = Date.now();
-    return { ok: true };
-  }
-  // 等待中：直接移出
-  r.players.splice(i, 1);
-  if (userRoom[username] === roomId) delete userRoom[username];
-  r.notice = username + ' 离开了房间';
-  if (r.players.length === 0) { delete rooms[roomId]; return { ok: true, dissolved: true }; }
-  if (username === r.host) { r.host = r.players[0]; r.notice += '；' + r.host + ' 成为新房主'; }
-  r.updatedAt = Date.now();
-  return { ok: true };
+
+  var inGame = (r.status === 'playing' || r.status === 'duel');
+  if (!inGame) return removeFromRoom(r, roomId, username, i, '离开了房间');
+
+  // 单挑进行中：旁观者离开不影响单挑；单挑者离开 → 对手获胜
+  var isDuelist = !!(r.duel && r.duel.players.indexOf(username) >= 0);
+  if (r.status === 'duel' && !isDuelist) return removeFromRoom(r, roomId, username, i, '离开了房间（单挑继续）');
+  if (r.status === 'duel') finishDuel(r, username, '离开房间', false);
+  else { clearTurnTimer(r); r.game = null; }
+  return removeFromRoom(r, roomId, username, i, '离开，对局已终止');
 }
 
 function startRoom(username, roomId) {
@@ -124,6 +209,14 @@ function terminateRoom(username, roomId) {
   var r = rooms[roomId];
   if (!r) return { error: '房间不存在' };
   if (r.host !== username) return { error: '只有房主能终止对局' };
+  if (r.status === 'duel') {
+    // 房主终止单挑（无胜负判定，直接取消）
+    clearTurnTimer(r);
+    r.game = null; r.duel = null; r.status = 'waiting';
+    r.notice = '房主终止了单挑，可重新开始';
+    r.updatedAt = Date.now();
+    return { ok: true };
+  }
   if (r.status !== 'playing') return { error: '当前没有进行中的对局' };
   clearTurnTimer(r);
   r.status = 'waiting';
@@ -137,7 +230,7 @@ function terminateRoom(username, roomId) {
 function roomAction(username, roomId, kind, word, confirmed, itemKind) {
   var r = rooms[roomId];
   if (!r) return { error: '房间不存在' };
-  if (r.status !== 'playing' || !r.game) return { error: '对局未在进行' };
+  if ((r.status !== 'playing' && r.status !== 'duel') || !r.game) return { error: '对局未在进行' };
   var g = r.game;
   var cur = g.players[g.turn];
   if (!cur || cur.name !== username) return { error: '还没轮到你出词' };
@@ -145,6 +238,11 @@ function roomAction(username, roomId, kind, word, confirmed, itemKind) {
   if (out.error) return { error: out.error };
   points.credit(g);   // 联机房间：玩家名就是用户名 → 各自结算到自己的账户（幂等）
   r.updatedAt = Date.now();
+  // 单挑：出现"认输"即结束本场（引擎在 doAction 内已 concede 给胜者记分，故 alreadyScored=true）
+  if (r.status === 'duel' && kind === 'concede') {
+    finishDuel(r, username, '认输', true);
+    return { ok: true, duelEnded: true, notice: r.notice };
+  }
   armTurnTimer(r);   // 轮到下一位，重新计时
   return { ok: true, pending: out.pending || null };
 }
@@ -178,7 +276,11 @@ function roomState(username, roomId) {
   var ud = userdata.loadUserData(username);
   out.myPoints = ud.points || 0;
   out.myItems = ud.items || {};
-  if (r.status === 'playing' && r.game) {
+  // 单挑相关信息（供前端渲染"邀请/接受/拒绝"与倒计时）
+  out.challenge = r.challenge || null;
+  out.duel = r.duel || null;
+  out.lastDuel = r.lastDuel || null;
+  if ((r.status === 'playing' || r.status === 'duel') && r.game) {
     out.game = view.snapshot(r.game, r.id, '', null, false);
     out.myTurn = !!(out.game.players[out.game.turn] && out.game.players[out.game.turn].name === username);
     out.turnDeadline = r.turnDeadline || null;
@@ -197,6 +299,9 @@ module.exports = {
   terminateRoom: terminateRoom,
   dissolveRoom: dissolveRoom,
   roomAction: roomAction,
+  challengeRoom: challengeRoom,
+  respondChallenge: respondChallenge,
+  finishDuel: finishDuel,
   getUserRoom: getUserRoom,
   roomState: roomState
 };
