@@ -408,5 +408,53 @@ t('AI 可信度: 专业术语(conf=0.3) 显著劣于精讲词(conf=0.9)', functi
   assert.ok(wins >= 45, '精讲词应稳定胜出, 实际 ' + wins + '/60');
 });
 
+/* ---- 积分系统（正反馈）---- */
+t('积分: 每成功出词 +perWord', function () {
+  var g = new R.Game(store, [{ name: '甲', type: 'human' }]);
+  assert.strictEqual(g.players[0].points, 0, '初始为 0');
+  g.submitStart('apple');
+  assert.strictEqual(g.players[0].points, R.POINTS.perWord, '开局出词应加分');
+  g.submitChain('lemon');
+  assert.strictEqual(g.players[0].points, R.POINTS.perWord * 2, '接龙出词应加分');
+});
+
+t('积分: 被拒绝的出词不加分', function () {
+  var g = new R.Game(store, [{ name: '甲', type: 'human' }]);
+  g.submitStart('apple');
+  var before = g.players[0].points;
+  var r = g.submitChain('monkey');            // 与 apple 不匹配
+  assert.strictEqual(r.ok, false);
+  assert.strictEqual(g.players[0].points, before, '失败出词不应加分');
+});
+
+t('积分: 赢一轮获得 winRound，认输方不得分', function () {
+  var g = new R.Game(store, [{ name: '甲', type: 'human' }, { name: '乙', type: 'human' }]);
+  g.submitStart('apple');                     // 甲 出词 +1
+  assert.strictEqual(g.players[0].points, R.POINTS.perWord);
+  g.concede('乙认输');                         // 轮到乙(1)，上一个出词的是甲(0) → 甲赢
+  assert.strictEqual(g.players[0].score, 1, '甲得分');
+  assert.strictEqual(g.players[0].points, R.POINTS.perWord + R.POINTS.winRound, '甲应+winRound');
+  assert.strictEqual(g.players[1].points, 0, '认输方不得分');
+});
+
+t('积分: 长接龙额外奖励（pointsForWin）', function () {
+  assert.strictEqual(R.pointsForWin(0), R.POINTS.winRound, '短接龙只有基础分');
+  assert.strictEqual(R.pointsForWin(R.POINTS.longChainFrom), R.POINTS.winRound, '刚好达到阈值不加成');
+  assert.strictEqual(R.pointsForWin(R.POINTS.longChainFrom + 5),
+    R.POINTS.winRound + 5 * R.POINTS.longChainBonus, '超出部分按 bonus 累加');
+});
+
+t('积分: 重复认输不会重复计分（防刷分）', function () {
+  var g = new R.Game(store, [{ name: '甲', type: 'human' }, { name: '乙', type: 'human' }]);
+  g.submitStart('apple');
+  g.concede('乙认输');                          // 甲 赢本轮
+  var pts = g.players[0].points, sc = g.players[0].score;
+  assert.strictEqual(sc, 1, '甲得 1 分');
+  var dup = g.concede('再次认输');               // 本轮已结束
+  assert.strictEqual(dup.alreadyEnded, true, '应识别为"本轮已结束"');
+  assert.strictEqual(g.players[0].points, pts, '重复认输不应再加积分');
+  assert.strictEqual(g.players[0].score, sc, '重复认输不应再加分数');
+});
+
 console.log('\n结果: ' + pass + ' 通过, ' + fail + ' 失败');
 process.exit(fail ? 1 : 0);

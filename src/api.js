@@ -11,6 +11,7 @@ var db = require('./db');
 var auth = require('./auth');
 var userdata = require('./userdata');
 var usage = require('./usage');
+var points = require('./points');
 var view = require('./view');
 var gameplay = require('./gameplay');
 var rooms = require('./rooms');
@@ -67,7 +68,9 @@ function handleApi(req, res, pathname) {
       var out = gameplay.doAction(game, body.kind, body.word, body.confirmed);
       if (out.error) { json(res, 400, { error: out.error }); return; }
       usage.recordUsage(game, preLen); // 把本回合新用的词计入持久化防疲劳
+      points.credit(game);             // 把本局累积的积分结算到账户（幂等：只结算未结算的增量）
       var snap = view.snapshot(game, body.sessionId, out.lastAI, out.pending, out.aiConceded);
+      if (game.user) snap.accountPoints = userdata.loadUserData(game.user).points;
       if (out.lastAI && !out.pending) { setTimeout(function () { json(res, 200, snap); }, 540); } // AI 假装思考
       else json(res, 200, snap);
     });
@@ -155,7 +158,7 @@ function handleApi(req, res, pathname) {
     var mname = auth.verifyToken(mq.token);
     if (!mname || !auth.hasUser(mname)) { json(res, 401, { error: '未登录或登录已过期' }); return; }
     var md = userdata.loadUserData(mname);
-    json(res, 200, { ok: true, username: mname, games: md.games, best: md.best, seen: md.seen, profile: view.profileSummary(userdata.accountProfile(mname)) });
+    json(res, 200, { ok: true, username: mname, games: md.games, best: md.best, seen: md.seen, points: md.points, items: md.items, profile: view.profileSummary(userdata.accountProfile(mname)) });
     return;
   }
 

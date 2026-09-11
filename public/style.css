@@ -417,6 +417,9 @@ input, select { font-size: 16px; }
   font-size: 11.5px; color: var(--muted);
 }
 .player-card .proper-quota.used-up { color: #b45309; font-weight: 600; }
+/* 积分（正反馈）：账号栏高亮 + 记分板本局积分 */
+.account-bar .pts { color: #b45309; }
+.player-card .game-points { margin-top: 3px; font-size: 11.5px; font-weight: 600; color: #15803d; }
 .proper-badge {
   display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 9px;
   background: #fff3cd; color: #92400e; font-size: 11px; vertical-align: middle;

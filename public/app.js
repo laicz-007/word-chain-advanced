@@ -64,7 +64,14 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(b)
-    }).then(function (r) { return r.json().then(function (j) { j._http = r.status; return j; }); });
+    }).then(function (r) {
+      return r.json().then(function (j) {
+        j._http = r.status;
+        // 服务端在每次动作后回传账户最新积分 → 实时刷新（只此一处，覆盖所有动作入口）
+        if (j && j.accountPoints != null && account) { account.points = j.accountPoints; renderAccountBar(); }
+        return j;
+      });
+    });
   }
 
   // 快速查词(供乐观显示"我出的词"释义, 不参与AI思考)
@@ -169,7 +176,13 @@
     if (authToken && !account) { $('account-bar').classList.add('hidden'); return; }  // 账户信息加载中
     var logged = loggedIn();
     $('account-bar').classList.remove('hidden');
-    $('account-bar-text').textContent = logged ? ('已登录：' + account.username) : '游客身份（数据仅存本浏览器）';
+    if (logged) {
+      // 用 innerHTML 以便高亮积分；用户名必须转义（esc）
+      $('account-bar-text').innerHTML = '已登录：' + esc(account.username) +
+        '　<b class="pts">积分 ' + ((account && account.points) || 0) + '</b>';
+    } else {
+      $('account-bar-text').textContent = '游客身份（数据仅存本浏览器）';
+    }
     $('account-bar-action').textContent = logged ? '退出' : '登录';
     $('account-bar-pw').classList.toggle('hidden', !logged);   // 只有登录用户才显示"修改密码"
   }
@@ -282,7 +295,7 @@
       .then(function (r) { return r.json(); })
       .then(function (res) {
         if (res.ok && res.username) {
-          account = { username: res.username, games: res.games || [], best: res.best || 0, seen: res.seen || [], profile: res.profile || null };
+          account = { username: res.username, games: res.games || [], best: res.best || 0, seen: res.seen || [], points: res.points || 0, items: res.items || {}, profile: res.profile || null };
           applyAccountLocal();
         } else { account = null; setAuthToken(''); }
         return account;
@@ -945,6 +958,14 @@
       if (trackingMe() && i === myLocalIdx) { var mt = document.createElement('em'); mt.className = 'me-tag'; mt.textContent = '我'; card.appendChild(mt); }
       var sc = document.createElement('div'); sc.className = 'score'; sc.textContent = p.score; card.appendChild(sc);
       var sl = document.createElement('div'); sl.className = 'score-label'; sl.textContent = '得分'; card.appendChild(sl);
+      // 本局赚取的积分（正反馈）
+      if (p.points) {
+        var gp = document.createElement('div');
+        gp.className = 'game-points';
+        gp.textContent = '+' + p.points;
+        gp.title = '本局已赚取 ' + p.points + ' 积分';
+        card.appendChild(gp);
+      }
       // 专名额度（人名/地名/姓氏）：每局限用 N 个，用完变红
       if (p.properUsed != null && state.properQuota) {
         var pq = document.createElement('div');

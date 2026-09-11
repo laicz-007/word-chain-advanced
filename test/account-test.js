@@ -80,6 +80,34 @@ function get(p) { return fetch(BASE + p).then(function (r) { return r.json(); })
   var newPwLogin = await post('/api/login', { username: uname, password: 'newpass99' });
   check('改密后新密码可登录', newPwLogin.ok && !!newPwLogin.token);
 
+  /* ---- 积分系统 ---- */
+  var ptsName = 'test_p' + String(Date.now()).slice(-8);   // 注意用户名上限 20 字符
+  var preg = await post('/api/register', { username: ptsName, password: 'pass1234' });
+  check('积分: 测试账户注册成功', preg.ok === true && !!preg.token);
+  var ptoken = preg.token;
+  var pme0 = await get('/api/me?token=' + encodeURIComponent(ptoken));
+  check('积分: 新账户 0 分且道具库存为空', pme0.points === 0 && pme0.items && Object.keys(pme0.items).length === 0);
+
+  var pst = await post('/api/start', { token: ptoken, playerArray: [{ name: 'a', type: 'human' }, { name: 'AI', type: 'ai' }] });
+  var pact = await post('/api/action', { sessionId: pst.sessionId, kind: 'start', word: 'apple' });
+  check('积分: 动作响应回传账户积分', pact.accountPoints === srv.POINTS.perWord);
+  check('积分: 快照含各方本局积分', Array.isArray(pact.players) && pact.players[0].points >= srv.POINTS.perWord);
+  var pme1 = await get('/api/me?token=' + encodeURIComponent(ptoken));
+  check('积分: 已持久化到账户', pme1.points === srv.POINTS.perWord);
+
+  // 结算幂等性：同一局反复结算只写一次增量（否则积分会翻倍膨胀）
+  var pg = srv.createGame([{ name: 'p', type: 'human' }, { name: 'AI', type: 'ai' }]);
+  pg.user = ptsName;
+  pg.submitStart('apple');
+  check('积分结算: 首次结算写入增量', srv.points.credit(pg) === srv.POINTS.perWord);
+  check('积分结算: 重复调用不重复加分', srv.points.credit(pg) === 0);
+  check('积分结算: 账户积分正确累加', srv.loadUserData(ptsName).points === srv.POINTS.perWord * 2);
+
+  // 游客/未登录对局不产生任何积分写入
+  var gg = srv.createGame([{ name: '游客甲', type: 'human' }, { name: 'AI', type: 'ai' }]);
+  gg.submitStart('apple');
+  check('积分结算: 游客对局不写账户', srv.points.credit(gg) === 0);
+
   // 清理测试账户
   try {
     var usersFile = path.join(__dirname, '..', 'data', 'users.json');
@@ -87,7 +115,12 @@ function get(p) { return fetch(BASE + p).then(function (r) { return r.json(); })
     Object.keys(users).forEach(function (u) { if (u.indexOf('test_') === 0) delete users[u]; });
     fs.writeFileSync(usersFile, JSON.stringify(users));
   } catch (e) {}
-  try { fs.unlinkSync(path.join(__dirname, '..', 'data', 'sync', uname + '.json')); } catch (e) {}
+  try {
+    var syncDir = path.join(__dirname, '..', 'data', 'sync');
+    fs.readdirSync(syncDir).forEach(function (f) {
+      if (f.indexOf('test_') === 0) { try { fs.unlinkSync(path.join(syncDir, f)); } catch (e) {} }
+    });
+  } catch (e) {}
 
   console.log('\n结果: ' + pass + ' 通过, ' + fail + ' 失败');
   process.exit(fail ? 1 : 0);

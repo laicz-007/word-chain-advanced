@@ -129,6 +129,25 @@
     return null;
   }
 
+  /* ---- 积分系统（正反馈）----
+   * 规则常量集中在此，便于调整数值而不动逻辑。
+   * 计分口径：每成功出 1 个词 +perWord；赢一轮（对手认输/无词可接）+winRound；
+   *           单轮接龙长度达到 longChainFrom 后，每多 1 词再 +longChainBonus（给该轮赢家）。
+   * 只加分不扣分 —— 目的是正反馈，不做惩罚性设计。
+   */
+  var POINTS = {
+    perWord: 1,
+    winRound: 10,
+    longChainFrom: 10,
+    longChainBonus: 1
+  };
+
+  function pointsForWin(chainLen) {
+    var extra = 0;
+    if (chainLen > POINTS.longChainFrom) extra = (chainLen - POINTS.longChainFrom) * POINTS.longChainBonus;
+    return POINTS.winRound + extra;
+  }
+
   /* ---- 词库存储器 ---- */
   function WordStore(vocab) {
     this.byWord = Object.create(null);   // 空原型：避免 "constructor"/"__proto__" 等词撞上继承属性
@@ -379,6 +398,7 @@
         name: p.name,
         type: p.type,
         score: 0,
+        points: 0,     // 本局累积的积分（由服务端结算到账户）
         properUsed: 0, // 本局已使用的专名(人名/地名/姓氏)个数，跨轮不重置
         recent: [] // {w, d} 最近5个词库词 (供AI匹配难度)
       };
@@ -418,6 +438,13 @@
     return this.players.map(function (p) {
       var used = p.properUsed || 0;
       return { name: p.name, used: used, left: Math.max(0, PROPER_QUOTA - used), quota: PROPER_QUOTA };
+    });
+  };
+
+  // 本局各方累积的积分（供前端展示；账户结算由服务端负责）
+  Game.prototype.pointsInfo = function () {
+    return this.players.map(function (p) {
+      return { name: p.name, points: p.points || 0 };
     });
   };
 
@@ -489,6 +516,7 @@
     this.lastWordOwner = this.turn;
     this.pushRecent(this.turn, w);
     if (isProper) pl.properUsed = (pl.properUsed || 0) + 1;
+    pl.points = (pl.points || 0) + POINTS.perWord;
 
     this.chain.push(this.addLog({
       kind: 'start',
@@ -546,6 +574,7 @@
     this.lastWordOwner = this.turn;
     this.pushRecent(this.turn, w);
     if (isProper) pl.properUsed = (pl.properUsed || 0) + 1;
+    pl.points = (pl.points || 0) + POINTS.perWord;
 
     this.chain.push(this.addLog({
       kind: 'chain',
@@ -567,12 +596,19 @@
 
   // 认输 / AI 无词可接。返回本轮得分与新的 starter。
   Game.prototype.concede = function (reason) {
+    // 守卫：本轮已结束时重复认输不再计分（否则重复调用会重复给赢家加分=可刷分）
+    if (this.roundActive === false) {
+      return { player: this.currentPlayer().name, scorer: null, alreadyEnded: true };
+    }
     var loser = this.currentPlayer();
     // 上一个成功出词的人得分
     var scorer = this.lastWordOwner >= 0 ? this.lastWordOwner : -1;
 
     if (scorer >= 0 && scorer !== this.turn) {
       this.players[scorer].score += 1;
+      // 赢一轮的积分（含长接龙额外奖励）
+      var winPts = pointsForWin(this.chain.length);
+      this.players[scorer].points = (this.players[scorer].points || 0) + winPts;
     } else if (scorer >= 0 && scorer === this.turn) {
       // 理论上不会发生；保险起见不计分
     }
@@ -683,6 +719,8 @@
     VOWELS: VOWELS,
     PROPER_QUOTA: PROPER_QUOTA,
     isProperEntry: isProperEntry,
+    POINTS: POINTS,
+    pointsForWin: pointsForWin,
     lastN: lastN,
     hasVowelEnding: hasVowelEnding,
     forbiddenEnding: forbiddenEnding,

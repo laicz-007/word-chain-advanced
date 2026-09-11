@@ -10,6 +10,7 @@ var db = require('./src/db');
 var auth = require('./src/auth');
 var userdata = require('./src/userdata');
 var usage = require('./src/usage');
+var points = require('./src/points');
 var view = require('./src/view');
 var gameplay = require('./src/gameplay');
 var rooms = require('./src/rooms');
@@ -48,6 +49,9 @@ module.exports = {
   recordUsage: usage.recordUsage,
   resetUsage: usage.resetUsage,
   globalUsage: usage.globalUsage,
+  // 积分与道具
+  points: points,
+  POINTS: db.R.POINTS,
   // 账号
   makeToken: auth.makeToken,
   verifyToken: auth.verifyToken,

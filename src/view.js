@@ -68,6 +68,7 @@ function snapshot(game, sessionId, lastAI, pending, aiConceded) {
     players: game.players.map(function (p, i) {
       return {
         name: p.name, type: p.type, score: p.score, turn: i === game.turn,
+        points: p.points || 0,                                        // 本局累积积分
         properUsed: p.properUsed || 0,
         properLeft: Math.max(0, db.R.PROPER_QUOTA - (p.properUsed || 0))
       };

@@ -7,6 +7,7 @@
 var db = require('./db');
 var view = require('./view');
 var gameplay = require('./gameplay');
+var points = require('./points');
 
 var rooms = Object.create(null);      // roomId -> room（空原型）
 var userRoom = Object.create(null);   // username -> roomId（一个账号只能在一个房间）
@@ -141,6 +142,7 @@ function roomAction(username, roomId, kind, word, confirmed) {
   if (!cur || cur.name !== username) return { error: '还没轮到你出词' };
   var out = gameplay.doAction(g, kind, word, confirmed);
   if (out.error) return { error: out.error };
+  points.credit(g);   // 联机房间：玩家名就是用户名 → 各自结算到自己的账户（幂等）
   r.updatedAt = Date.now();
   armTurnTimer(r);   // 轮到下一位，重新计时
   return { ok: true, pending: out.pending || null };
