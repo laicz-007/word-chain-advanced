@@ -62,6 +62,19 @@ info('实际加载文件', db.dbPath);
 info('词条总数', list.length.toLocaleString('en-US'));
 info('带精讲(note)的词', db.noteCount.toLocaleString('en-US'));
 
+/* 精讲数据完整性：has_note 来自 Kyle 语料，是构建期"可信词"判据的一支
+ *（isTrustedEntry = 柯林斯≥1星 或 f≥阈值 或 有精讲），也决定 conf 与 AI 的教学加成。
+ * ⚠️ 全新克隆默认拿不到它（GitHub API 不通且本地无 data/kyle/ 缓存）——
+ *    实测那种构建的 has_note 会从 13,884 掉到 0，且会**多删一批短词**（少了"有精讲=可信"这一支）。
+ *    这类残缺是静默的：构建照常成功、游戏照常能玩，只是词库和标准版不一样。 */
+if (db.noteCount === 0) {
+  bad('精讲数据(has_note)', '0 个 —— 这份词库几乎肯定是残缺构建（缺 Kyle 语料），请重跑 npm run build 并看它的警告');
+} else if (db.noteCount < db.wordCount * 0.005) {
+  warn('精讲数据偏少', db.noteCount + ' 个（正常约 1.3 万，占 4.5%）—— 可能只拿到部分 Kyle 语料');
+} else {
+  ok('精讲数据(has_note)', db.noteCount.toLocaleString('en-US') + ' 个');
+}
+
 /* 词库与规则是否同版：
  * 词库里的 has_succ/chain_idx 是**用某一版规则算出来的**。若规则改了却没重建，
  * 词库就与运行期判据脱节 —— 而症状是静默的（测试全绿、服务照常启动，

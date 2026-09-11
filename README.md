@@ -85,8 +85,16 @@ npm run build         # 依次执行下面三步
 #   3. node   tools/compute_chain_idx.js  -> data/db.json（成品：过滤 + 算好可接指数）
 ```
 
-> 第 1 步的产物 `public/vocab.json` 已在仓库中，所以通常会自动跳过。
-> 第 2 步的源数据（`data/ecdict.csv`、`data/tofu_words.csv`、`data/kyle/`）如果已存在就**不联网**。
+> **第 1 步会自动跳过**：它的源数据（`data/word.csv` 等）不入库，而产物 `public/vocab.json` 是入库的，
+> 所以全新克隆里源数据不存在、产物已就位 —— 脚本会识别这种情况并跳过（不是报错）。
+>
+> **第 2 步的三份数据源**（`data/ecdict.csv`、`data/tofu_words.csv`、`data/kyle/*.jsonl`）如果已存在就不联网。
+>
+> ⚠️ **Kyle 精讲数据必须拿到**（`data/kyle/` 下 9 个 `.jsonl`，共约 63MB）。
+> 它决定"知识点"功能、`conf` 可信度、以及 AI 的教学加成。
+> 如果构建时拿不到它（GitHub API 不通 + 本地无缓存），脚本会打印**【警告】**并继续 ——
+> 产出的词库**能玩但不完整**（`has_note` 全部为 false），`npm test` 会有 4 项失败、
+> `node tools/check_db.js` 会报硬失败。**别用这种词库发布。**
 
 ### 第二步：启动
 

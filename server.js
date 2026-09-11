@@ -35,6 +35,7 @@ module.exports = {
   store: db.store,
   dbVocab: db.dbVocab,
   R: db.R,
+  noteCount: db.noteCount,   // 精讲词数（测试预检用：为 0 说明词库残缺，见 test/api-test.js）
   // 对局编排
   sessions: gameplay.sessions,
   createGame: gameplay.createGame,

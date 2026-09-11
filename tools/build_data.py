@@ -13,12 +13,37 @@
   - 仅保留纯字母单词 (a-z), 去掉含空格/标点/连字符的短语。
   - 仅保留有中文释义的词 (保证出词时都能展示释义, 便于学习)。
 """
-import csv, io, re, json, os, collections
+import csv, io, re, json, os, sys, collections
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WORD_CSV = os.path.join(BASE, 'data', 'word.csv')
 TRANS_CSV = os.path.join(BASE, 'data', 'word_translation.csv')
 OUT = os.path.join(BASE, 'public', 'vocab.json')
+
+
+def check_sources():
+    """决定这一步该不该跑。
+
+    源数据 data/word.csv 与 data/word_translation.csv **不入库**（data/*.csv 被 gitignore），
+    而产物 public/vocab.json 是入库的 —— 所以**全新克隆天然没有源数据、但有产物**。
+    这时应当跳过，而不是抛 FileNotFoundError 把整条 npm run build 打断
+    （曾经就是这样：新人按 README 跑第一步，看到的是一段 Python 报错堆栈）。
+    """
+    have_src = os.path.exists(WORD_CSV) and os.path.exists(TRANS_CSV)
+    have_out = os.path.exists(OUT) and os.path.getsize(OUT) > 100000
+    if have_src:
+        return True
+    if have_out:
+        print('[跳过] 找不到源数据 data/word.csv + word_translation.csv，')
+        print('       但产物 public/vocab.json 已随仓库提供（%.2f MB），直接沿用它。'
+              % (os.path.getsize(OUT) / 1048576.0))
+        print('       如需重建这一步，请把 word.csv 与 word_translation.csv 放到 data/ 下再跑。')
+        return False
+    print('【错误】既没有源数据，也没有可用的 public/vocab.json，无法继续。', file=sys.stderr)
+    print('   缺：' + WORD_CSV, file=sys.stderr)
+    print('   缺：' + TRANS_CSV, file=sys.stderr)
+    print('   这两个文件来自 LinXueyuanStdio/DictionaryData，请先补齐后再跑本步骤。', file=sys.stderr)
+    sys.exit(1)
 
 
 def load_translations():
@@ -36,6 +61,8 @@ def load_translations():
 
 
 def main():
+    if not check_sources():
+        return
     trans = load_translations()
     entries = {}  # word -> dict
     stat = collections.Counter()

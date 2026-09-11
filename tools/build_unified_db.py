@@ -385,6 +385,30 @@ def main():
     kyle = collect_kyle()
     ecd = load_ecd_map()
 
+    # ---- 数据源完整性把关（"绝不静默失败"）----
+    # 缺数据源时**不能默默继续**：那会产出一个"看起来成功、其实少了一大块"的词库。
+    # 实测过的两种残缺：
+    #   · 没有 Kyle（全新克隆默认如此：GitHub API 不通且本地无缓存）
+    #     → has_note 从 13,884 掉到 0 → 精讲/知识点全丢、conf 全面降级、
+    #       而且 isTrusted 少了"有精讲"这一支 → 更多短词会被当成生僻词删掉
+    #   · 没有 ECDICT（下载失败且无缓存）
+    #     → 词条数从 33 万掉到约 4 万，差一个数量级
+    if not kyle:
+        print('')
+        print('【警告】Kyle 精讲数据一个字都没拿到（has_note 将全部为 false）。')
+        print('    影响：知识点全丢、AI 的教学加成失效、conf 全面降级，')
+        print('          并且构建期的"依赖型短词清理"会多删一批词（少了"有精讲=可信"这一支）。')
+        print('    原因通常是：无法访问 GitHub API，且本地没有 data/kyle/*.jsonl 缓存。')
+        print('    解决：联网后重跑，或把 kyle 的 9 个 .jsonl 放到 data/kyle/ 下。')
+        print('    （本次仍然继续构建，但产出的词库与标准版【不一致】，请勿直接用于发布。）')
+        print('')
+    if len(ecd) < 100000:
+        print('【错误】ECDICT 词库不可用（只拿到 %d 条，正常应有 30 万条以上）。' % len(ecd))
+        print('   它是全量词库的主体，缺了它只能生成一个约 4 万词的残缺库。')
+        print('   这种"看起来成功、其实少一个数量级"的结果比直接报错更危险，故中止。')
+        print('   解决：联网后重跑（首次需下载约 62MB），或把 ecdict.csv 放到 data/ 下。')
+        sys.exit(1)
+
     # 汇拢每个词的多源信号
     sigs = {}
     for w, s in seed.items():

@@ -14,6 +14,21 @@ if (!fs.existsSync(path.join(__dirname, '..', 'data', 'db.json'))) {
 }
 
 var S = require('../server.js');
+
+/* 预检：这份词库有没有精讲数据。
+ * has_note 来自 Kyle 语料，是"知识点 / 探索·发现"等功能的基础。
+ * 全新克隆默认拿不到它（GitHub API 不通且本地无 data/kyle/ 缓存），
+ * 那种构建**会成功但残缺** —— 下面几项断言会失败。先说清楚根因，
+ * 免得看的人以为是代码坏了、去翻无关的地方。 */
+if (S.noteCount === 0) {
+  console.log('');
+  console.log('提示：这份词库没有任何精讲数据（has_note 全为 false）。');
+  console.log('      多半是构建时拿不到 Kyle 语料 —— 请回看 npm run build 输出的【警告】。');
+  console.log('      下面"知识点 / 探索·发现"相关的断言会失败，那是词库残缺，不是代码 bug。');
+  console.log('      修法：联网重跑 npm run build，或把 Kyle 的 9 个 .jsonl 放到 data/kyle/ 下。');
+  console.log('');
+}
+
 var pass = 0, fail = 0;
 function t(name, fn) {
   try { fn(); pass++; console.log('  ok ' + name); }
