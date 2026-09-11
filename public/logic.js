@@ -65,10 +65,20 @@
   }
 
   /* 禁止"回声"：新词不得恰好等于上词的末尾 2 或 3 字母。
-   * 起因（用户反馈）：A 出 xxxlar，B 直接回一个 lar（词库里的「n. 家庭守护神」，生僻到没人认识）
+   * 起因（用户反馈，房间对战）：A 出 xxxlar，B 直接回一个 lar（词库里的「n. 家庭守护神」）
    * 就能接上 —— 合法、但看起来就是在偷懒，房间对战里体验极差。
-   * 实测该规则封掉 18.1 万次这类招式，只让 34 个词变成死路（0.01%）。
+   *
+   * 例外（用户明确要求）：**高频词允许回声**。to / be / as 这类常见词回一遍不算偷懒。
+   * 判定口径与"从词库删除生僻回声热词"完全一致（见 isTrustedEntry），保证两个机制不打架。
    * 注意：词长 >3 的词不可能是回声（匹配只看末尾 2/3 字母），故只需判 2 与 3 字母。 */
+  var ECHO_KEEP_F = 0.65;   // ⚠️ 与 tools/compute_chain_idx.js 的同名常量必须保持一致
+
+  // 高频/可信词条：柯林斯≥1星，或常见度 f≥0.65，或 Kyle 精讲词
+  function isTrustedEntry(e) {
+    if (!e) return true;    // 词库外的词（玩家自己填的）：不拦回声
+    return (e.collins >= 1) || ((e.f || 0) >= ECHO_KEEP_F) || !!e.has_note;
+  }
+
   function isEcho(prev, word) {
     if (word.length === 2) return word === prev.slice(-2);
     if (word.length === 3) return word === prev.slice(-3);
@@ -87,7 +97,8 @@
   }
 
   // 接龙词校验：需满足规则1、2、3、4
-  function canChain(rawPrev, rawWord) {
+  // opts.echoOk = true 表示允许回声（调用方已确认该词是高频词）
+  function canChain(rawPrev, rawWord, opts) {
     var prev = normalize(rawPrev);
     var w = normalize(rawWord);
     if (!isAlphaLower(w)) return { ok: false, reason: '只接受英文单词（纯字母）。' };
@@ -100,9 +111,9 @@
       }
       return { ok: false, reason: '需以「' + p2 + '」或「' + prev.slice(-3) + '」开头。' };
     }
-    // 禁止回声：不能直接把上词的结尾当成这次要出的词
-    if (isEcho(prev, w)) {
-      return { ok: false, reason: '不能直接把上词的结尾「' + w + '」当作你要出的词，请另找一个词。' };
+    // 禁止回声（高频词例外，由调用方通过 opts.echoOk 放行）
+    if (isEcho(prev, w) && !(opts && opts.echoOk)) {
+      return { ok: false, echo: true, reason: '不能直接把上词的结尾「' + w + '」当作你要出的词，请另找一个词。' };
     }
     if (!hasVowelEnding(w)) return { ok: false, reason: '结尾 3 个字母必须含有 1 个元音（a e i o u y）。' };
     if (forbiddenEnding(w)) return { ok: false, reason: '不能以 ry / ht / ck 结尾。' };
@@ -246,6 +257,11 @@
     return this.byWord[normalize(raw)] || null;
   };
 
+  // 该词是否允许"回声"（高频词允许，生僻词不允许）
+  WordStore.prototype.echoOkFor = function (raw) {
+    return isTrustedEntry(this.lookup(raw));
+  };
+
   WordStore.prototype.candidates = function (rawPrev, used) {
     var prev = normalize(rawPrev);
     var out = [];
@@ -266,7 +282,7 @@
 
     return out.filter(function (e) {
       if (used && used[e.w]) return false;
-      return canChain(prev, e.w).ok;
+      return canChain(prev, e.w, { echoOk: isTrustedEntry(e) }).ok;
     });
   };
 
@@ -671,7 +687,7 @@
   Game.prototype.submitChain = function (raw, opts) {
     opts = opts || {};
     if (this.needsStart()) return { ok: false, reason: '当前需要先给出开局词。' };
-    var res = canChain(this.lastWord, raw);
+    var res = canChain(this.lastWord, raw, { echoOk: this.store.echoOkFor(raw) });
     if (!res.ok) return { ok: false, reason: res.reason };
     var w = res.word;
     var pl = this.currentPlayer();
@@ -863,6 +879,8 @@
     satisfiesMinLength: satisfiesMinLength,
     matches: matches,
     isEcho: isEcho,
+    isTrustedEntry: isTrustedEntry,
+    ECHO_KEEP_F: ECHO_KEEP_F,
     canStart: canStart,
     canChain: canChain,
     WordStore: WordStore,

@@ -634,5 +634,44 @@ t('禁止回声: 提交回声词被拒且不加分', function () {
   assert.strictEqual(g.players[0].points, before, '被拒不应加分');
 });
 
+/* ---- 回声门控：高频词允许回声，生僻词不允许（用户要求）---- */
+t('回声门控: isTrustedEntry 判定（柯林斯≥1 / f≥0.65 / 有精讲）', function () {
+  assert.strictEqual(R.isTrustedEntry({ w: 'x', collins: 1 }), true);
+  assert.strictEqual(R.isTrustedEntry({ w: 'x', collins: 0, f: 0.7 }), true);
+  assert.strictEqual(R.isTrustedEntry({ w: 'x', collins: 0, f: 0.2, has_note: true }), true);
+  assert.strictEqual(R.isTrustedEntry({ w: 'x', collins: 0, f: 0.3 }), false, '生僻词不可信');
+  assert.strictEqual(R.isTrustedEntry({ w: 'x' }), false);
+  assert.strictEqual(R.isTrustedEntry(null), true, '词库外的词不拦回声');
+  assert.strictEqual(R.ECHO_KEEP_F, 0.65);
+});
+
+t('回声门控: 默认拒绝回声，显式 echoOk 才放行（供高频词使用）', function () {
+  assert.strictEqual(R.canChain('into', 'to').ok, false, '默认应拒绝回声');
+  assert.strictEqual(R.canChain('into', 'to', { echoOk: true }).ok, true, '高频词应放行');
+  assert.strictEqual(R.canChain('into', 'tonic').ok, true, '非回声词不受影响');
+});
+
+t('回声门控: candidates() 放行高频回声词、拦掉生僻回声词', function () {
+  // 高频回声词（le 是 able 的末尾 2 字母，但 collins=5 → 可信）→ 放行
+  var v1 = new R.WordStore([
+    { w: 'able', zh: 'x', d: 1, f: 0.9, kind: 0.9, has_succ: true, chain_idx: 0.5, collins: 3 },
+    { w: 'le', zh: 'x', d: 1, f: 0.9, kind: 0.9, has_succ: true, chain_idx: 0.5, collins: 5 },
+    { w: 'lemon', zh: 'x', d: 1, f: 0.5, kind: 0.9, has_succ: true, chain_idx: 0.5, collins: 0 }
+  ]);
+  var ws1 = v1.candidates('able', null).map(function (x) { return x.w; });
+  assert.ok(ws1.indexOf('le') !== -1, '高频回声词应放行');
+  assert.ok(ws1.indexOf('lemon') !== -1, '非回声词应保留');
+
+  // 生僻回声词（lar 是 abarticular 的末尾 3 字母，但无佐证且 f 低）→ 拦掉
+  var v2 = new R.WordStore([
+    { w: 'abarticular', zh: 'x', d: 1, f: 0.9, kind: 0.9, has_succ: true, chain_idx: 0.5, collins: 3 },
+    { w: 'lar', zh: 'x', d: 1, f: 0.3, kind: 0.9, has_succ: true, chain_idx: 0.5, collins: 0 },
+    { w: 'large', zh: 'x', d: 1, f: 0.5, kind: 0.9, has_succ: true, chain_idx: 0.5, collins: 0 }
+  ]);
+  var ws2 = v2.candidates('abarticular', null).map(function (x) { return x.w; });
+  assert.strictEqual(ws2.indexOf('lar'), -1, '生僻回声词应被拦（用户抱怨的偷懒招）');
+  assert.ok(ws2.indexOf('large') !== -1, '非回声词应保留');
+});
+
 console.log('\n结果: ' + pass + ' 通过, ' + fail + ' 失败');
 process.exit(fail ? 1 : 0);

@@ -224,5 +224,27 @@ t('禁止回声: 真实词库中回声词被 canChain 拒绝', function () {
   assert.strictEqual(S.R.canChain('abarticular', 'large').ok, true, 'large 不是回声，应放行');
 });
 
+t('词库清理: 保留有独立意思的短词，删除依赖型短词/生僻回声词', function () {
+  // 有独立实际意思 → 必须保留（用户判据："必须要有独立实际意思才可以保留"）
+  ['oat', 'tin', 'ram', 'hen', 'lid', 'ox', 'log', 'owl', 'ash', 'den', 'mat', 'nil', 'pod', 'fin', 'tar',
+    'pus', 'ump', 'amp', 'ken', 'yon', 'mol', 'col', 'ate', 'to', 'be', 'as'].forEach(function (w) {
+    assert.ok(S.store.lookup(w), w + ' 有独立意思，不应被删');
+  });
+  // 依赖型（缩写/昵称/字母名/化学符号/生僻回声热词）→ 必须删除
+  ['sis', 'lar', 'te', 'ess', 'ne', 'ogy', 'ier', 'ary', 'ery', 'zed', 'gy'].forEach(function (w) {
+    assert.strictEqual(S.store.lookup(w), null, w + ' 是依赖型短词/生僻回声词，应删除');
+  });
+});
+
+t('回声门控: 高频词在真实词库中可回声，生僻词被拦', function () {
+  var to = S.store.lookup('to');
+  assert.ok(to && S.R.isTrustedEntry(to), 'to 是高频词');
+  assert.strictEqual(S.store.echoOkFor('to'), true, 'to 允许回声');
+  assert.strictEqual(S.store.echoOkFor('oat'), false, 'oat 虽是真词但非高频 → 不允许回声');
+  // 走真实 store 的 candidates：以 abarticular 结尾后，lar 已从库中删除
+  var cands = S.store.candidates('abarticular', null).map(function (x) { return x.w; });
+  assert.strictEqual(cands.indexOf('lar'), -1, 'lar 已被清理');
+});
+
 console.log('\n结果: ' + pass + ' 通过, ' + fail + ' 失败');
 process.exit(fail ? 1 : 0);

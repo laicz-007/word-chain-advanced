@@ -80,7 +80,9 @@ function ok(msg) { console.log('  ok ' + msg); }
         if (ai.action === 'concede') break;
         var aw = g.lastWord;
         if (!store.lookup(aw)) { fail('r' + r + ' AI 词不在词库: ' + aw); return; }
-        if (!R.canChain(before, aw).ok) { fail('r' + r + ' AI 词违规: ' + before + ' -> ' + aw + ' ' + R.canChain(before, aw).reason); return; }
+        // 必须带上回声门控：高频词（如 age）允许回声，裸调用 canChain 会一律拒绝
+        var chainRes = R.canChain(before, aw, { echoOk: store.echoOkFor(aw) });
+        if (!chainRes.ok) { fail('r' + r + ' AI 词违规: ' + before + ' -> ' + aw + ' ' + chainRes.reason); return; }
         if (usedInRound.indexOf(aw) !== -1) { fail('r' + r + ' AI 轮内重复: ' + aw); return; }
         usedInRound.push(aw);
         last = aw;

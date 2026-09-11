@@ -97,6 +97,10 @@ db.forEach(function (e) {
 var kindMap = Object.create(null);
 db.forEach(function (e) { kindMap[e.w] = e.kind != null ? e.kind : 0.9; });
 
+var ECHO_KEEP_F = 0.65;   // ⚠️ 与 public/logic.js 的同名常量必须保持一致
+// 高频/可信词条：柯林斯≥1星，或常见度 f≥0.65，或 Kyle 精讲词。高频词允许"回声"（用户要求）。
+function isTrusted(e) { return (e.collins >= 1) || ((e.f || 0) >= ECHO_KEEP_F) || !!e.has_note; }
+
 var maxChain = 0;
 var rawDist = [];   // 观测 chain_raw 分布以校验 REF
 var total = db.length;
@@ -106,10 +110,12 @@ var total = db.length;
 function isChainable(prev, s) {
   var w = s.w;
   if (w === prev) return false;
-  // 禁止回声：必须与 logic.js 的 canChain 保持一致。
-  // 否则构建时会把"回声词"算成可接，导致 chain_idx 虚高、与真实规则不符。
-  if (w.length === 2) { if (w === prev.slice(-2)) return false; }
-  else if (w.length === 3) { if (w === prev.slice(-3)) return false; }
+  // 禁止回声（必须与 logic.js 的 canChain 口径一致）：高频词允许回声，生僻词不允许。
+  // 否则构建期会把回声算成"可接"，使 chain_idx 虚高、与真实规则不符。
+  if (w.length === 2 || w.length === 3) {
+    var echo = (w.length === 2) ? (w === prev.slice(-2)) : (w === prev.slice(-3));
+    if (echo && !isTrusted(s)) return false;
+  }
   // 结尾最多3字母须含元音
   var tail = w.length <= 3 ? w : w.slice(-3);
   var hasV = false;
@@ -165,6 +171,42 @@ var JUNK = new Set([
   'processsor', 'messsage', 'narcisssus', 'excesssive', 'bosss', 'eyewitnesss'
 ]);
 var before = db.length;
+
+/* ---- 依赖型短词清理（"必须要有独立实际意思才可以保留"）----
+ * 判据：长度 2-3 的短词，若非"高频/可信"，且满足以下任一，即删除：
+ *   A. 依赖型语义 —— 释义表明它依附于另一个词/不是独立词：
+ *      等于另一词（sis =「姐妹（等于sister）」）、字母名（ess/zed/en）、化学符号（te/ne/ag）、
+ *      缩写、昵称、屈折形式（ays =「ay 的第三人称」）、词素标记（fer =「pref. 带」）、
+ *      缩略语展开（ac =「Alternating Current,…」）、无词性标记的片段（ogy =「农业气象学」）
+ *   B. 回声热词 —— 长度≤3、非高频、且有 ≥ECHO_HOT_MIN 个词以它结尾（说明它实际被当后缀用）。
+ *      这类词（lar/ier/ary/ery/nin…）释义看起来正常，但生僻到没人认识，
+ *      出完含该后缀的词后对手只要原样回一遍就"接上了"，看起来就是在偷懒。
+ * 保留：有独立意思的真词（oat 燕麦 / tin 锡 / ram 公羊 / hen 母鸡 / ox 公牛 / log 原木 / owl 猫头鹰…）。
+ * 实测：删 212 个，其中仅 6 个边缘真词受损（um/ay/os/ger/fed/dal，输入时仍可用确认方式出词）。
+ */
+var ECHO_HOT_MIN = 500;
+var POS_REX = /\b(n|v|vt|vi|adj|adv|prep|conj|pron|num|int|interj|abbr|a|ad|un|art|aux|modal)\./;
+function dependentWhy(z) {
+  if (/等于|\(\s*=|（\s*=|\[\s*=/.test(z)) return '等于另一词';
+  if (/字母\s*[A-Z]\b|\b[A-Z]\s*字母/.test(z)) return '字母名';
+  if (/\bsymb\b/i.test(z)) return '化学符号';
+  if (/缩写|缩略|简称|略语|首字母/.test(z)) return '缩写';
+  if (/[A-Z][a-z]{2,}\s*[之的]昵称/.test(z)) return '昵称';
+  if (/的(过去式|过去分词|现在分词|第三人称|复数|名词复数|比较级|最高级)|的-s形式/.test(z)) return '屈折形式';
+  if (/\bvbl\.|\bpref\.|\bsuff\.|\bcomb\./.test(z)) return '词素标记';
+  if (/^[A-Z][a-z]+\s+[A-Z][a-z]+/.test(z)) return '缩略语展开';
+  if (!POS_REX.test(z)) return '无词性标记(片段)';
+  return null;
+}
+// 每个 2/3 字母串作为"词尾"出现在多少词里（衡量它被当作后缀使用的程度）
+var suf2 = Object.create(null), suf3 = Object.create(null);
+db.forEach(function (e) {
+  var w = e.w;
+  if (w.length >= 2) suf2[w.slice(-2)] = (suf2[w.slice(-2)] || 0) + 1;
+  if (w.length >= 3) suf3[w.slice(-3)] = (suf3[w.slice(-3)] || 0) + 1;
+});
+function echoCount(e) { return e.w.length === 3 ? (suf3[e.w.slice(-3)] || 0) : (suf2[e.w.slice(-2)] || 0); }
+
 db = db.filter(function (e) {
   if (JUNK.has(e.w)) return false;                    // 明确垃圾黑名单
   // 缩写/碎片(kind=0.05)：只留常见词白名单。
@@ -177,9 +219,15 @@ db = db.filter(function (e) {
   // 注意：ECDICT 里 [网络] 从不位于释义开头（实际写法是 "n. 野猫\n[网络] 野猫赛；美国原装进口"），
   //       所以必须用【不锚定】的匹配。曾经写成 /^\[网络\]/，结果一个词都匹配不到（规则空转）。
   if (/\[网络\]/.test(e.zh || '') && !(e.collins > 0) && !((e.frq || 0) > 0)) return false;
+  // 依赖型短词 / 生僻回声热词（见上方说明）
+  if (e.w.length >= 2 && e.w.length <= 3 && !KEEP.has(e.w) && !isTrusted(e)) {
+    var z = String(e.zh || '').trim();
+    if (dependentWhy(z)) return false;
+    if (echoCount(e) >= ECHO_HOT_MIN) return false;
+  }
   return true;
 });
-console.log('过滤(缩写碎片/无元音/黑名单/[网络]低质；专名保留待限额): ' + before + ' -> ' + db.length + '（保留白名单 ' + KEEP.size + ' 个常用词）');
+console.log('过滤(缩写碎片/无元音/黑名单/[网络]低质/依赖型短词/生僻回声热词；专名保留待限额): ' + before + ' -> ' + db.length + '（保留白名单 ' + KEEP.size + ' 个常用词）');
 console.log('  kind 分布: ' +
   '普通词 ' + db.filter(function (e) { return e.kind >= 0.5; }).length +
   ' / 专名 ' + db.filter(function (e) { return e.kind > 0.06 && e.kind < 0.5; }).length +
