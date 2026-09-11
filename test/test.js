@@ -575,14 +575,16 @@ t('道具-反转卡: 效果跨轮保留', function () {
   assert.strictEqual(g.reverseTurn, true, '换轮后反转仍生效（本局内持续）');
 });
 
-t('道具: 道具日志不计入长接龙词数（countWords）', function () {
+t('道具: countWords 计入"代打的词"、排除纯道具日志（甲算、乙不算）', function () {
   var chain = [
     { kind: 'start', word: 'a' }, { kind: 'chain', word: 'b' },
-    { kind: 'item', item: 'skip' },
-    { kind: 'chain', byItem: 'swap', word: 'c' }
+    { kind: 'item', item: 'skip' },                    // 纯道具日志：不是词，不数
+    { kind: 'chain', byItem: 'swap', word: 'c' }       // 修改卡代打的词：计入接龙长度
   ];
-  assert.strictEqual(R.countWords(chain), 2, '只数玩家真实出词');
-  assert.strictEqual(R.pointsForWin(R.countWords(chain)), R.POINTS.winRound, '道具不应把接龙长度刷长');
+  assert.strictEqual(R.countWords(chain), 3, '跳过卡不算词；修改卡代打的词计 1');
+  // 前端靠 byItem 把"代打的词"排除在"你出过的词"之外（记录 / 生词表）
+  var mine = chain.filter(function (e) { return !e.byItem && (e.kind === 'start' || e.kind === 'chain'); });
+  assert.strictEqual(mine.length, 2, '"你出的词"应排除 byItem 条目');
 });
 
 /* ---- 禁止回声（用户反馈：xxxlar → 对手回 lar，生僻却能接，像在偷懒）---- */

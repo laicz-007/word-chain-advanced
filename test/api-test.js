@@ -296,16 +296,26 @@ t('AI 裁判: 待作答时其它动作被拒（经 doAction 层）', function ()
   assert.ok(!S.doAction(g, 'verify', null, false, null, 0).error ? false : true, '重复作答应报错');
 });
 
-t('回归: chainLen 不含道具代打的词（曾把"最长接龙"成就灌水）', function () {
+t('修改卡: 代打的词计入接龙长度，但带 byItem 标记（不计入"你出的词"）', function () {
   var g = S.createGame([{ name: '甲', type: 'human' }, { name: 'AI', type: 'ai' }]);
   g.submitStart('apple');
   g.tickAI();
   var before = S.snapshot(g, 's', '', null, false).chainLen;
   var sw = g.useItem('swap');
   var after = S.snapshot(g, 's', '', null, false).chainLen;
-  assert.strictEqual(after, before, '修改卡不应改变 chainLen（实际 ' + before + ' → ' + after + '）');
-  assert.strictEqual(after, S.R.countWords(g.chain), 'chainLen 必须等于真实出词数');
-  if (sw.ok) assert.ok(sw.word, '修改卡生效时应给出替代词');
+  if (sw.ok) {
+    // 用户要求："甲算、乙不算" —— 计入接龙长度，但不当作玩家出的词
+    assert.strictEqual(after, before + 1, '修改卡代打的词应计入接龙长度（实际 ' + before + ' → ' + after + '）');
+    var last = g.chain[g.chain.length - 1];
+    assert.strictEqual(last.byItem, 'swap', '该条目必须带 byItem 标记，供前端过滤（不算玩家出词）');
+    assert.strictEqual(after, S.R.countWords(g.chain), 'chainLen 应与 countWords 一致');
+  }
+});
+
+t('AI 裁判: 默认不挂（按需求只有联机房间挂）', function () {
+  var g = S.createGame([{ name: '甲', type: 'human' }, { name: '乙', type: 'human' }]);
+  assert.strictEqual(g.aiReferee, null, '人机对战 / 本地同屏不应挂裁判（不弹验词）');
+  assert.strictEqual(S.ai.CFG.VERIFY_TIMEOUT_MS, 15000, '验词时限应为 15 秒');
 });
 
 t('AI 裁判: 三种模式的画像来源正确（历次对局数据要能用上、不能张冠李戴）', function () {

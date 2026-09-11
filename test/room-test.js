@@ -163,6 +163,39 @@ async function reg(name) {
   check('单挑: 解散房间后成员都不再属于任何房间',
     (await get('/api/room/mine?token=' + encodeURIComponent(A.token))).roomId === null);
 
+  /* ---- AI 裁判验词（按需求：只有联机房间有）---- */
+  process.env.VERIFY_TIMEOUT_MS = '700';
+  var cV = await post('/api/room/create', { token: A.token });
+  var vid = cV.roomId;
+  await post('/api/room/join', { token: B.token, roomId: vid });
+  await post('/api/room/start', { token: A.token, roomId: vid });
+  var ptsAB = (await get('/api/me?token=' + encodeURIComponent(A.token))).points;
+
+  // A 出一个极生僻的开局词 → 应弹验词
+  await post('/api/room/action', { token: A.token, roomId: vid, kind: 'start', word: 'aardvark' });
+  // 注意：出词本身 +1 分（perWord）已先结算，所以要在这一步之后取基准
+  var ptsAfterPlay = (await get('/api/me?token=' + encodeURIComponent(A.token))).points;
+  check('验词: 开局出词先 +1 分（perWord）', ptsAfterPlay === ptsAB + 1);
+  var sv = await get('/api/room/state?token=' + encodeURIComponent(A.token) + '&roomId=' + vid);
+  check('验词: 出极生僻词会弹验词（联机房间）', !!(sv.game && sv.game.verify));
+  check('验词: 下发 4 个选项但不含答案',
+    sv.game.verify && sv.game.verify.options.length === 4 &&
+    sv.game.verify.answerIdx === undefined && sv.game.verify.correctZh === undefined);
+  check('验词: 有倒计时（≤15 秒）', sv.verifyMsLeft != null && sv.verifyMsLeft <= 15000);
+  check('验词: 验词期间不跑回合计时器', !sv.turnDeadline);
+  check('验词: 回合停在出词人身上（等作答）', sv.game.players[sv.game.turn].name === A.name);
+
+  // 不作答 → 等它超时
+  await new Promise(function (r) { setTimeout(r, 1300); });
+  var sv2 = await get('/api/room/state?token=' + encodeURIComponent(A.token) + '&roomId=' + vid);
+  check('验词: 超时提示写明"验词超时未作答"', /验词超时未作答/.test(sv2.notice || ''));
+  check('验词: 超时不判负（房间仍在进行）', sv2.status === 'playing');
+  check('验词: 超时后验词清空、接龙继续', sv2.game && !sv2.game.verify);
+  var ptsAA = (await get('/api/me?token=' + encodeURIComponent(A.token))).points;
+  check('验词: 超时按答错扣 1 分（净额 = 出词 +1 与扣分 −1 相抵）', ptsAA === ptsAfterPlay - 1 && ptsAA === ptsAB);
+  await post('/api/room/dissolve', { token: A.token, roomId: vid });
+  delete process.env.VERIFY_TIMEOUT_MS;
+
   /* ---- room/mine ---- */
   check('离开后 room/mine 为 null', (await get('/api/room/mine?token=' + encodeURIComponent(A.token))).roomId === null);
 

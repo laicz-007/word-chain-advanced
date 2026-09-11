@@ -9,6 +9,7 @@ var view = require('./view');
 var gameplay = require('./gameplay');
 var points = require('./points');
 var userdata = require('./userdata');
+var ai = require('./ai');
 
 var rooms = Object.create(null);      // roomId -> room（空原型）
 var userRoom = Object.create(null);   // username -> roomId（一个账号只能在一个房间）
@@ -24,14 +25,20 @@ function newRoomId() {
 /* ---- 回合超时自动认输（默认 60 秒，可用环境变量 TURN_TIMEOUT_MS 覆盖，便于测试） ---- */
 function turnTimeoutMs() { return Number(process.env.TURN_TIMEOUT_MS || 60000); }
 
+/* 回合/验词两种计时器互斥，一起清最安全（避免残留回调在回合已变后触发） */
 function clearTurnTimer(r) {
   if (r.turnTimer) { clearTimeout(r.turnTimer); r.turnTimer = null; }
+  r.turnDeadline = null;
+  if (r.verifyTimer) { clearTimeout(r.verifyTimer); r.verifyTimer = null; }
+  r.verifyDeadline = null;
 }
 
 function armTurnTimer(r) {
+  // ⚠️ 必须在清计时器【之前】判断：验词期间由 15 秒验词计时器负责，不能把它清掉
+  if (r.game && r.game.verify) return;
   clearTurnTimer(r);
-  r.turnDeadline = null;
-  if (r.status !== 'playing' || !r.game || !r.game.roundActive) return;
+  if (r.status !== 'playing' && r.status !== 'duel') return;
+  if (!r.game || !r.game.roundActive) return;
   if (r.game.needsStart()) return;   // 开局词阶段不计时（开局者需思考，且避免超时后空转反复认输）
   var cur = r.game.players[r.game.turn];
   if (!cur || cur.type !== 'human') return;
@@ -45,11 +52,10 @@ function onTurnTimeout(r) {
   if (Date.now() < (r.turnDeadline || 0)) return;   // 回合已变，作废
   var cur = r.game.players[r.game.turn];
   if (!cur || cur.type !== 'human') return;
-  // 待作答验词时超时 ≠ "未出词"：提示语要区分，否则玩家看不懂为什么被判负
+  // 验词有自己的 15 秒计时器（见 armVerifyTimer），回合计时器在验词期间不会跑，
+  // 所以这里只可能是"出词超时"
   var secs = Math.round(turnTimeoutMs() / 1000);
-  var why = r.game.verify
-    ? ('验词超时未作答（' + secs + ' 秒），自动认输')
-    : ('超时 ' + secs + ' 秒未出词，自动认输');
+  var why = '超时 ' + secs + ' 秒未出词，自动认输';
   r.game.concede(why);
   if (r.status === 'duel') { finishDuel(r, cur.name, why, true); return; }  // 单挑超时即结束本场
   r.game.newRound();
@@ -61,6 +67,38 @@ function onTurnTimeout(r) {
 // 单挑邀请有效期（过期自动作废，避免"邀请挂着不动"把房间卡死）
 function challengeTtlMs() { return Number(process.env.CHALLENGE_TTL_MS || 60000); }
 var CHALLENGE_TTL_MS = challengeTtlMs();
+
+/* AI 裁判验词的独立计时器（默认取 ai.CFG.VERIFY_TIMEOUT_MS = 15 秒，环境变量可覆盖）。
+ * 规则（按用户要求）：验词期间【不】跑回合计时器，改用这个 15 秒；
+ * 超时不判负（词在弹验词前就已经被接受了），只按"答错"扣 1 分，然后从下一个人继续接龙。 */
+function verifyTimeoutMs() { return Number(process.env.VERIFY_TIMEOUT_MS || ai.CFG.VERIFY_TIMEOUT_MS); }
+
+function clearVerifyTimer(r) {
+  if (r.verifyTimer) { clearTimeout(r.verifyTimer); r.verifyTimer = null; }
+  r.verifyDeadline = null;
+}
+
+function armVerifyTimer(r) {
+  clearVerifyTimer(r);
+  if (!r.game || !r.game.verify) return;
+  clearTurnTimer(r);                       // 验词期间停掉回合计时器
+  var ms = verifyTimeoutMs();
+  r.verifyDeadline = Date.now() + ms;
+  r.verifyTimer = setTimeout(function () { onVerifyTimeout(r); }, ms);
+}
+
+function onVerifyTimeout(r) {
+  if (!r.game || !r.game.verify) return;
+  if (Date.now() < (r.verifyDeadline || 0)) return;    // 已作答/回合已变，作废
+  var v = r.game.verify;
+  var who = (r.game.players[v.playerIdx] || {}).name || '?';
+  var out = r.game.timeoutVerify();
+  points.credit(r.game);                               // 扣分落到账户（双向结算）
+  r.notice = who + ' 验词超时未作答，扣 ' + out.penalty + ' 分，由下一位继续';
+  r.updatedAt = Date.now();
+  clearVerifyTimer(r);
+  armTurnTimer(r);                                     // 接龙从下一个人继续
+}
 
 /* ---- 1v1 单挑（房间内发起）----
  * 流程：房间成员 A 向 B 发起单挑 → B 选择接受/拒绝。
@@ -130,7 +168,7 @@ function respondChallenge(username, roomId, accept) {
     r.updatedAt = Date.now();
     return { ok: true, accepted: false, cancelled: true };
   }
-  r.game = gameplay.createGame([{ name: c.from, type: 'human' }, { name: username, type: 'human' }]);
+  r.game = gameplay.createGame([{ name: c.from, type: 'human' }, { name: username, type: 'human' }], { referee: true });
   r.duel = { players: [c.from, username], at: Date.now() };
   r.status = 'duel';
   r.notice = '单挑开始：' + c.from + ' vs ' + username;
@@ -201,7 +239,7 @@ function startRoom(username, roomId) {
   if (r.status !== 'waiting') return { error: '对局已开始' };
   if (r.players.length < 2) return { error: '至少需要 2 人才能开始' };
   var players = r.players.map(function (n) { return { name: n, type: 'human' }; });
-  r.game = gameplay.createGame(players);
+  r.game = gameplay.createGame(players, { referee: true });   // 只联机房间挂 AI 裁判
   r.status = 'playing';
   r.notice = '房主开始了对局';
   r.updatedAt = Date.now();
@@ -249,6 +287,9 @@ function roomAction(username, roomId, kind, word, confirmed, itemKind, choice) {
     finishDuel(r, username, '认输', true);
     return { ok: true, duelEnded: true, notice: r.notice };
   }
+  // AI 裁判：刚弹出验词 → 改用 15 秒验词计时器（回合计时器停掉）
+  if (g.verify) { armVerifyTimer(r); return { ok: true, pending: out.pending || null, verify: true }; }
+  clearVerifyTimer(r);
   armTurnTimer(r);   // 轮到下一位，重新计时
   return { ok: true, pending: out.pending || null };
 }
@@ -286,6 +327,8 @@ function roomState(username, roomId) {
   out.challenge = r.challenge || null;
   out.duel = r.duel || null;
   out.lastDuel = r.lastDuel || null;
+  // 验词倒计时（前端弹窗显示剩余秒数）
+  out.verifyMsLeft = r.verifyDeadline ? Math.max(0, r.verifyDeadline - Date.now()) : null;
   if ((r.status === 'playing' || r.status === 'duel') && r.game) {
     out.game = view.snapshot(r.game, r.id, '', null, false);
     out.myTurn = !!(out.game.players[out.game.turn] && out.game.players[out.game.turn].name === username);

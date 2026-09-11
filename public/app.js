@@ -39,6 +39,7 @@
   var myLocalIdx = -1;              // 本地同屏"统计我的出词"：我的玩家下标(-1=不统计)
   var shopCatalogCache = null;      // 商店目录缓存
   var shopQuota = 3;                // 每局道具使用上限（服务端下发）
+  var verifyDeadline = null;        // AI 裁判验词的本地倒计时基准（联机房间下发剩余毫秒）
   var ITEM_KINDS = [
     { kind: 'skip', name: '跳过卡', desc: '跳过本次接龙（不算认输，直接轮到下一位）' },
     { kind: 'swap', name: '修改卡', desc: '把你要接的词换成另一个更好接的词（可接指数更高）' },
@@ -453,7 +454,7 @@
     roomPollTimer = setInterval(function () { pollRoom(false); }, 800);
     // 倒计时本地每秒刷新（两次轮询之间也平滑跳动）
     countdownTimer = setInterval(function () {
-      if (mode === 'online' && onlineActive && state) { renderTurn(); renderScoreboard(); }
+      if (mode === 'online' && onlineActive && state) { renderTurn(); renderScoreboard(); renderVerifyTick(); }
     }, 1000);
   }
   function stopRoomPolling() {
@@ -546,6 +547,8 @@
       // 用"剩余毫秒数"校准本地倒计时基准，避免服务器/浏览器时钟偏差导致跳变
       if (rs.turnMsLeft != null) localDeadline = Date.now() + rs.turnMsLeft;
       else localDeadline = null;
+      // 验词倒计时同理：用服务端下发的剩余毫秒校准本机基准
+      verifyDeadline = (rs.verifyMsLeft != null) ? (Date.now() + rs.verifyMsLeft) : null;
       $('setup').classList.add('hidden');
       $('game').classList.remove('hidden');
       $('log').classList.add('hidden');
@@ -589,12 +592,21 @@
       opts.appendChild(b);
     });
     verifyMsg('');
+    renderVerifyTick();
   }
   function verifyMsg(m, err) {
     var el = $('verify-msg');
     if (!el) return;
     el.textContent = m || '';
     el.classList.toggle('err', !!err);
+  }
+  // 验词剩余秒数（联机房间：服务端下发剩余毫秒，本地递减避免时钟偏差）
+  function renderVerifyTick() {
+    var el = $('verify-timer');
+    if (!el || !state || !state.verify || verifyDeadline == null) return;
+    var s = Math.max(0, Math.ceil((verifyDeadline - Date.now()) / 1000));
+    el.textContent = '⏱ 剩余 ' + s + ' 秒（超时按答错扣 1 分，接龙由下一位继续）';
+    el.className = 'verify-timer' + (s <= 5 ? ' danger' : '');
   }
   function onAnswerVerify(i) {
     var opts = $('verify-options');

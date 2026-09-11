@@ -208,11 +208,12 @@
     return out;
   }
 
-  // 本轮"真正的出词"数量（排除道具生成的日志条目），用于长接龙奖励判定
+  /* 本局接龙序列的长度（用于长接龙奖励与前端"最长接龙"）。
+   * 含修改卡"代打的词"—— 按用户要求：它计入接龙长度（它是接龙链条的一环），
+   * 但【不】计入"你出过的词"（记录/生词表），那部分由前端 playedWords() 过滤 byItem。 */
   function countWords(chain) {
     var n = 0;
     for (var i = 0; i < chain.length; i++) {
-      if (chain[i].byItem) continue;                       // 道具代生成的词不算玩家出词
       if (chain[i].kind === 'start' || chain[i].kind === 'chain') n++;
     }
     return n;
@@ -817,6 +818,25 @@
     this.turn = this.starter;
     this.roundActive = false;
     return { player: loser.name, scorer: scorer >= 0 ? this.players[scorer].name : null };
+  };
+
+  /* 验词超时未作答：与答错一样扣分，然后照样推进回合（"接龙继续"）。
+   * 联机房间用：词在弹出验词前就已经被接受了，所以超时不该判负，只扣分。 */
+  Game.prototype.timeoutVerify = function () {
+    var v = this.verify;
+    if (!v) return { error: '没有待作答的验词' };
+    var p = this.players[v.playerIdx];
+    p.points = Math.max(0, (p.points || 0) - VERIFY_WRONG_PENALTY);
+    this.addLog({
+      kind: 'verify', player: p.name, playerIdx: v.playerIdx, playerType: p.type,
+      word: v.word, correct: false, timeout: true, answer: v.answerIdx, reasons: (v.reasons || []).slice()
+    });
+    this.verify = null;
+    this.startNextTurn();   // 接龙从下一个人继续
+    return {
+      ok: true, correct: false, timeout: true, penalty: VERIFY_WRONG_PENALTY,
+      points: p.points, answerIdx: v.answerIdx, correctZh: v.correctZh
+    };
   };
 
   // 开始新一轮

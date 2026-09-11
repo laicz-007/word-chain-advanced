@@ -8,8 +8,13 @@ var ai = require('./ai');
 
 var sessions = {}; // sessionId -> game
 
-// 建局时挂上 AI 裁判（人机/本地同屏/联机房间三条路径都经过这里）
-function createGame(players) { return ai.attach(new db.R.Game(db.store, players)); }
+/* 建局。AI 裁判【只】在联机房间启用（按用户要求：人机对战与本地同屏都不弹验词），
+ * 所以默认不挂裁判；房间侧需要时传 opts.referee = true。 */
+function createGame(players, opts) {
+  var g = new db.R.Game(db.store, players);
+  if (opts && opts.referee) ai.attach(g);
+  return g;
+}
 
 /* 使用道具（服务端权威）：校验登录 → 校验库存 → 交给引擎执行 → 扣减库存。
  * 账户归属：人机对战用对局绑定的 game.user；联机房间用玩家名（房间玩家名就是用户名）。
