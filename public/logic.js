@@ -104,6 +104,31 @@
     return null;
   }
 
+  /* ---- 专名限额制度 ----
+   * 人名/地名/姓氏（kind=0.10）不从词库删除 —— 删了会制造死路 —— 而是：
+   *   · AI 侧：靠 kind 降权（scorePick 里词型惩罚 ×0.378）重度避开
+   *   · 玩家侧：每人每局最多使用 PROPER_QUOTA 个，超出即拒
+   * kind 取值口径：0.90=普通词 / 0.10=专名 / 0.05=缩写碎片(词库构建时已过滤)
+   */
+  var PROPER_QUOTA = 3;   // 每名玩家每局可使用专名的上限（"局"= 一次完整对局，跨轮不重置）
+
+  function isProperEntry(e) {
+    if (!e) return false;
+    var k = e.kind;
+    return k != null && k > 0.06 && k < 0.5;
+  }
+
+  // 该玩家是否还有专名额度；返回 null 表示可用，否则返回拒绝原因
+  function properQuotaError(pl, entry) {
+    if (!isProperEntry(entry)) return null;
+    var used = pl.properUsed || 0;
+    if (used >= PROPER_QUOTA) {
+      return '「' + entry.w + '」是人名/地名/姓氏（专名），每人每局最多使用 ' + PROPER_QUOTA +
+        ' 个，你已经用完了。';
+    }
+    return null;
+  }
+
   /* ---- 词库存储器 ---- */
   function WordStore(vocab) {
     this.byWord = Object.create(null);   // 空原型：避免 "constructor"/"__proto__" 等词撞上继承属性
@@ -224,6 +249,8 @@
       if (c.has_succ === false) continue;
       // 硬门禁2：纯缩写/碎片(kind<=0.05) 不出现在 AI 选词里
       if (kind < 0.06) continue;
+      // 硬门禁3：该玩家专名额度已用完时，AI 不再把专名喂给他
+      if (ctx.noProper && kind > 0.06 && kind < 0.5) continue;
       var cnt = (usage && usage[c.w]) || 0;
       var S1 = Math.pow(0.5, cnt);                                  // 防疲劳: 没用过=1
       var S2 = (target == null) ? 0.5 : Math.max(0, 1 - Math.abs((c.d || 5) - target) / 10); // 难度贴合
@@ -342,6 +369,7 @@
         name: p.name,
         type: p.type,
         score: 0,
+        properUsed: 0, // 本局已使用的专名(人名/地名/姓氏)个数，跨轮不重置
         recent: [] // {w, d} 最近5个词库词 (供AI匹配难度)
       };
     });
@@ -373,6 +401,14 @@
   // 当前回合需要的是“开局词”还是“接龙词”
   Game.prototype.needsStart = function () {
     return this.lastWord == null;
+  };
+
+  // 专名额度信息（供前端展示"专名 1/3"）
+  Game.prototype.properQuotaInfo = function () {
+    return this.players.map(function (p) {
+      var used = p.properUsed || 0;
+      return { name: p.name, used: used, left: Math.max(0, PROPER_QUOTA - used), quota: PROPER_QUOTA };
+    });
   };
 
   // AI 的目标难度 = 融合(用户学习画像 skill, 本局最近词均值)
@@ -431,14 +467,22 @@
       return { ok: false, pending: 'non-vocab', word: w, reason: '「' + w + '」不在词库中，不计入难度统计，请确认是否使用。' };
     }
 
+    // 专名限额（人名/地名/姓氏）：超出每局上限则拒绝
+    var properEntry = inVocab ? this.store.lookup(w) : null;
+    var quotaErr = properQuotaError(pl, properEntry);
+    if (quotaErr) return { ok: false, reason: quotaErr };
+    var isProper = isProperEntry(properEntry);
+
     this.used[w] = true;
     this.allUsed[w] = (this.allUsed[w] || 0) + 1;
     this.lastWord = w;
     this.lastWordOwner = this.turn;
     this.pushRecent(this.turn, w);
+    if (isProper) pl.properUsed = (pl.properUsed || 0) + 1;
 
     this.chain.push(this.addLog({
       kind: 'start',
+      proper: isProper,
       player: pl.name,
       playerIdx: this.turn,
       playerType: pl.type,
@@ -480,14 +524,22 @@
       return { ok: false, pending: 'non-vocab', word: w, reason: '「' + w + '」不在词库中，不计入难度统计，请确认是否使用。' };
     }
 
+    // 专名限额（人名/地名/姓氏）：超出每局上限则拒绝
+    var properEntry = inVocab ? this.store.lookup(w) : null;
+    var quotaErr = properQuotaError(pl, properEntry);
+    if (quotaErr) return { ok: false, reason: quotaErr };
+    var isProper = isProperEntry(properEntry);
+
     this.used[w] = true;
     this.allUsed[w] = (this.allUsed[w] || 0) + 1;
     this.lastWord = w;
     this.lastWordOwner = this.turn;
     this.pushRecent(this.turn, w);
+    if (isProper) pl.properUsed = (pl.properUsed || 0) + 1;
 
     this.chain.push(this.addLog({
       kind: 'chain',
+      proper: isProper,
       player: pl.name,
       playerIdx: this.turn,
       playerType: pl.type,
@@ -555,11 +607,13 @@
     if (this.roundActive === false) return null;
     var pl = this.currentPlayer();
     if (pl.type !== 'ai') return null;
+    // AI 与人类共用同一套专名额度：额度用完后不再选专名（否则 AI 会照喂不误）
+    var aiNoProper = (pl.properUsed || 0) >= PROPER_QUOTA;
 
     if (this.needsStart()) {
       // AI 作为开局者：探索·发现模式随机给有趣的词；否则评分挑一个好开的词
       var target = this.aiTarget();
-      var ctx = { recentEnds: this.aiEnds, profile: this.profile };
+      var ctx = { recentEnds: this.aiEnds, profile: this.profile, noProper: aiNoProper };
       var choice;
       if (this.explore) {
         // 探索·发现："有趣"开局词也结合画像 —— 难度贴合 + 优先"含知识点且你未见过"的新词
@@ -583,7 +637,7 @@
     } else {
       // AI 接龙：本轮已用(硬)+会话使用次数(软防疲劳)
       var target2 = this.aiTarget();
-      var cand = aiChoose(this.store, this.lastWord, this.used, this.allUsed, target2, { recentEnds: this.aiEnds, profile: this.profile });
+      var cand = aiChoose(this.store, this.lastWord, this.used, this.allUsed, target2, { recentEnds: this.aiEnds, profile: this.profile, noProper: aiNoProper });
       if (!cand) {
         this.concede('AI 没有合法的接龙词');
         return { action: 'concede' };
@@ -602,6 +656,8 @@
   return {
     normalize: normalize,
     VOWELS: VOWELS,
+    PROPER_QUOTA: PROPER_QUOTA,
+    isProperEntry: isProperEntry,
     lastN: lastN,
     hasVowelEnding: hasVowelEnding,
     forbiddenEnding: forbiddenEnding,

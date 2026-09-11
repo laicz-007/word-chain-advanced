@@ -286,5 +286,83 @@ t('Game: 防疲劳 AI 接龙避开已用词', function () {
   assert.strictEqual(g.lastWord, 'lexx', 'AI 应避开已用的 blex, 选 lexx');
 });
 
+/* ---- 专名（人名/地名/姓氏）限额制度 ---- */
+// 用一个"专名可自我衔接"的最小词库：cola 末尾 la → la*la 系列词都以 la 开头且以 la 结尾
+function properFixture() {
+  return new R.WordStore([
+    { w: 'cola', zh: 'x', d: 1, f: 0.5, kind: 0.9, has_succ: true, chain_idx: 0.5 },
+    { w: 'laala', zh: 'x', d: 1, f: 0.9, kind: 0.1, has_succ: true, chain_idx: 0.9 },
+    { w: 'labla', zh: 'x', d: 1, f: 0.9, kind: 0.1, has_succ: true, chain_idx: 0.9 },
+    { w: 'lacla', zh: 'x', d: 1, f: 0.9, kind: 0.1, has_succ: true, chain_idx: 0.9 },
+    { w: 'ladla', zh: 'x', d: 1, f: 0.9, kind: 0.1, has_succ: true, chain_idx: 0.9 }
+  ]);
+}
+
+t('专名: isProperEntry 判定与 PROPER_QUOTA', function () {
+  assert.strictEqual(R.isProperEntry({ w: 'a', kind: 0.1 }), true);
+  assert.strictEqual(R.isProperEntry({ w: 'a', kind: 0.9 }), false);
+  assert.strictEqual(R.isProperEntry({ w: 'a', kind: 0.05 }), false, '缩写碎片不算专名');
+  assert.strictEqual(R.isProperEntry({ w: 'a' }), false, '无 kind 字段(vocab.json 场景)按普通词处理');
+  assert.strictEqual(R.isProperEntry(null), false);
+  assert.strictEqual(R.PROPER_QUOTA, 3);
+});
+
+t('专名限额: 每局每人 3 个, 第 4 个被拒', function () {
+  var g = new R.Game(properFixture(), [{ name: '我', type: 'human' }]);
+  assert.ok(g.submitStart('cola').ok, '普通词开局应成功');
+  assert.strictEqual(g.players[0].properUsed, 0, '普通词不消耗专名额度');
+  assert.ok(g.submitChain('laala').ok, '第 1 个专名应可用');
+  assert.ok(g.submitChain('labla').ok, '第 2 个专名应可用');
+  assert.ok(g.submitChain('lacla').ok, '第 3 个专名应可用');
+  assert.strictEqual(g.players[0].properUsed, 3);
+  var r = g.submitChain('ladla');
+  assert.strictEqual(r.ok, false, '第 4 个专名应被拒');
+  assert.ok(/专名/.test(r.reason || ''), '拒绝原因应说明是专名限额, 实际: ' + r.reason);
+  assert.strictEqual(g.players[0].properUsed, 3, '被拒后额度不应增加');
+});
+
+t('专名限额: 换轮不重置（额度按"局"计，不按"轮"计）', function () {
+  var g = new R.Game(properFixture(), [{ name: '我', type: 'human' }]);
+  g.submitStart('cola');
+  g.submitChain('laala'); g.submitChain('labla'); g.submitChain('lacla');
+  g.concede('测试认输');
+  g.newRound();
+  assert.strictEqual(g.players[0].properUsed, 3, '换轮后已用额度应保留');
+  var r = g.submitStart('ladla');   // 专名作开局词
+  assert.strictEqual(r.ok, false, '换轮后专名额度不应重置');
+});
+
+t('专名限额: 每位玩家各自独立计数', function () {
+  var v = properFixture();
+  var g = new R.Game(v, [{ name: '甲', type: 'human' }, { name: '乙', type: 'human' }]);
+  g.submitStart('cola');                       // 甲 开局
+  assert.ok(g.submitChain('laala').ok);        // 乙 用第 1 个
+  assert.ok(g.submitChain('labla').ok);        // 甲 用第 1 个
+  assert.strictEqual(g.players[0].properUsed, 1, '甲 用了 1 个');
+  assert.strictEqual(g.players[1].properUsed, 1, '乙 用了 1 个');
+});
+
+t('专名限额: AI 有额度时会选专名（对照）', function () {
+  var g = new R.Game(properFixture(), [{ name: 'AI', type: 'ai' }]);
+  g.submitStart('cola');
+  assert.ok(g.tickAI(), 'AI 应有动作');
+  // 4 个专名统计特征完全相同（同 d/f/chain_idx/kind），选哪个由随机因子决定，
+  // 所以只断言"选中的确实是专名"，不断言具体是哪个词（否则会随机失败）
+  assert.ok(R.isProperEntry(g.store.lookup(g.lastWord)), '有额度时 AI 会选专名, 实际选了 ' + g.lastWord);
+  assert.strictEqual(g.players[0].properUsed, 1, 'AI 用掉 1 个专名额度');
+});
+
+t('专名限额: AI 额度用完后不再选专名（宁可认输）', function () {
+  // 开局：候选含普通词 cola 与专名 laala，额度已满 → 应选普通词
+  var g = new R.Game(properFixture(), [{ name: 'AI', type: 'ai' }]);
+  g.players[0].properUsed = R.PROPER_QUOTA;
+  var r = g.tickAI();
+  assert.ok(r, 'AI 应有动作');
+  assert.strictEqual(g.lastWord, 'cola', '额度已满时 AI 开局应选普通词');
+  // 接龙：从 cola 只能接专名 laala → 额度已满，应认输而不是违规选专名
+  var r2 = g.tickAI();
+  assert.ok(r2 && r2.action === 'concede', '额度用完后 AI 不应选专名, 实际 ' + JSON.stringify(r2));
+});
+
 console.log('\n结果: ' + pass + ' 通过, ' + fail + ' 失败');
 process.exit(fail ? 1 : 0);

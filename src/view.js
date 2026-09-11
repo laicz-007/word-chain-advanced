@@ -4,7 +4,7 @@ var db = require('./db');
 
 function enrichWord(w) {
   var e = db.store.lookup(w);
-  if (!e) return { word: w, zh: '', phonetic: '', note: '', note_long: '', has_note: false, d: null, inVocab: false, chain_idx: null, has_succ: true, dead: false };
+  if (!e) return { word: w, zh: '', phonetic: '', note: '', note_long: '', has_note: false, d: null, inVocab: false, chain_idx: null, has_succ: true, dead: false, proper: false };
   return {
     word: w,
     zh: e.zh || '',
@@ -14,6 +14,7 @@ function enrichWord(w) {
     has_note: !!e.has_note,
     d: e.diff != null ? e.diff : e.d,
     inVocab: true,
+    proper: db.R.isProperEntry(e),   // 专名（人名/地名/姓氏）→ 前端打标 + 计入限额
     chain_idx: e.chain_idx != null ? e.chain_idx : null,
     has_succ: e.has_succ !== false,
     dead: e.has_succ === false
@@ -31,6 +32,7 @@ function enrichLogEntry(en) {
     enriched.chain_idx = info.chain_idx;
     enriched.has_succ = info.has_succ;
     enriched.dead = info.dead;
+    if (enriched.proper == null) enriched.proper = info.proper;
     if (!enriched.zh) enriched.zh = info.zh;
   }
   return enriched;
@@ -64,8 +66,13 @@ function snapshot(game, sessionId, lastAI, pending, aiConceded) {
   return {
     sessionId: sessionId,
     players: game.players.map(function (p, i) {
-      return { name: p.name, type: p.type, score: p.score, turn: i === game.turn };
+      return {
+        name: p.name, type: p.type, score: p.score, turn: i === game.turn,
+        properUsed: p.properUsed || 0,
+        properLeft: Math.max(0, db.R.PROPER_QUOTA - (p.properUsed || 0))
+      };
     }),
+    properQuota: { perPlayer: db.R.PROPER_QUOTA, players: game.properQuotaInfo() },
     account: game.user || null,
     profile: game.profile ? profileSummary(game.profile) : null,
     turn: game.turn,

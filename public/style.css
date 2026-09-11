@@ -410,3 +410,14 @@ input, select { font-size: 16px; }
 .record-word .phonetic { color: var(--muted); font-size: 12px; margin: 0 4px; }
 .record-word span:last-child { color: #374151; flex: 1 1 auto; }
 @media (max-width: 640px) { .record-head { gap: 6px; } .record-meta { font-size: 11.5px; } .record-word { font-size: 13px; } }
+
+/* 专名（人名 / 地名 / 姓氏）：额度显示与徽章 */
+.player-card .proper-quota {
+  margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--line);
+  font-size: 11.5px; color: var(--muted);
+}
+.player-card .proper-quota.used-up { color: #b45309; font-weight: 600; }
+.proper-badge {
+  display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 9px;
+  background: #fff3cd; color: #92400e; font-size: 11px; vertical-align: middle;
+}

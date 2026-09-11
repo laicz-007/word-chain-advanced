@@ -945,6 +945,14 @@
       if (trackingMe() && i === myLocalIdx) { var mt = document.createElement('em'); mt.className = 'me-tag'; mt.textContent = '我'; card.appendChild(mt); }
       var sc = document.createElement('div'); sc.className = 'score'; sc.textContent = p.score; card.appendChild(sc);
       var sl = document.createElement('div'); sl.className = 'score-label'; sl.textContent = '得分'; card.appendChild(sl);
+      // 专名额度（人名/地名/姓氏）：每局限用 N 个，用完变红
+      if (p.properUsed != null && state.properQuota) {
+        var pq = document.createElement('div');
+        pq.className = 'proper-quota' + (p.properLeft === 0 ? ' used-up' : '');
+        pq.textContent = '专名 ' + p.properUsed + '/' + state.properQuota.perPlayer;
+        pq.title = '人名 / 地名 / 姓氏（专名）每局最多使用 ' + state.properQuota.perPlayer + ' 个';
+        card.appendChild(pq);
+      }
       // 回合角标文案：联机时按"是否我"区分；本地/人机用"当前出词"
       var tagText = '当前出词';
       if (online && isTurn) tagText = (myName === p.name) ? '你的回合' : '接龙中';
@@ -994,8 +1002,11 @@
     if (en.dead) warn = '<div class="dead-warn">⚠️ 这个词结尾几乎接不下去（死路），下家会很难。</div>';
     else if (en.chain_idx != null && en.chain_idx < 0.08) warn = '<div class="dead-warn soft">⚠️ 这个词结尾不好接，小心卡壳。</div>';
     var meMark = (trackingMe() && en.playerIdx === myLocalIdx) ? ' <em class="me-tag">我</em>' : '';
+    var properBadge = en.proper
+      ? '<span class="proper-badge" title="人名 / 地名 / 姓氏（专名），每局限用 ' + (state.properQuota ? state.properQuota.perPlayer : 3) + ' 个">专名</span>'
+      : '';
     return '<div class="' + (active ? 'cur-word' : 'prev-word') + '">' +
-      '<span class="tag">' + tag + '</span><span class="w">' + esc(en.word) + '</span>' + speak + phon +
+      '<span class="tag">' + tag + '</span><span class="w">' + esc(en.word) + '</span>' + speak + phon + properBadge +
       '<span class="who">' + esc(en.playerName || en.player) + (en.kind === 'start' ? ' 开局' : '') + meMark + '</span>' +
       zh + note + warn + (dHtml ? '<div class="meta">' + dHtml + '</div>' : '') +
       '</div>';

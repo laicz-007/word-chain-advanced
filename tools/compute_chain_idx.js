@@ -30,6 +30,13 @@ var store = new R.WordStore(db);
 var VOWELS = 'aeiouy';
 var PROPER_RE = /\[(地名|人名|姓|音|圣经|宗|国|地|人|城|河|山|岛|族|币)\]/;
 var PROPER_RE2 = /\((美国|英国|德国|法国|日本|意大利|俄国|希腊|罗马|圣经|姓氏|地名|人名|首都|首府|城市|河流|山脉|岛屿)[^)]*\)/;
+/* 专名注记式（补 PROPER_RE/PROPER_RE2 的漏网）。
+ * ECDICT 最常见的专名写法是「(Aage)人名；(丹)奥格」—— "人名" 在括号【外面】，
+ * 上面两条正则都匹配不到，导致 7,056 个专名被当成普通词(kind=0.9)。
+ * 这里要求"注记式"上下文（右括号后紧跟 人名/地名/姓氏，或 （人名）/[人名]），
+ * 【不能】用宽泛的 /人名|地名|姓氏/：那会因子串误伤真常用词
+ * （例：warehouse 的定义含"以他人名义购进"，其中的"人名"是巧合子串，实测 f=0.60）。 */
+var PROPER_RE3 = /([)）]\s*(人名|地名|姓氏))|([（(](人名|地名|姓氏)[）)])|(\[人名\])/;
 var POS_RE = /\b(n|v|vt|vi|adj|adv|prep|conj|pron|num|int|interj|abbr|a|ad)\./;
 var CAT_TAG_RE = /^\[[^\]]{1,4}\]/;
 
@@ -43,7 +50,7 @@ function computeKind(e) {
   if (L <= 5 && CAT_TAG_RE.test(zh.trim())) return 0.05;                 // [计]/[军]/[化] 等前缀 + 短词 => 代码/缩写
   if (L <= 5 && /^[a-z]+ [a-z]+/.test(zh.trim()) && !POS_RE.test(zh)) return 0.05; // "last field"/"intensive care" 等纯英文缩写
   // 地名/人名/姓/专名
-  if (PROPER_RE.test(zh) || PROPER_RE2.test(zh)) return 0.10;
+  if (PROPER_RE.test(zh) || PROPER_RE2.test(zh) || PROPER_RE3.test(zh)) return 0.10;
   if (L <= 6 && /(公司|协会|组织|委员会|研究所|大学|中心|部|总部|地区|国)/.test(zh) && /[A-Z]/.test(w) === false) return 0.10;
   return 0.90; // 普通词
 }
@@ -120,7 +127,11 @@ var JUNK = new Set([
 var before = db.length;
 db = db.filter(function (e) {
   if (JUNK.has(e.w)) return false;                    // 明确垃圾黑名单
-  if (e.kind <= 0.1) return KEEP.has(e.w);            // 缩写/专名：只留白名单常用词
+  // 缩写/碎片(kind=0.05)：只留常见词白名单。
+  // 注意这里是 < 0.1 而【不是】<= 0.1 —— kind=0.10 的专名（人名/地名/姓氏）要【保留】：
+  // 游戏对专名改用"限额制度"（每人每局最多 N 个），它们仍需留在词库里参与接龙，
+  // 只是 AI 会重度降权避开、玩家用量受限。把它们从词库删掉反而会制造新的死路。
+  if (e.kind < 0.1) return KEEP.has(e.w);
   if (e.w.length >= 4 && !/[aeiouy]/.test(e.w)) return false;  // 无元音长串(代码/缩写碎片)
   // [网络] 标签且无权威佐证(collins/词频)：低质机翻/游戏黑话，剔除
   // 注意：ECDICT 里 [网络] 从不位于释义开头（实际写法是 "n. 野猫\n[网络] 野猫赛；美国原装进口"），
@@ -128,7 +139,11 @@ db = db.filter(function (e) {
   if (/\[网络\]/.test(e.zh || '') && !(e.collins > 0) && !((e.frq || 0) > 0)) return false;
   return true;
 });
-console.log('过滤(缩写/专名/无元音/黑名单/[网络]低质): ' + before + ' -> ' + db.length + '（保留白名单 ' + KEEP.size + ' 个常用词）');
+console.log('过滤(缩写碎片/无元音/黑名单/[网络]低质；专名保留待限额): ' + before + ' -> ' + db.length + '（保留白名单 ' + KEEP.size + ' 个常用词）');
+console.log('  kind 分布: ' +
+  '普通词 ' + db.filter(function (e) { return e.kind >= 0.5; }).length +
+  ' / 专名 ' + db.filter(function (e) { return e.kind > 0.06 && e.kind < 0.5; }).length +
+  ' / 缩写 ' + db.filter(function (e) { return e.kind <= 0.06; }).length);
 
 fs.writeFileSync(dbPath, JSON.stringify(db), 'utf8');
 

@@ -141,5 +141,51 @@ t('AI 认输: 暂停待确认 + continue-round 进入下一轮', function () {
   assert.ok(g.roundActive, '新回合开始');
 });
 
+t('专名限额: 真实词库里的专名被正确识别', function () {
+  var props = S.dbVocab.filter(function (e) { return S.R.isProperEntry(e); });
+  assert.ok(props.length > 1000, '真实词库应识别出大量专名, 实际 ' + props.length);
+  assert.strictEqual(S.R.isProperEntry(S.store.lookup('apple')), false, 'apple 是普通词');
+  assert.strictEqual(S.R.isProperEntry(S.store.lookup('warehouse')), false,
+    'warehouse 定义含"以他人名义"的子串, 不能因 /人名/ 宽匹配被误判为专名');
+  // 关键回归保护：凡"带专名注记"的词，一个都不能漏网（这正是此前的 bug：7,056 个全漏）
+  var annotated = S.dbVocab.filter(function (e) {
+    return /([)）]\s*(人名|地名|姓氏))|([（(](人名|地名|姓氏)[）)])|(\[人名\])/.test(e.zh || '');
+  });
+  assert.ok(annotated.length > 1000, '词库应含大量专名注记词, 实际 ' + annotated.length);
+  var leaked = annotated.filter(function (e) { return !S.R.isProperEntry(e); });
+  assert.strictEqual(leaked.length, 0, '带专名注记的词不应漏网, 实际漏 ' + leaked.length + ' 个');
+  // 专名总数应 >= 注记词数（另有 [圣经]/[地名] 等方括号注记形式也会被判为专名）
+  assert.ok(props.length >= annotated.length, '专名识别数不应少于注记词数');
+});
+
+t('专名限额: 快照暴露额度，开局用专名会消耗额度', function () {
+  var g = S.createGame([{ name: '我', type: 'human' }]);
+  var snap0 = S.snapshot(g, 'sid', '', null);
+  assert.ok(snap0.properQuota, '快照应含 properQuota');
+  assert.strictEqual(snap0.properQuota.perPlayer, S.R.PROPER_QUOTA, '每局额度应为 PROPER_QUOTA');
+  assert.strictEqual(snap0.players[0].properLeft, S.R.PROPER_QUOTA, '开局前额度应满');
+
+  // 从真实词库里动态取一个"可作为开局词"的专名（避免硬编码依赖具体词条）
+  var startable = S.dbVocab.filter(function (e) {
+    return S.R.isProperEntry(e) && S.R.canStart(e.w).ok;
+  });
+  assert.ok(startable.length > 0, '词库里应存在可开局的专名');
+  var pw = startable[0].w;
+
+  var out = S.doAction(g, 'start', pw, false);
+  assert.ok(!out.error, '专名应可作为开局词(受限额而非禁用), 实际: ' + out.error);
+  assert.strictEqual(g.players[0].properUsed, 1, '开局专名应计入额度');
+  var snap1 = S.snapshot(g, 'sid', '', null);
+  assert.strictEqual(snap1.players[0].properLeft, S.R.PROPER_QUOTA - 1, '额度应减 1');
+  assert.strictEqual(snap1.chain[snap1.chain.length - 1].proper, true, '接龙面板该词应带 proper 标记');
+
+  // 用满额度后，再出专名应被拒（经 doAction 这一层验证，而非仅引擎层）
+  g.players[0].properUsed = S.R.PROPER_QUOTA;
+  g.newRound();
+  var out2 = S.doAction(g, 'start', pw, false);
+  assert.ok(out2.error, '额度用满后专名应被拒');
+  assert.ok(/专名/.test(out2.error), '拒绝原因应说明是专名限额, 实际: ' + out2.error);
+});
+
 console.log('\n结果: ' + pass + ' 通过, ' + fail + ' 失败');
 process.exit(fail ? 1 : 0);
