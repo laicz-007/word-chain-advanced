@@ -37,6 +37,13 @@
   var localDeadline = null;         // 本地倒计时基准(避免服务器/浏览器时钟不同步导致的跳变)
   var countdownTimer = null;        // 倒计时本地刷新计时器
   var myLocalIdx = -1;              // 本地同屏"统计我的出词"：我的玩家下标(-1=不统计)
+  var shopCatalogCache = null;      // 商店目录缓存
+  var shopQuota = 3;                // 每局道具使用上限（服务端下发）
+  // 本版本已实现的道具（反转卡语义待确认，暂不列出）
+  var ITEM_KINDS = [
+    { kind: 'skip', name: '跳过卡', desc: '跳过本次接龙（不算认输，直接轮到下一位）' },
+    { kind: 'swap', name: '修改卡', desc: '把你要接的词换成另一个更好接的词（可接指数更高）' }
+  ];
 
   function loadSet(k) { try { return new Set(JSON.parse(localStorage.getItem(k) || '[]')); } catch (e) { return new Set(); } }
   function saveSet(k, s) { try { localStorage.setItem(k, JSON.stringify(Array.from(s))); } catch (e) {} }
@@ -124,6 +131,8 @@
     $('auth-guest-go').addEventListener('click', onAuthGuest);
     $('account-bar-action').addEventListener('click', onAccountBarAction);
     $('account-bar-pw').addEventListener('click', openPwModal);
+    $('account-bar-shop').addEventListener('click', openShop);
+    $('shop-close').addEventListener('click', closeShop);
     $('pw-submit').addEventListener('click', onSubmitPw);
     $('pw-cancel').addEventListener('click', closePwModal);
     ['pw-old', 'pw-new', 'pw-new2'].forEach(function (id) {
@@ -185,6 +194,7 @@
     }
     $('account-bar-action').textContent = logged ? '退出' : '登录';
     $('account-bar-pw').classList.toggle('hidden', !logged);   // 只有登录用户才显示"修改密码"
+    $('account-bar-shop').classList.toggle('hidden', !logged); // 商店同理（道具要用积分买）
   }
   function onAccountBarAction() {
     if (loggedIn()) onAuthLogout();                          // 退出 → 回登录页
@@ -506,11 +516,11 @@
     }
   }
   // 出词/认输等动作：联机走房间，本地走会话
-  function submitAction(kind, word, confirmed) {
+  function submitAction(kind, word, confirmed, item) {
     if (mode === 'online' && onlineActive) {
-      return api('/api/room/action', { roomId: roomId, kind: kind, word: word, confirmed: !!confirmed });
+      return api('/api/room/action', { roomId: roomId, kind: kind, word: word, confirmed: !!confirmed, item: item });
     }
-    return api('/api/action', { sessionId: sessionId, kind: kind, word: word, confirmed: !!confirmed });
+    return api('/api/action', { sessionId: sessionId, kind: kind, word: word, confirmed: !!confirmed, item: item });
   }
 
   // 学习画像面板 —— 便携版(离线): 本地画像; 网站版: 登录账户画像; 均仅"人机对战"
@@ -853,6 +863,121 @@
 
   function setMsg(text, cls) { var m = $('game-msg'); m.textContent = text; m.className = 'game-msg ' + (cls || ''); }
 
+  /* ---------- 道具商店 ---------- */
+  function shopMsg(m, err) {
+    var el = $('shop-msg');
+    if (!el) return;
+    el.textContent = m || '';
+    el.classList.toggle('err', !!err);
+  }
+  function renderShop(res) {
+    if (res && res.points != null && account) account.points = res.points;
+    if (res && res.items && account) account.items = res.items;
+    if (res && res.catalog) shopCatalogCache = res.catalog;
+    if (res && res.quota) shopQuota = res.quota;
+    renderAccountBar();
+    var pts = $('shop-points');
+    if (pts) pts.innerHTML = '我的积分：<b>' + ((account && account.points) || 0) + '</b>' +
+      (shopQuota ? '　每局道具上限：' + shopQuota + ' 次' : '');
+    var box = $('shop-list');
+    if (!box) return;
+    box.innerHTML = '';
+    var items = (account && account.items) || {};
+    (shopCatalogCache || []).forEach(function (it) {
+      var own = items[it.kind] || 0;
+      var row = document.createElement('div');
+      row.className = 'shop-row';
+      row.innerHTML = '<div class="shop-info"><b>' + esc(it.name) + '</b>' +
+        '<span class="shop-price">' + it.price + ' 积分</span>' +
+        '<div class="shop-desc">' + esc(it.desc) + '</div>' +
+        '<div class="shop-own">持有 ' + own + '</div></div>';
+      var btn = document.createElement('button');
+      btn.className = 'btn btn-primary btn-sm';
+      btn.textContent = '购买';
+      btn.disabled = ((account && account.points) || 0) < it.price;
+      btn.addEventListener('click', function () { buyItem(it.kind, btn); });
+      row.appendChild(btn);
+      box.appendChild(row);
+    });
+    if (!(shopCatalogCache || []).length) box.innerHTML = '<p class="empty">暂无可购买的道具。</p>';
+  }
+  function openShop() {
+    if (!loggedIn()) return;
+    shopMsg('');
+    $('shop-modal').classList.remove('hidden');
+    fetchJSON('/api/shop?token=' + encodeURIComponent(authToken), 'GET')
+      .then(function (res) {
+        if (res.error) { shopMsg('✗ ' + res.error, true); return; }
+        renderShop(res);
+      })
+      .catch(function () { shopMsg('✗ 网络错误，请重试', true); });
+  }
+  function closeShop() { $('shop-modal').classList.add('hidden'); shopMsg(''); }
+  function buyItem(kind, btn) {
+    if (btn) btn.disabled = true;
+    shopMsg('购买中…');
+    fetchJSON('/api/shop/buy', 'POST', { token: authToken, item: kind })
+      .then(function (res) {
+        if (res.error) { shopMsg('✗ ' + res.error, true); if (btn) btn.disabled = false; return; }
+        shopMsg('✓ 购买成功');
+        renderShop(res);
+        renderItemBar();
+      })
+      .catch(function () { shopMsg('✗ 网络错误，请重试', true); if (btn) btn.disabled = false; });
+  }
+
+  /* ---------- 局内道具栏 ---------- */
+  // 是否轮到"本机的人"出词（决定道具按钮可不可点）
+  function myTurnNow() {
+    if (!state || !state.players) return false;
+    var cur = state.players[state.turn];
+    if (!cur) return false;
+    if (mode === 'online' && onlineActive) return cur.name === myName;
+    return cur.type === 'human';
+  }
+  function myItemLeft() {
+    if (!state || !state.itemState || !state.itemState.players) return 0;
+    var p = state.itemState.players[state.turn];
+    return p ? p.left : 0;
+  }
+  function renderItemBar() {
+    var bar = $('item-bar');
+    if (!bar) return;
+    if (!loggedIn() || !state || window.__LOCAL_GAME__) { bar.classList.add('hidden'); return; }
+    var left = myItemLeft();
+    var inv = (account && account.items) || {};
+    bar.classList.remove('hidden');
+    bar.innerHTML = '<span class="item-bar-label">道具 <b>' + (state.itemState ? state.itemState.perPlayer - left : 0) +
+      '/' + (state.itemState ? state.itemState.perPlayer : 3) + '</b></span>';
+    ITEM_KINDS.forEach(function (it) {
+      var own = inv[it.kind] || 0;
+      var btn = document.createElement('button');
+      btn.className = 'btn btn-sm item-btn';
+      btn.textContent = it.name + ' ×' + own;
+      btn.title = it.desc + (left <= 0 ? '（本局道具次数已用完）' : '') + (own <= 0 ? '（没有库存，去商店购买）' : '');
+      btn.disabled = !myTurnNow() || left <= 0 || own <= 0;
+      btn.addEventListener('click', function () { useItemNow(it.kind, btn); });
+      bar.appendChild(btn);
+    });
+  }
+  function useItemNow(kind, btn) {
+    if (btn) btn.disabled = true;
+    setMsg('使用道具中…', 'info');
+    submitAction('item', null, false, kind)
+      .then(function (res) {
+        if (res.error) { setMsg('✗ ' + res.error, 'err'); renderItemBar(); return; }
+        if (res.accountItems && account) account.items = res.accountItems;
+        if (res.accountPoints != null && account) account.points = res.accountPoints;
+        var eff = res.itemEffect || {};
+        var label = (ITEM_KINDS.filter(function (x) { return x.kind === kind; })[0] || {}).name || '道具';
+        if (eff.effect === 'swap' && eff.word) setMsg('✓ ' + label + '：待接词已换成「' + eff.word + '」', 'info');
+        else setMsg('✓ ' + label + ' 已使用', 'info');
+        if (mode === 'online' && onlineActive) pollRoom(true);
+        else { state = res; render(); focusInput(); }
+      })
+      .catch(function () { setMsg('✗ 网络错误，请重试', 'err'); renderItemBar(); });
+  }
+
   /* ---------- 渲染 ---------- */
   function render() {
     if (!state) return;
@@ -863,6 +988,7 @@
     renderRecords();
     renderAIConfirm();
     renderControls();
+    renderItemBar();
     renderModeActions();
     updateMilestone();
     trackSeen();

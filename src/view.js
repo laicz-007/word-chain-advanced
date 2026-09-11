@@ -74,6 +74,7 @@ function snapshot(game, sessionId, lastAI, pending, aiConceded) {
       };
     }),
     properQuota: { perPlayer: db.R.PROPER_QUOTA, players: game.properQuotaInfo() },
+    itemState: { perPlayer: db.R.ITEM_QUOTA, players: game.itemState() },
     account: game.user || null,
     profile: game.profile ? profileSummary(game.profile) : null,
     turn: game.turn,

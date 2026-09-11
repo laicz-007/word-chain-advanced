@@ -108,6 +108,51 @@ function get(p) { return fetch(BASE + p).then(function (r) { return r.json(); })
   gg.submitStart('apple');
   check('积分结算: 游客对局不写账户', srv.points.credit(gg) === 0);
 
+  /* ---- 道具商店 ---- */
+  var sme = await get('/api/shop?token=garbage');
+  check('道具: 未登录不能查看商店', !!sme.error);
+  var shop = await get('/api/shop?token=' + encodeURIComponent(ptoken));
+  check('道具: 商店目录可获取且不含未实现道具',
+    shop.ok === true && shop.catalog.length > 0 &&
+    shop.catalog.every(function (i) { return i.kind !== 'reverse' && i.price > 0; }));
+  check('道具: 商店返回每局上限', shop.quota === srv.R.ITEM_QUOTA);
+
+  var poorBuy = await post('/api/shop/buy', { token: ptoken, item: 'skip' });
+  check('道具: 积分不足时购买失败', !!poorBuy.error);
+
+  var pd = srv.loadUserData(ptsName); pd.points = 100; srv.saveUserData(ptsName);
+  var buy = await post('/api/shop/buy', { token: ptoken, item: 'skip' });
+  check('道具: 购买成功并扣积分、加库存', buy.ok === true && buy.points === 70 && buy.items.skip === 1);
+
+  var buyBad = await post('/api/shop/buy', { token: ptoken, item: 'reverse' });
+  check('道具: 未实现的道具不可购买', !!buyBad.error);
+  var buyUnknown = await post('/api/shop/buy', { token: ptoken, item: '__nope__' });
+  check('道具: 未知道具不可购买', !!buyUnknown.error);
+
+  var meItems = await get('/api/me?token=' + encodeURIComponent(ptoken));
+  check('道具: me 反映库存与积分', meItems.items.skip === 1 && meItems.points === 70);
+
+  /* ---- 道具使用（走完整服务端路径：登录校验 → 库存校验 → 引擎 → 扣减）---- */
+  // 用单人局，避免 AI 回合/认输带来的不确定性
+  var ig = srv.createGame([{ name: 'p', type: 'human' }]);
+  ig.user = ptsName;
+  ig.submitStart('apple');
+  var useNoInv = srv.doAction(ig, 'item', null, false, 'swap');
+  check('道具: 没有库存时使用被拒', !!useNoInv.error && /没有/.test(useNoInv.error));
+
+  var igGuest = srv.createGame([{ name: '游客', type: 'human' }]);
+  igGuest.submitStart('apple');
+  var useGuest = srv.doAction(igGuest, 'item', null, false, 'skip');
+  check('道具: 游客使用道具被拒（需登录）', !!useGuest.error && /登录/.test(useGuest.error));
+
+  var okUse = srv.doAction(ig, 'item', null, false, 'skip');
+  check('道具: 有库存时使用成功并扣减库存',
+    !okUse.error && okUse.itemEffect && okUse.itemEffect.effect === 'skip' &&
+    (srv.loadUserData(ptsName).items.skip || 0) === 0);
+
+  var useAgain = srv.doAction(ig, 'item', null, false, 'skip');
+  check('道具: 用完后再次使用被拒', !!useAgain.error && /没有/.test(useAgain.error));
+
   // 清理测试账户
   try {
     var usersFile = path.join(__dirname, '..', 'data', 'users.json');

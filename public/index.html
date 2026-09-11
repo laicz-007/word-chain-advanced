@@ -30,6 +30,7 @@
     <!-- 账号状态条（进入游玩页后显示） -->
     <div id="account-bar" class="account-bar hidden">
       <span id="account-bar-text">游客</span>
+      <button id="account-bar-shop" class="btn btn-sm hidden">道具商店</button>
       <button id="account-bar-pw" class="btn btn-sm hidden">修改密码</button>
       <button id="account-bar-action" class="btn btn-sm">退出</button>
     </div>
@@ -183,6 +184,8 @@
         <button id="confirm-yes" class="btn btn-warn">确认使用</button>
         <button id="confirm-no" class="btn">重新输入</button>
       </div>
+      <!-- 局内道具栏（登录用户可见；每局每人限用 3 次） -->
+      <div id="item-bar" class="item-bar hidden"></div>
       <div id="game-msg" class="game-msg"></div>
 
       <div id="ai-confirm" class="ai-confirm hidden">
@@ -249,6 +252,22 @@
       <div class="report-actions">
         <button id="pw-submit" class="btn btn-primary">确认修改</button>
         <button id="pw-cancel" class="btn">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 道具商店弹层（全局，仅登录用户可用） -->
+  <div id="shop-modal" class="report-modal hidden">
+    <div class="report-inner">
+      <div class="report-popup">
+        <h3>道具商店</h3>
+        <p class="auth-note">用积分购买道具。道具在<b>对局中</b>使用，每局每人最多用 3 次（三种卡合计）。</p>
+        <div id="shop-points" class="shop-points"></div>
+        <div id="shop-list" class="shop-list"></div>
+        <p id="shop-msg" class="login-msg"></p>
+      </div>
+      <div class="report-actions">
+        <button id="shop-close" class="btn">关闭</button>
       </div>
     </div>
   </div>

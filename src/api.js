@@ -65,12 +65,17 @@ function handleApi(req, res, pathname) {
       var game = gameplay.sessions[body.sessionId];
       if (!game) { json(res, 404, { error: '会话不存在' }); return; }
       var preLen = game.log.length;
-      var out = gameplay.doAction(game, body.kind, body.word, body.confirmed);
+      var out = gameplay.doAction(game, body.kind, body.word, body.confirmed, body.item);
       if (out.error) { json(res, 400, { error: out.error }); return; }
       usage.recordUsage(game, preLen); // 把本回合新用的词计入持久化防疲劳
       points.credit(game);             // 把本局累积的积分结算到账户（幂等：只结算未结算的增量）
       var snap = view.snapshot(game, body.sessionId, out.lastAI, out.pending, out.aiConceded);
-      if (game.user) snap.accountPoints = userdata.loadUserData(game.user).points;
+      if (out.itemEffect) snap.itemEffect = out.itemEffect;
+      if (game.user) {
+        var aud = userdata.loadUserData(game.user);
+        snap.accountPoints = aud.points;
+        snap.accountItems = aud.items;
+      }
       if (out.lastAI && !out.pending) { setTimeout(function () { json(res, 200, snap); }, 540); } // AI 假装思考
       else json(res, 200, snap);
     });
@@ -153,6 +158,35 @@ function handleApi(req, res, pathname) {
     return;
   }
 
+  /* ---- 商店（道具购买，需登录）---- */
+  if (pathname === '/api/shop' && req.method === 'GET') {
+    var shq = url.parse(req.url, true).query;
+    var shname = auth.verifyToken(shq.token);
+    if (!shname || !auth.hasUser(shname)) { json(res, 401, { error: '未登录或登录已过期' }); return; }
+    var shd = userdata.loadUserData(shname);
+    json(res, 200, { ok: true, catalog: db.R.shopCatalog(), quota: db.R.ITEM_QUOTA, points: shd.points, items: shd.items });
+    return;
+  }
+
+  if (pathname === '/api/shop/buy' && req.method === 'POST') {
+    readBody(req, function (body) {
+      var bname = auth.verifyToken(body.token);
+      if (!bname || !auth.hasUser(bname)) { json(res, 401, { error: '未登录或登录已过期' }); return; }
+      var kind = String(body.item || '');
+      var it = db.R.itemInfo(kind);
+      if (!it) { json(res, 400, { error: '未知道具' }); return; }
+      if (it.available === false) { json(res, 400, { error: '「' + it.name + '」暂未开放' }); return; }
+      if (!userdata.spendPoints(bname, it.price)) {
+        json(res, 400, { error: '积分不足：需要 ' + it.price + '，当前 ' + userdata.loadUserData(bname).points });
+        return;
+      }
+      userdata.addItem(bname, kind, 1);
+      var nd = userdata.loadUserData(bname);
+      json(res, 200, { ok: true, item: kind, spent: it.price, points: nd.points, items: nd.items });
+    });
+    return;
+  }
+
   if (pathname === '/api/me' && req.method === 'GET') {
     var mq = url.parse(req.url, true).query;
     var mname = auth.verifyToken(mq.token);
@@ -208,7 +242,7 @@ function handleApi(req, res, pathname) {
   if (pathname === '/api/room/action' && req.method === 'POST') {
     readBody(req, function (body) {
       var n = roomName(body); if (!n) return;
-      var rr = rooms.roomAction(n, body.roomId, body.kind, body.word, body.confirmed);
+      var rr = rooms.roomAction(n, body.roomId, body.kind, body.word, body.confirmed, body.item);
       if (rr.error) json(res, 400, rr); else json(res, 200, rr);
     });
     return;

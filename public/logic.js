@@ -148,6 +148,43 @@
     return POINTS.winRound + extra;
   }
 
+  /* ---- 道具系统 ----
+   * 三种卡，用积分购买（价格见下），每局每人最多使用 ITEM_QUOTA 次（三种合计）。
+   * available=false 的暂不出售/不可用（尚无实现，避免卖出一个坏道具）。
+   */
+  var ITEMS = {
+    skip: { name: '跳过卡', price: 30, desc: '跳过本次接龙（不算认输，直接轮到下一位）', available: true },
+    swap: { name: '修改卡', price: 50, desc: '把你要接的词换成另一个更好接的词（可接指数更高）', available: true },
+    // ⚠️ 语义待用户确认：(a)反向匹配（下家需接上词"开头"）还是 (b)回合逆序。确认前不出售。
+    reverse: { name: '反转卡', price: 40, desc: '反转接龙方向（语义待确认，暂未开放）', available: false }
+  };
+  var ITEM_QUOTA = 3;   // 每局每人可使用道具的总次数（三种合计）
+
+  function itemInfo(kind) {
+    var k = String(kind == null ? '' : kind);
+    return Object.prototype.hasOwnProperty.call(ITEMS, k) ? ITEMS[k] : null;
+  }
+
+  // 商店目录（只列已实现的道具）
+  function shopCatalog() {
+    var out = [];
+    Object.keys(ITEMS).forEach(function (k) {
+      if (ITEMS[k].available === false) return;
+      out.push({ kind: k, name: ITEMS[k].name, price: ITEMS[k].price, desc: ITEMS[k].desc });
+    });
+    return out;
+  }
+
+  // 本轮"真正的出词"数量（排除道具生成的日志条目），用于长接龙奖励判定
+  function countWords(chain) {
+    var n = 0;
+    for (var i = 0; i < chain.length; i++) {
+      if (chain[i].byItem) continue;                       // 道具代生成的词不算玩家出词
+      if (chain[i].kind === 'start' || chain[i].kind === 'chain') n++;
+    }
+    return n;
+  }
+
   /* ---- 词库存储器 ---- */
   function WordStore(vocab) {
     this.byWord = Object.create(null);   // 空原型：避免 "constructor"/"__proto__" 等词撞上继承属性
@@ -399,6 +436,7 @@
         type: p.type,
         score: 0,
         points: 0,     // 本局累积的积分（由服务端结算到账户）
+        itemsUsed: 0,  // 本局已使用道具次数（三种卡合计，跨轮不重置）
         properUsed: 0, // 本局已使用的专名(人名/地名/姓氏)个数，跨轮不重置
         recent: [] // {w, d} 最近5个词库词 (供AI匹配难度)
       };
@@ -446,6 +484,67 @@
     return this.players.map(function (p) {
       return { name: p.name, points: p.points || 0 };
     });
+  };
+
+  // 道具额度信息（供前端展示"道具 1/3"）
+  Game.prototype.itemState = function () {
+    return this.players.map(function (p) {
+      var used = p.itemsUsed || 0;
+      return { name: p.name, used: used, left: Math.max(0, ITEM_QUOTA - used), quota: ITEM_QUOTA };
+    });
+  };
+
+  /* 使用道具。返回 { ok:true, effect, ... } 或 { error:'...' }
+   * 注意：库存与积分扣减由服务端负责（本方法只管对局内效果与每局限额），
+   *      这样"服务端权威"才成立 —— 客户端改不了自己的道具数量。
+   */
+  Game.prototype.useItem = function (kind) {
+    var info = itemInfo(kind);
+    if (!info) return { error: '未知道具' };
+    if (info.available === false) return { error: '「' + info.name + '」暂未开放' };
+    if (this.roundActive === false) return { error: '本轮已结束，无法使用道具' };
+    var pl = this.currentPlayer();
+    if ((pl.itemsUsed || 0) >= ITEM_QUOTA) {
+      return { error: '每局每人最多使用 ' + ITEM_QUOTA + ' 次道具，你已经用完了。' };
+    }
+
+    if (kind === 'skip') {
+      if (this.lastWord == null) return { error: '还没有待接的词，先出开局词' };
+      // 跳过本次接龙：不认输、待接词不变，直接轮到下一位
+      this.addLog({ kind: 'item', item: 'skip', player: pl.name, playerIdx: this.turn, playerType: pl.type, word: this.lastWord });
+      this.startNextTurn();
+      pl.itemsUsed = (pl.itemsUsed || 0) + 1;
+      return { ok: true, effect: 'skip' };
+    }
+
+    if (kind === 'swap') {
+      if (this.lastWord == null) return { error: '还没有待接的词，先出开局词' };
+      // 换成一个"可接指数更高"的替代词，且必须仍是上一词的合法后继（否则链条会断）
+      var prev = null;
+      for (var i = this.chain.length - 2; i >= 0; i--) {
+        if (this.chain[i].kind === 'start' || this.chain[i].kind === 'chain') { prev = this.chain[i].word; break; }
+      }
+      var cur = this.store.lookup(this.lastWord);
+      var curIdx = cur ? (cur.chain_idx || 0) : 0;
+      var pool = prev
+        ? this.store.candidates(prev, this.used).filter(function (e) { return (e.chain_idx || 0) > curIdx; })
+        : [];
+      if (!pool.length) return { error: '没有找到更好接的替代词（本次不消耗道具）' };
+      var pick = pool[Math.floor(Math.random() * pool.length)];
+      var from = this.lastWord;
+      this.addLog({ kind: 'item', item: 'swap', player: pl.name, playerIdx: this.turn, playerType: pl.type, word: pick.w, from: from });
+      this.lastWord = pick.w;       // 待接词换成更好接的那个
+      this.used[pick.w] = true;     // 防止之后重复出同一个词
+      // lastWordOwner 保持不变：替代词由道具生成，不算该玩家"出的词"
+      this.chain.push(this.addLog({
+        kind: 'chain', byItem: 'swap', player: pl.name, playerIdx: this.turn, playerType: pl.type,
+        word: pick.w, zh: pick.zh || '', d: pick.d, f: pick.f, inVocab: true, note: ''
+      }));
+      pl.itemsUsed = (pl.itemsUsed || 0) + 1;
+      return { ok: true, effect: 'swap', word: pick.w, from: from };
+    }
+
+    return { error: '「' + info.name + '」暂未实现' };
   };
 
   // AI 的目标难度 = 融合(用户学习画像 skill, 本局最近词均值)
@@ -607,7 +706,7 @@
     if (scorer >= 0 && scorer !== this.turn) {
       this.players[scorer].score += 1;
       // 赢一轮的积分（含长接龙额外奖励）
-      var winPts = pointsForWin(this.chain.length);
+      var winPts = pointsForWin(countWords(this.chain));
       this.players[scorer].points = (this.players[scorer].points || 0) + winPts;
     } else if (scorer >= 0 && scorer === this.turn) {
       // 理论上不会发生；保险起见不计分
@@ -721,6 +820,11 @@
     isProperEntry: isProperEntry,
     POINTS: POINTS,
     pointsForWin: pointsForWin,
+    ITEMS: ITEMS,
+    ITEM_QUOTA: ITEM_QUOTA,
+    itemInfo: itemInfo,
+    shopCatalog: shopCatalog,
+    countWords: countWords,
     lastN: lastN,
     hasVowelEnding: hasVowelEnding,
     forbiddenEnding: forbiddenEnding,

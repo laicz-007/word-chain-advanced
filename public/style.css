@@ -420,6 +420,24 @@ input, select { font-size: 16px; }
 /* 积分（正反馈）：账号栏高亮 + 记分板本局积分 */
 .account-bar .pts { color: #b45309; }
 .player-card .game-points { margin-top: 3px; font-size: 11.5px; font-weight: 600; color: #15803d; }
+
+/* 道具商店 */
+.shop-points { margin: 10px 0 8px; font-size: 14px; }
+.shop-list { display: flex; flex-direction: column; gap: 8px; }
+.shop-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; }
+.shop-info { flex: 1 1 auto; }
+.shop-price { margin-left: 8px; color: #b45309; font-weight: 600; font-size: 13px; }
+.shop-desc { color: var(--muted); font-size: 12.5px; margin-top: 3px; }
+.shop-own { color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+/* 局内道具栏 */
+.item-bar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin: 10px 0 0; padding: 8px 10px;
+  border: 1px dashed var(--line); border-radius: 10px; background: #f8fafc;
+}
+.item-bar-label { font-size: 12.5px; color: var(--muted); }
+.item-btn[disabled] { opacity: .45; cursor: not-allowed; }
 .proper-badge {
   display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 9px;
   background: #fff3cd; color: #92400e; font-size: 11px; vertical-align: middle;

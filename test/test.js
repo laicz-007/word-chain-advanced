@@ -456,5 +456,100 @@ t('积分: 重复认输不会重复计分（防刷分）', function () {
   assert.strictEqual(g.players[0].score, sc, '重复认输不应再加分数');
 });
 
+/* ---- 道具系统 ---- */
+function itemFixture() {
+  return new R.WordStore([
+    { w: 'abler', zh: 'x', d: 1, f: 0.5, kind: 0.9, has_succ: true, chain_idx: 0.5 },
+    { w: 'erlow', zh: 'x', d: 1, f: 0.5, kind: 0.9, has_succ: true, chain_idx: 0.1 },
+    { w: 'erhigh', zh: 'x', d: 1, f: 0.5, kind: 0.9, has_succ: true, chain_idx: 0.9 }
+  ]);
+}
+
+t('道具: 商店只出售已实现的道具（反转卡暂不开放）', function () {
+  var cat = R.shopCatalog();
+  var kinds = cat.map(function (i) { return i.kind; });
+  assert.ok(kinds.indexOf('skip') >= 0, '跳过卡可售');
+  assert.ok(kinds.indexOf('swap') >= 0, '修改卡可售');
+  assert.strictEqual(kinds.indexOf('reverse'), -1, '未实现的道具不应出售（避免卖坏道具）');
+  assert.ok(cat.every(function (i) { return i.price > 0 && i.name && i.desc; }), '目录项应含价格与说明');
+  assert.strictEqual(R.ITEM_QUOTA, 3);
+  assert.strictEqual(R.itemInfo('nope'), null, '未知道具返回 null');
+  assert.strictEqual(R.itemInfo('reverse').available, false, '反转卡标记为未开放');
+});
+
+t('道具-跳过卡: 跳过本次接龙（待接词不变、不算认输）', function () {
+  var g = new R.Game(itemFixture(), [{ name: '甲', type: 'human' }, { name: '乙', type: 'human' }]);
+  g.submitStart('abler');                       // 甲 开局
+  var w = g.lastWord;
+  assert.strictEqual(g.turn, 1, '轮到乙');
+  var r = g.useItem('skip');
+  assert.ok(r.ok && r.effect === 'skip', '跳过卡应生效');
+  assert.strictEqual(g.lastWord, w, '待接词应保持不变');
+  assert.strictEqual(g.turn, 0, '应轮到下一位');
+  assert.strictEqual(g.players[1].itemsUsed, 1, '计入该玩家本局道具次数');
+  assert.strictEqual(g.players[1].score, 0, '跳过不算认输，不得分');
+  assert.strictEqual(g.roundActive, true, '本轮仍在进行');
+});
+
+t('道具-修改卡: 把待接词换成可接指数更高的合法后继', function () {
+  var g = new R.Game(itemFixture(), [{ name: '我', type: 'human' }]);
+  g.submitStart('abler');
+  g.submitChain('erlow');
+  assert.strictEqual(g.lastWord, 'erlow');
+  var ownerBefore = g.lastWordOwner, ptsBefore = g.players[0].points;
+  var r = g.useItem('swap');
+  assert.ok(r.ok && r.effect === 'swap', '修改卡应生效');
+  assert.strictEqual(g.lastWord, 'erhigh', '应换成可接指数更高的词(0.1 → 0.9)');
+  assert.strictEqual(g.players[0].itemsUsed, 1, '计入本局道具次数');
+  assert.strictEqual(g.players[0].points, ptsBefore, '道具换词不算玩家出词，不应加分');
+  assert.strictEqual(g.lastWordOwner, ownerBefore, 'lastWordOwner 不应被道具改变');
+});
+
+t('道具-修改卡: 找不到更好接的词时失败且不消耗次数', function () {
+  var v = new R.WordStore([
+    { w: 'abler', zh: 'x', d: 1, f: 0.5, kind: 0.9, has_succ: true, chain_idx: 0.5 },
+    { w: 'erbest', zh: 'x', d: 1, f: 0.5, kind: 0.9, has_succ: true, chain_idx: 0.9 }
+  ]);
+  var g = new R.Game(v, [{ name: '我', type: 'human' }]);
+  g.submitStart('abler');
+  g.submitChain('erbest');
+  var r = g.useItem('swap');
+  assert.ok(r.error, '没有更好接的词应返回错误');
+  assert.strictEqual(g.players[0].itemsUsed, 0, '失败不应消耗道具次数');
+  assert.strictEqual(g.lastWord, 'erbest', '待接词不应被改动');
+});
+
+t('道具: 每局每人最多 3 次（跨轮不重置）', function () {
+  var g = new R.Game(itemFixture(), [{ name: '我', type: 'human' }]);
+  g.submitStart('abler');
+  assert.ok(g.useItem('skip').ok, '第 1 次');
+  assert.ok(g.useItem('skip').ok, '第 2 次');
+  assert.ok(g.useItem('skip').ok, '第 3 次');
+  var r = g.useItem('skip');
+  assert.ok(r.error, '第 4 次应被拒');
+  assert.ok(/3 次/.test(r.error), '拒绝原因应说明每局上限, 实际: ' + r.error);
+  g.concede('测试'); g.newRound();
+  assert.strictEqual(g.players[0].itemsUsed, R.ITEM_QUOTA, '换轮后已用次数应保留');
+  assert.ok(g.useItem('skip').error, '换轮后仍应被拒');
+});
+
+t('道具: 未开放的道具不可用', function () {
+  var g = new R.Game(itemFixture(), [{ name: '我', type: 'human' }]);
+  g.submitStart('abler');
+  var r = g.useItem('reverse');
+  assert.ok(r.error && /暂未开放/.test(r.error), '反转卡应提示暂未开放, 实际: ' + (r && r.error));
+  assert.strictEqual(g.players[0].itemsUsed, 0, '失败不应消耗次数');
+});
+
+t('道具: 道具日志不计入长接龙词数（countWords）', function () {
+  var chain = [
+    { kind: 'start', word: 'a' }, { kind: 'chain', word: 'b' },
+    { kind: 'item', item: 'skip' },
+    { kind: 'chain', byItem: 'swap', word: 'c' }
+  ];
+  assert.strictEqual(R.countWords(chain), 2, '只数玩家真实出词');
+  assert.strictEqual(R.pointsForWin(R.countWords(chain)), R.POINTS.winRound, '道具不应把接龙长度刷长');
+});
+
 console.log('\n结果: ' + pass + ' 通过, ' + fail + ' 失败');
 process.exit(fail ? 1 : 0);

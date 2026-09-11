@@ -8,6 +8,7 @@ var db = require('./db');
 var view = require('./view');
 var gameplay = require('./gameplay');
 var points = require('./points');
+var userdata = require('./userdata');
 
 var rooms = Object.create(null);      // roomId -> room（空原型）
 var userRoom = Object.create(null);   // username -> roomId（一个账号只能在一个房间）
@@ -133,14 +134,14 @@ function terminateRoom(username, roomId) {
 }
 
 // 处理一次行动（仅限当前回合玩家）。返回 {ok} 或 {error}；结束后由客户端轮询同步。
-function roomAction(username, roomId, kind, word, confirmed) {
+function roomAction(username, roomId, kind, word, confirmed, itemKind) {
   var r = rooms[roomId];
   if (!r) return { error: '房间不存在' };
   if (r.status !== 'playing' || !r.game) return { error: '对局未在进行' };
   var g = r.game;
   var cur = g.players[g.turn];
   if (!cur || cur.name !== username) return { error: '还没轮到你出词' };
-  var out = gameplay.doAction(g, kind, word, confirmed);
+  var out = gameplay.doAction(g, kind, word, confirmed, itemKind);
   if (out.error) return { error: out.error };
   points.credit(g);   // 联机房间：玩家名就是用户名 → 各自结算到自己的账户（幂等）
   r.updatedAt = Date.now();
@@ -173,6 +174,10 @@ function roomState(username, roomId) {
     players: r.players.slice(), me: username, isHost: (r.host === username),
     notice: r.notice, seq: r.updatedAt
   };
+  // 该玩家的账户积分/道具库存（联机房间的玩家名就是用户名）
+  var ud = userdata.loadUserData(username);
+  out.myPoints = ud.points || 0;
+  out.myItems = ud.items || {};
   if (r.status === 'playing' && r.game) {
     out.game = view.snapshot(r.game, r.id, '', null, false);
     out.myTurn = !!(out.game.players[out.game.turn] && out.game.players[out.game.turn].name === username);
