@@ -296,5 +296,35 @@ t('AI 裁判: 待作答时其它动作被拒（经 doAction 层）', function ()
   assert.ok(!S.doAction(g, 'verify', null, false, null, 0).error ? false : true, '重复作答应报错');
 });
 
+t('回归: chainLen 不含道具代打的词（曾把"最长接龙"成就灌水）', function () {
+  var g = S.createGame([{ name: '甲', type: 'human' }, { name: 'AI', type: 'ai' }]);
+  g.submitStart('apple');
+  g.tickAI();
+  var before = S.snapshot(g, 's', '', null, false).chainLen;
+  var sw = g.useItem('swap');
+  var after = S.snapshot(g, 's', '', null, false).chainLen;
+  assert.strictEqual(after, before, '修改卡不应改变 chainLen（实际 ' + before + ' → ' + after + '）');
+  assert.strictEqual(after, S.R.countWords(g.chain), 'chainLen 必须等于真实出词数');
+  if (sw.ok) assert.ok(sw.word, '修改卡生效时应给出替代词');
+});
+
+t('AI 裁判: 三种模式的画像来源正确（历次对局数据要能用上、不能张冠李戴）', function () {
+  // 本地同屏（勾了"统计我的出词"）：只有"我"那位能用我的画像
+  var g1 = S.createGame([{ name: '玩家 1', type: 'human' }, { name: '玩家 2', type: 'human' }]);
+  g1.profile = { skill: 5, hasData: true, knownSet: {} };
+  g1.myPlayerIdx = 1;
+  assert.strictEqual(S.ai.profileFor(g1, 1), g1.profile, '我（下标 1）应拿到画像');
+  assert.strictEqual(S.ai.profileFor(g1, 0), null, '同屏别人的词不能拿我的画像去判');
+
+  // 人机对战：用对局绑定的账户画像
+  var g2 = S.createGame([{ name: '小明', type: 'human' }, { name: 'AI', type: 'ai' }]);
+  g2.profile = { skill: 5, hasData: true, knownSet: {} };
+  assert.strictEqual(S.ai.profileFor(g2, 0), g2.profile, '人机对战应用绑定账户的画像');
+
+  // 联机房间：玩家名=用户名 → 未注册则为 null（不报错、不串号）
+  var g3 = S.createGame([{ name: 'zzz_不存在_zzz', type: 'human' }, { name: 'yyy_不存在_yyy', type: 'human' }]);
+  assert.strictEqual(S.ai.profileFor(g3, 0), null, '未注册玩家名 → 无画像（房间模式下不报错）');
+});
+
 console.log('\n结果: ' + pass + ' 通过, ' + fail + ' 失败');
 process.exit(fail ? 1 : 0);

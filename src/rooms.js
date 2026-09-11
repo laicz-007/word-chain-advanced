@@ -45,11 +45,15 @@ function onTurnTimeout(r) {
   if (Date.now() < (r.turnDeadline || 0)) return;   // 回合已变，作废
   var cur = r.game.players[r.game.turn];
   if (!cur || cur.type !== 'human') return;
-  var why = '超时 ' + Math.round(turnTimeoutMs() / 1000) + ' 秒未出词，自动认输';
+  // 待作答验词时超时 ≠ "未出词"：提示语要区分，否则玩家看不懂为什么被判负
+  var secs = Math.round(turnTimeoutMs() / 1000);
+  var why = r.game.verify
+    ? ('验词超时未作答（' + secs + ' 秒），自动认输')
+    : ('超时 ' + secs + ' 秒未出词，自动认输');
   r.game.concede(why);
   if (r.status === 'duel') { finishDuel(r, cur.name, why, true); return; }  // 单挑超时即结束本场
   r.game.newRound();
-  r.notice = cur.name + ' 超时未出词，自动认输';
+  r.notice = cur.name + ' ' + why;
   r.updatedAt = Date.now();
   armTurnTimer(r);   // 新一轮继续计时
 }

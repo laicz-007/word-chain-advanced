@@ -66,12 +66,22 @@
   function snapshot(game, sessionId, lastAI, pending, aiConceded) {
     return {
       sessionId: sessionId,
-      players: game.players.map(function (p, i) { return { name: p.name, type: p.type, score: p.score, turn: i === game.turn }; }),
+      players: game.players.map(function (p, i) {
+        return {
+          name: p.name, type: p.type, score: p.score, turn: i === game.turn,
+          points: p.points || 0,
+          properUsed: p.properUsed || 0,
+          properLeft: Math.max(0, R.PROPER_QUOTA - (p.properUsed || 0))
+        };
+      }),
+      properQuota: { perPlayer: R.PROPER_QUOTA, players: game.properQuotaInfo() },
+      itemState: { perPlayer: R.ITEM_QUOTA, players: game.itemState() },
+      reverseTurn: !!game.reverseTurn,
       account: null, profile: profileSummary(game.profile),
       turn: game.turn, starter: game.starter, round: game.round, roundActive: game.roundActive,
       needsStart: game.needsStart(), lastWord: game.lastWord, lastWordOwner: game.lastWordOwner,
       aiTarget: game.aiTarget(), aiInfo: lastAI || '', pending: pending || null, aiConceded: !!aiConceded,
-      chain: game.chain.slice(-2).map(enrichLogEntry), chainLen: game.chain.length, log: game.log.map(enrichLogEntry),
+      chain: game.chain.slice(-2).map(enrichLogEntry), chainLen: R.countWords(game.chain), log: game.log.map(enrichLogEntry),
       allUsedCount: Object.keys(game.allUsed).length
     };
   }

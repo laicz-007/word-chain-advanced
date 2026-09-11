@@ -47,6 +47,10 @@ function advanceAI(game, state) {
 // 处理一次人类动作（start/chain/concede/continue-round/item/verify）+ 自动处理 AI 回合
 function doAction(game, kind, word, confirmed, itemKind, choice) {
   var state = { lastAI: '', pending: null, aiConceded: false, itemEffect: null, verify: null };
+  // "出词过快"要量的是"玩家看到上一个局面 → 他提交"的间隔。
+  // ⚠️ 不能用"他上次出词的时间"：人机对战里中间还夹着 AI 的回合，会把间隔算长。
+  //    所以基准是"上一次 doAction 返回的时刻"（含 AI 回合），在函数末尾更新。
+  var elapsedMs = game._lastActionAt ? (Date.now() - game._lastActionAt) : null;
 
   advanceAI(game, state); // 先自动跑 AI，确保轮到人类
 
@@ -55,8 +59,6 @@ function doAction(game, kind, word, confirmed, itemKind, choice) {
 
   if (kind === 'start' || kind === 'chain') {
     if (game.currentPlayer().type !== 'human') return { error: '当前不是你的回合' };
-    // 距上一个出词的间隔：供 AI 裁判判断"出词过快"
-    var elapsedMs = game._lastSubmitAt ? (Date.now() - game._lastSubmitAt) : null;
     var res = kind === 'start'
       ? game.submitStart(word, { confirmed: !!confirmed, elapsedMs: elapsedMs })
       : game.submitChain(word, { confirmed: !!confirmed, elapsedMs: elapsedMs });
@@ -64,9 +66,8 @@ function doAction(game, kind, word, confirmed, itemKind, choice) {
       state.pending = { word: res.word, reason: res.reason };
     } else if (res && !res.ok) {
       return { error: res.reason };
-    } else {
-      game._lastSubmitAt = Date.now();
-      if (res && res.verify) state.verify = res.verify;
+    } else if (res && res.verify) {
+      state.verify = res.verify;
     }
   } else if (kind === 'verify') {
     // AI 裁判作答：答错扣分，无论对错接龙继续（引擎负责推进回合）
@@ -93,6 +94,7 @@ function doAction(game, kind, word, confirmed, itemKind, choice) {
 
   advanceAI(game, state); // 人类行动后，再次自动推进 AI
 
+  game._lastActionAt = Date.now();   // 供下一次"出词过快"判定（基准=本次返回时刻）
   return {
     ok: true, lastAI: state.lastAI, pending: state.pending, aiConceded: state.aiConceded,
     itemEffect: state.itemEffect, verify: state.verify, verifyResult: state.verifyResult
@@ -101,5 +103,5 @@ function doAction(game, kind, word, confirmed, itemKind, choice) {
 
 module.exports = {
   sessions: sessions, createGame: createGame, advanceAI: advanceAI, doAction: doAction,
-  useItem: useItem, ai: ai
+  useItem: useItem
 };

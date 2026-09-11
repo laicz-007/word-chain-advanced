@@ -598,17 +598,26 @@
   }
   function onAnswerVerify(i) {
     var opts = $('verify-options');
-    Array.prototype.forEach.call(opts.querySelectorAll('button'), function (b) { b.disabled = true; });
+    var btns = Array.prototype.slice.call(opts.querySelectorAll('button'));
+    btns.forEach(function (b) { b.disabled = true; });
     verifyMsg('提交中…');
     submitAction('verify', null, false, null, i).then(function (res) {
-      if (res.error) { verifyMsg('✗ ' + res.error, true); return; }
+      if (res.error) {
+        // ⚠️ 出错必须把按钮恢复可点，否则弹窗没有关闭按钮 → 玩家彻底卡死
+        btns.forEach(function (b) { b.disabled = false; });
+        verifyMsg('✗ ' + res.error, true);
+        return;
+      }
       var r = res.verifyResult || {};
       var tip = r.correct
         ? '✓ 答对了，验词通过'
         : ('✗ 答错了，扣 ' + r.penalty + ' 分；正确答案是「' + (r.correctZh || '') + '」');
       if (mode === 'online' && onlineActive) { onlineMsg(tip); pollRoom(true); }
       else { state = res; setMsg(tip, r.correct ? 'info' : 'err'); render(); focusInput(); }
-    }).catch(function () { verifyMsg('✗ 网络错误，请重试', true); });
+    }).catch(function () {
+      btns.forEach(function (b) { b.disabled = false; });
+      verifyMsg('✗ 网络错误，请重试', true);
+    });
   }
 
   // 学习画像面板 —— 便携版(离线): 本地画像; 网站版: 登录账户画像; 均仅"人机对战"
@@ -797,9 +806,16 @@
     hideConfirm(); renderSetup();
   }
   // 把当前对局存成一条"局"记录（本地同屏"统计我的出词"时只记我的词）
+  // 本轮真正由玩家出的词（排除修改卡"代打"的条目：它不是玩家出的词，不该进记录/统计）
+  function playedWords(log) {
+    return log.filter(function (e) {
+      return !e.byItem && (e.kind === 'start' || e.kind === 'chain');
+    });
+  }
+
   function captureRecord() {
     if (!state || !state.log || !state.log.length) return;
-    var all = state.log.filter(function (e) { return e.kind === 'start' || e.kind === 'chain'; })
+    var all = playedWords(state.log)
       .map(function (e) { return { word: e.word, zh: e.zh || '', phonetic: e.phonetic || '', d: e.d, playerIdx: e.playerIdx, playerType: e.playerType }; });
     var tracking = trackingMe();
     var words = tracking ? all.filter(function (w) { return w.playerIdx === myLocalIdx; }) : all;
@@ -811,6 +827,7 @@
       // 我的最长连续接龙（同屏轮流通常=1，不把别人的长龙算进我的纪录）
       var run = 0, myBest = 0;
       state.log.forEach(function (e) {
+        if (e.byItem) return;   // 修改卡代打的词不算"我的出词"
         if (e.kind === 'start' || e.kind === 'chain') {
           if (e.playerIdx === myLocalIdx) { run++; if (run > myBest) myBest = run; }
           else run = 0;
@@ -1294,7 +1311,7 @@
     var items = [];
     // 当前局(进行中)
     if (state && state.log && state.log.length) {
-      var words = state.log.filter(function (e) { return e.kind === 'start' || e.kind === 'chain'; })
+      var words = playedWords(state.log)
         .map(function (e) { return { word: e.word, zh: e.zh || '', phonetic: e.phonetic || '', d: e.d }; });
       var u = {}, sumD = 0, cnt = 0;
       words.forEach(function (w) { u[w.word] = 1; if (w.d) { sumD += w.d; cnt++; } });

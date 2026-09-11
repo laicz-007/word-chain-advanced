@@ -17,6 +17,8 @@
  */
 'use strict';
 var db = require('./db');
+var auth = require('./auth');
+var userdata = require('./userdata');
 
 var CFG = {
   FAST_MS: 2500,          // 距上一个词不足此毫秒 → 视为"出词过快"
@@ -51,6 +53,22 @@ function cleanZh(zh) {
   s = s.replace(/^[a-z]{1,6}\.\s*/i, '');
   if (s.length > 34) s = s.slice(0, 34) + '…';
   return s;
+}
+
+/* 取"该玩家"用于判定的学习画像（历次对局数据）。三种模式来源不同，必须分清：
+ *  - 本地同屏（勾了"统计我的出词"）：只有 myPlayerIdx 那位能用"我"的画像，别的人没有 ——
+ *    否则会拿别人的词去对我的画像判可疑
+ *  - 人机对战：用对局绑定的账户画像（game.profile）
+ *  - 联机房间：玩家名就是用户名 → 读他自己的账户画像（不这么做的话，房间模式下这项信号恒为 0）
+ * 结果按局缓存在玩家对象上（画像一局内不变，避免每次出词都重算）。 */
+function profileFor(game, playerIdx) {
+  var p = game && game.players && game.players[playerIdx];
+  if (!p) return null;
+  if (game.myPlayerIdx != null) return (playerIdx === game.myPlayerIdx) ? (game.profile || null) : null;
+  if (game.profile) return game.profile;
+  if (p._profile !== undefined) return p._profile;
+  p._profile = auth.hasUser(p.name) ? userdata.accountProfile(p.name) : null;
+  return p._profile;
 }
 
 /* 生成四选一题目。返回 { word, options, answerIdx, correctZh } 或 null（该词无法出题） */
@@ -125,7 +143,7 @@ function assess(game, playerIdx, entry, opts) {
 
   // 4) 不像你会用的词（历次对局画像：难度区 + 已见词集合）
   var unlikely = 0;
-  var prof = game.profile;
+  var prof = profileFor(game, playerIdx);
   if (prof && prof.hasData) {
     var skill = Number(prof.skill) || 5;
     if ((entry.d || 5) > skill + 2) unlikely += 0.6;
@@ -134,9 +152,9 @@ function assess(game, playerIdx, entry, opts) {
   }
   if (unlikely >= 0.3) reasons.push('超出你的水平');
 
-  // 5) 取巧短词（又短又生僻）
-  var lazyShort = (entry.w.length <= 4 && !db.R.isTrustedEntry(entry)) ? 1 : 0;
-  if (lazyShort && entry.w.length <= 3) reasons.push('取巧短词');
+  // 5) 取巧短词（又短又生僻）—— 与触发口径一致，都用"≤3 字母"
+  var lazyShort = (entry.w.length <= 3 && !db.R.isTrustedEntry(entry)) ? 1 : 0;
+  if (lazyShort) reasons.push('取巧短词');
 
   var score = W.obscure * obscure + W.fast * fast + W.jumpUp * jumpUp + W.unlikely * unlikely + W.lazyShort * lazyShort;
   // 硬规则：极生僻词（无任何佐证且 f 低于 OBSCURE_VERY_LOW）无论快慢都验 ——
@@ -169,4 +187,7 @@ function attach(game) {
   return game;
 }
 
-module.exports = { CFG: CFG, WEIGHTS: W, assess: assess, attach: attach, makeQuestion: makeQuestion, cleanZh: cleanZh, obscurityOf: obscurityOf };
+module.exports = {
+  CFG: CFG, WEIGHTS: W, assess: assess, attach: attach,
+  makeQuestion: makeQuestion, cleanZh: cleanZh, obscurityOf: obscurityOf, profileFor: profileFor
+};

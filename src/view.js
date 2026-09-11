@@ -103,7 +103,9 @@ function snapshot(game, sessionId, lastAI, pending, aiConceded) {
     pending: pending || null,
     aiConceded: !!aiConceded,
     chain: game.chain.slice(-2).map(enrichLogEntry),
-    chainLen: game.chain.length,
+    // 用 countWords 而不是 chain.length：修改卡会往 chain 里塞一个"道具代打的词"，
+    // 那不是玩家出词，直接数长度会把"最长接龙"成就灌水
+    chainLen: db.R.countWords(game.chain),
     log: game.log.map(enrichLogEntry),
     allUsedCount: Object.keys(game.allUsed).length
   };
