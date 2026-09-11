@@ -2,19 +2,17 @@
 node_modules/
 
 # 生成/下载的数据（可用 `npm run build` 重新生成，大文件不入库）
+# 注意：词库**不再有例外**。data/db.lite.json 曾经被特批入库（为了"克隆即玩"），
+# 但它没有任何生成脚本、会静默过期，2026-09 已废弃删除。现在克隆后必须跑 npm run build。
 data/*.csv
 data/*.json
 data/kyle/
 data/sync/
 data/.secret
 
-# 例外：轻量词库随项目分发，让"克隆下来就能直接玩"（不依赖 Python 构建）
-!data/db.lite.json
-
 # 打包产物
 dist-store/
 *.zip
-word-chain-standalone.html
 
 # 系统/编辑器
 .DS_Store

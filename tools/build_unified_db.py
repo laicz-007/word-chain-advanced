@@ -24,7 +24,11 @@ import csv, io, json, os, re, sys, time, math, urllib.request, urllib.parse, ssl
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, 'data')
-OUT = os.path.join(DATA, 'db.json')
+# 产出【原始】词库，不是最终成品。
+# 第 3 步 compute_chain_idx.js 会读它、过滤、写出 data/db.json（成品）。
+# 分成两个文件是为了防止"就地改写"：过滤规则一旦删过头，重跑第 3 步（约 30 秒）就能恢复，
+# 不必从 ECDICT 重新整合（几分钟）。曾经两者共用一个文件，导致误删的词永久消失。
+OUT = os.path.join(DATA, 'db.raw.json')
 SEED = os.path.join(ROOT, 'public', 'vocab.json')
 
 KYLE_API = 'https://api.github.com/repos/KyleBing/english-vocabulary/contents/full_line_jsonl/full/%E4%B9%B1%E5%BA%8F'

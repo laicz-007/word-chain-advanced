@@ -8,13 +8,18 @@
 
 ## 1. 项目概况（30 秒看懂）
 
-### 1.1 三种交付形态
+### 1.1 交付形态
 
 | 形态 | 入口 | 依赖 | 数据存哪 |
 |---|---|---|---|
 | **网站版** | `server.js` | 只需 Node.js（运行时零第三方依赖） | 服务端 `data/`，按账户 |
-| **便携版** | `word-chain-standalone.html`（单文件 11MB） | 浏览器，零安装 | 浏览器 localStorage |
-| **词库工具链** | `npm run build` | 额外需要 **Python 3** | 产出 `data/db.json` |
+| **词库构建** | `npm run build` | 额外需要 **Python 3** | 产出 `data/db.raw.json`（原始）+ `data/db.json`（成品） |
+
+> **2026-09 移除的两种形态**（本文件其余章节若仍提到它们，以本条为准）：
+> - ❌ **离线便携版** `word-chain-standalone.html`（`tools/build_standalone.js` + `tools/localengine.js` 已删除）。
+>   它内嵌的轻量词库没有生成脚本、会静默过期，导致便携版长期落后于网站版。
+> - ❌ **轻量词库** `data/db.lite.json`（已 `git rm`）。同上原因：一次性快照、无生成脚本、无法更新。
+>   现在只有一份可重现的成品库 `data/db.json`，克隆后必须跑一次 `npm run build`。
 
 ### 1.2 代码构成
 
@@ -29,9 +34,9 @@
 
 | 指标 | 当前值 |
 |---|---|
-| 全量词库 `data/db.json` | **307,113** 词（约 96 MB） |
-| 轻量词库 `data/db.lite.json` | **36,809** 词（11.86 MB）—— ⚠️ 已过期，见下方"已知缺口" |
-| 基础词库 `public/vocab.json` | **28,531** 词 |
+| 全量词库 `data/db.json`（成品） | **307,113** 词（约 96 MB） |
+| 原始词库 `data/db.raw.json` | **331,961** 词（约 54 MB，构建中间产物，游戏不读） |
+| 基础词池 `public/vocab.json` | **28,531** 词（唯一入库的词库文件） |
 | 测试 | 7 套全部通过（其中 6 套带计数，共 **239** 项检查） |
 | 全量库 kind 分布 | 0.9→275,091 / 0.1→32,012 / 0.05→10 |
 | 死路词 | 1,299（占 0.42%） |
@@ -59,7 +64,6 @@ server.js ──┬─> src/config.js
 
 tools/compute_chain_idx.js ─> public/logic.js   ★ 同一份引擎
 tools/analyze_hard_ends.js ─> public/logic.js   ★ 同一份引擎
-tools/build_standalone.js  ─> （把 logic.js/app.js 内联进 HTML）
 ```
 
 **★ 最重要的一条联系**：`public/logic.js` 被**服务端、浏览器、词库构建工具三方共用**。
@@ -71,23 +75,24 @@ tools/build_standalone.js  ─> （把 logic.js/app.js 内联进 HTML）
 data/word.csv + word_translation.csv
         │  python tools/build_data.py
         ▼
-   public/vocab.json ──────────────┐  （28,531 词，基础池）
+   public/vocab.json ──────────────┐  （28,531 词，基础池）★ 入库
                                     │  python tools/build_unified_db.py
    data/ecdict.csv ────────────────┤  （联网下载 ECDICT/Tofu/Kyle）
    data/tofu_words.csv ────────────┤
    data/kyle/*.jsonl ──────────────┘
                                     ▼
-                        data/db.json（约 33 万词）
+                        data/db.raw.json（331,961 词）★ 原始库，只读，别改它
                                     │  node tools/compute_chain_idx.js
-                                    │  （算可接指数 + 过滤缩写/专名）
+                                    │  （过滤 + 算 kind/可接指数/conf）
                                     ▼
-                        data/db.json（282,551 词）★ 服务端优先使用
-                                    │
-   data/db.lite.json ──────────────┴──> src/db.js（兜底）+ build_standalone.js
-   （36,809 词，随仓库分发，克隆即可玩）
+                        data/db.json（307,113 词）★ 成品库，src/db.js 加载它
 
 tools/analyze_hard_ends.js ─> tools/hard_ends_report.json ─> tools/print_hard_list.js
 ```
+
+> **★ 为什么原始库和成品库是两个文件**：第 3 步以前是「读 db.json → 过滤 → 写回 db.json」，
+> 就地改写。过滤规则删过头，词就**永久消失**——2026-09 实测因此丢了 25,183 个词。
+> 现在原始库 `db.raw.json` 永远不会被改写，改过滤规则只需重跑第 3 步（约 30 秒）。
 
 ### 2.3 三条关键链路
 
@@ -115,14 +120,14 @@ score = 硬门禁(合规+非死路) × (0.30·防疲劳 + 0.23·难度贴合 + 0
 | 1 | **过滤正则与数据格式脱节** | `compute_chain_idx.js:126` 锚定 `/^\[网络\]/`，但 283 个词里 `[网络]` **全在释义中间**，开头 0 个 | 规则看似存在，**实际删 0 个词**（空转） | 改过滤规则后**必须跑一次"实际删了多少"的验证**，不能只看代码 |
 | 2 | ~~**专名识别基本失效**~~ ✅ **已修复** | 原 `compute_chain_idx.js:31-32` 要求 `[人名]` 或 `(国名…)`，但 ECDICT 真实写法是 `(Aage)人名；(丹)奥格`（"人名"在括号外） | 修复前：全量库 **7,056** 个专名注记词 **100% 漏网**，全被判为普通词（kind=0.9）→ 已改为 kind=0.10。**教训**：不能用宽泛的 `/人名\|地名\|姓氏/` —— `warehouse` 的释义含"以他人名义"，子串巧合会误伤真常用词；必须匹配"括号注记"上下文 |
 | 3 | **可接指数被 2 字母回退顶满** | 规则允许"末尾 2 字母"匹配，`ar`/`er`/`le` 等高频结尾导致 `chain_idx≈0.9` | 946 个 `-lar` 结尾的**生僻医学形容词**全部拿到满分可接指数，AI 主动喂给玩家（如 `acromioclavicular`=肩锁骨的） | 改 `compute_chain_idx.js` 的供给口径，或对"高可接+无权威佐证"组合降权 |
-| 4 | **生成物被当成源码入库** | `public/vocab.json`、`data/db.lite.json`、`tools/hard_ends_report.json` 都被 git 跟踪 | 会**静默漂移**：`hard_ends_report.json` 已是 8/31 基于 36,809 词的快照，早已过期 | 跟踪的生成物必须写明"由谁生成、何时生成" |
+| 4 | **生成物被当成源码入库** | `public/vocab.json`、`tools/hard_ends_report.json` 仍被 git 跟踪（`data/db.lite.json` 已在 2026-09 移除） | 会**静默漂移**：`hard_ends_report.json` 曾长期停留在旧快照，直到被 `check_db.js` 揪出来 | 跟踪的生成物必须写明"由谁生成、何时生成"；能用脚本生成的就别入库 |
 | 5 | ~~**工具链断链**~~ ✅ **已修复** | `print_hard_list.js` 读 `rep.words`/`rep.summary`，实际字段是 `rep.rows`/`rep.meta` | 运行**立即崩溃**（`TypeError: Cannot read properties of undefined`） | 已按真实结构重写，并加了"报告结构不对就给人话提示"的自检；消费方做字段校验是关键 |
-| 6 | **双份前端代码** | `word-chain-standalone.html` 内嵌 `logic.js`/`app.js` 的副本 | 已发生：便携版（2026-09-05 生成）**缺** `pluralBase`（复数拒绝）和 `turnMsLeft`（倒计时修复） | **改前端后必须重跑** `node tools/build_standalone.js` |
+| 6 | ~~**双份前端代码**~~ ✅ **已消除** | 原 `word-chain-standalone.html` 内嵌 `logic.js`/`app.js` 的副本 | 曾发生：便携版缺 `pluralBase`（复数拒绝）和 `turnMsLeft`（倒计时修复） | 2026-09 删除便携版与其打包脚本，前端只剩 `public/` 一份；`app.js` 里的 15 处 `window.__LOCAL_GAME__` 分支也已清掉 |
 | 7 | **规则常量重复** | `aeiouy` 出现在 **4 个文件 6 处**：`logic.js:22`、`analyze_hard_ends.js:23`、`build_unified_db.py:39`、`compute_chain_idx.js:30/40/124` | 改元音集合要改 6 处，极易漏 | 长期：收敛到一处；短期：改前先 grep |
 | 8 | **有规则但没测试** | `pluralBase`（复数拒绝）在 `test/` 里出现 **0 次** | 改坏了没人知道 | 新增规则必须配套测试 |
 | 9 | **环境陷阱** | ① PowerShell 下 `npm test` 被执行策略挡住（`npm.ps1` 无法加载）② `python3` 是坏的 Microsoft Store 别名 | 照 README 直接敲命令**会失败**，误判为项目坏了 | 用 `npm.cmd test`；用 `python`（不是 `python3`） |
 | 10 | **链路描述重复 4 处** | `package.json` build / `build-db.sh` / `README.md` / `DEPLOY.md` | 改一步要同步 4 处，必然漂移 | 以 `package.json` 为唯一真相源，其余只做引用 |
-| 11 | **重建词库代价高** | `compute_chain_idx.js` 遍历 33 万词约 **90 秒+**，`db.json` 84MB | 误跑/反复跑浪费时间，且会改动已入库的 `public/vocab.json` | 见第 5 节铁律：先备份、别乱跑 |
+| 11 | **重建词库代价高** | `compute_chain_idx.js` 遍历 33 万词约 **90 秒+**，成品 `db.json` 约 96MB | 误跑/反复跑浪费时间。第 2 步（Python 整合）更慢，要几分钟 | **拆库后已大幅缓解**：改过滤规则只需重跑第 3 步（30~90 秒），不用碰 Python；第 2 步的产物 `db.raw.json` 永久保留 |
 | 12 | **房间是内存态** | `src/rooms.js` 用普通对象存 `rooms`/`userRoom` | 服务重启房间全丢，无法多进程部署 | 现状可接受；若要多进程必须先落盘 |
 | 13 | **构建期索引建在过滤之前**（本轮新发现，已修复） | `compute_chain_idx.js` 原第 28 行 `var store = new R.WordStore(db)` 用的是**过滤前**的全量库，而过滤在其后 200 行才执行 | `succ_cnt`/`has_succ`/`chain_idx` 把**已被删除的词**也算成后继：**29,770 个词后继数虚高**，**20 个词被错标为"接得上"**（`onyx`/`oryx`/`coccyx`/`archaeopteryx` — 它们唯一的接法是被删掉的 `yx`/`alx`）。AI 会以为某个词还能接下去 | 已改为"**先过滤 → 再建索引 → 再算可接指数**"（把这段包成 `computeSucc()`，在过滤之后调用）。**通用教训：凡是"先算指标、后裁剪数据"的脚本，裁剪后的指标一定是脏的** —— 顺序必须是先裁剪再计算 |
 
@@ -133,7 +138,8 @@ score = 硬门禁(合规+非死路) × (0.30·防疲劳 + 0.23·难度贴合 + 0
 | # | 风险 | 具体位置 | 后果 | 对策 |
 |---|---|---|---|---|
 | 14 | **按释义做过滤时会误伤常用词**（本轮新发现，已修复） | `computeKind` 的两条规则：L56 `/(abbr\|缩写\|缩略\|简称\|首字母)/`（**无长度限制、无豁免**）、L69 `L<=6 && /(…\|部\|国\|…)/`（**无豁免**） | ① L56 删掉了 **`salt` 食盐**（释义含 "SALT [缩写] 限制战略武器会谈"）、`india` 印度、`canon`、`acronym`、`contraction`；② L69 把 **231 个超常用词判成专名**：`all`（全**部**的）、`back`（**背**部）、`body`（主要**部分**）、`area`（**地区**）、`part`（**部分**）、`action`、`abroad`（往**国**外）…… 后果是这些最常见的词在联机房间里**白白吃掉每人每局 3 个的专名额度**，AI 也会刻意避开 | 两处都加 **`!isTrusted(e)` 高频守卫** + L56 加 **`L<=8` 长度限制**。实测误伤 231→0、18→0 |
-| 15 | **构建脚本就地改写数据，错误会永久固化**（本轮新发现） | `compute_chain_idx.js` 第 263 行 `fs.writeFileSync(dbPath, …)` —— 读 `data/db.json`、过滤、再写回同一个文件 | 早期版本的过滤规则删掉的词**再也回不来**。实测旧库因此少了 **25,183 个词**（`action`/`abroad`/`ace` 全都不在），而且**没有任何迹象**表明它被删过 | 只有 `npm run build`（从 `build_unified_db.py` 重新生成）才能找回。**改过滤规则后若发现删过头，必须从源头重跑，不能只重跑最后一步** |
+| 15 | ~~**构建脚本就地改写数据**~~ ✅ **已修复** | 原 `compute_chain_idx.js` 读 `data/db.json`、过滤、再写回同一个文件 | 早期版本的过滤规则删掉的词**再也回不来**。实测旧库因此少了 **25,183 个词**（`action`/`abroad`/`ace` 全都不在），而且**没有任何迹象**表明它被删过 | 已拆成 `data/db.raw.json`（原始，只读）→ `data/db.json`（成品）。改过滤规则重跑第 3 步即可反复试，原始库 MD5 实测不变 |
+| 16 | **过滤规则重复且口径分叉**（本轮新发现，已修复） | `tools/compute_chain_idx.js` 里 `[网络]` 规则用 `collins>0 \|\| frq>0` 豁免，而 L56/L69 当时**完全没豁免** | 同一件事两套口径，后来者不知道照哪个抄 | 已统一为 `isTrusted(e)`（柯林斯≥1星 或 f≥0.65 或 有精讲）并加注释说明；新增过滤规则时**照抄这条** |
 
 > **#14 的通用教训**：**凡是"按中文释义的关键词做过滤/分类"，都必须在最常用的 100 个词上跑一遍误伤检查。**
 > 中文释义是散文，"部""国""中心"会出现在 全部/部分/内部/胸部/外国/国家/中心线 里。
@@ -167,7 +173,7 @@ score = 硬门禁(合规+非死路) × (0.30·防疲劳 + 0.23·难度贴合 + 0
 |---|---|---|---|
 | 1.1 | 修 `[网络]` 正则锚点（`^` 去掉） | 改完**必须实测删了多少**。预期删 283 个；若删 0 个说明还是没匹配上 | 实测删除 283，且抽查被删词确为机翻/黑话 |
 | ~~1.2~~ | ~~补专名正则~~ ✅ **已完成（并升级为"限额制度"）** | 见下方"专名限额制度"小节 | 专名漏网 7,056 → **0**；常见词零误伤（apple/water/warehouse/city 全部仍是 kind=0.9） |
-| 1.3 | 重建离线单文件 | `node tools/build_standalone.js`；这会覆盖 11MB 的产物文件 | 便携版含 `pluralBase` 与 `turnMsLeft` |
+| ~~1.3~~ | ~~重建离线单文件~~ ✅ **已废弃** | 便携版 2026-09 移除，不再需要这一步 | — |
 | 1.4 | 提交 | 一个逻辑改动一次提交，中文提交信息写清"改了什么/为什么" | `git log` 清晰可回溯 |
 
 > ⚠️ **Phase 1 的三个致命注意**：
@@ -183,14 +189,14 @@ score = 硬门禁(合规+非死路) × (0.30·防疲劳 + 0.23·难度贴合 + 0
 
 "竞技规则"**只在联机房间启用** —— 单机玩法保持轻松。凡新增会"限制玩家"的功能，先确认它属于哪一格。
 
-| 功能 | 人机对战 | 本地同屏 | 联机房间 | 离线便携版 | 实现处 |
-|---|---|---|---|---|---|
-| 词库清理（依赖型短词/回声热词已删） | ✅ | ✅ | ✅ | ✅ | `compute_chain_idx.js` 过滤块 |
-| **禁止回声** | — | — | **✅** | — | `canChain(prev, word, {strictEcho, echoOk})` |
-| **专名限额 3/局** | — | — | **✅** | — | `properQuotaError(pl, entry, strict)` |
-| **AI 裁判验词** | — | — | **✅** | — | `createGame(players, {referee:true})`，只有 rooms 传 |
-| **道具（买 + 用）** | — | — | **✅** | — | `gameplay.useItem` 检查 `mode === 'room'` |
-| **积分（挣分）** | ✅ | — | ✅ | — | `points.ownerOf` 对 `mode === 'local'` 返回 null |
+| 功能 | 人机对战 | 本地同屏 | 联机房间 | 实现处 |
+|---|---|---|---|---|
+| 词库清理（依赖型短词/回声热词已删） | ✅ | ✅ | ✅ | `compute_chain_idx.js` 过滤块 |
+| **禁止回声** | — | — | **✅** | `canChain(prev, word, {strictEcho, echoOk})` |
+| **专名限额 3/局** | — | — | **✅** | `properQuotaError(pl, entry, strict)` |
+| **AI 裁判验词** | — | — | **✅** | `createGame(players, {referee:true})`，只有 rooms 传 |
+| **道具（买 + 用）** | — | — | **✅** | `gameplay.useItem` 检查 `mode === 'room'` |
+| **积分（挣分）** | ✅ | — | ✅ | `points.ownerOf` 对 `mode === 'local'` 返回 null |
 
 **统一由 `game.mode` 表达**：`'pve'`（人机）/ `'local'`（本地同屏）/ `'room'`（联机房间）；`logic.js` 默认 `'pve'`。
 设置处：`api.js` 的 `/api/start`（有 AI → `pve`，全人类 → `local`）、`rooms.js` 的 `startRoom` 与单挑开局（→ `room`）。
@@ -198,7 +204,7 @@ score = 硬门禁(合规+非死路) × (0.30·防疲劳 + 0.23·难度贴合 + 0
 **三条容易踩的**：
 1. `canChain` 的 `strictEcho` 是**开关**、不是默认行为 —— 不传就是"允许回声"，这正是单机模式要的。
 2. `WordStore.candidates()` 也必须传 `strictEcho`，否则房间里的「提示」会推荐一个出词时必被拒的词。
-3. **构建期（`compute_chain_idx.js`）不套用回声规则** —— `chain_idx` 是人机/同屏/离线都在用的指标，
+3. **构建期（`compute_chain_idx.js`）不套用回声规则** —— `chain_idx` 是人机/同屏都在用的指标，
    这三个模式允许回声，套用会让可接指数偏悲观。（原先"构建期与运行期两处必须同步"的约束，
    只在规则变回全局时才会重新需要。）
 
@@ -221,7 +227,7 @@ score = 硬门禁(合规+非死路) × (0.30·防疲劳 + 0.23·难度贴合 + 0
 若要改成按"轮"计，在 `newRound()` 里重置该字段即可 —— 但先想清楚：一轮可能只有几个词，按轮计等于几乎不限。
 
 **改动这块时的注意**：
-1. `PROPER_QUOTA` 与 `isProperEntry` 在 `logic.js` 里，被**服务端 / 浏览器 / 便携版三方共用**，改完必须重跑 `node tools/build_standalone.js`。
+1. `PROPER_QUOTA` 与 `isProperEntry` 在 `logic.js` 里，被**服务端与浏览器共用**，改完两边都要验（跑 `npm run test` + 浏览器刷新一次）。
 2. 词库侧（`kind`）与游戏侧（限额）是**两套独立机制**，可以分别调整：只想让 AI 少喂专名就只调权重；只想限制玩家用量就只调 `PROPER_QUOTA`。
 3. ~~**专名限额不解决** `-lar` 类问题，根因是"2 字母回退"顶满可接指数~~ → **两次纠正后的最终结论**：
    ① 我一开始以为这是"AI 喂生僻词"问题，用 AI 出词占比衡量 → 只有 0.3%，判定为低收益；
@@ -265,7 +271,7 @@ soft *= (0.60 + 0.40 * conf);        // 缺 conf 字段的旧词库按 0.85 中�
 
 **改动这块时的注意**：
 1. `conf`/`dGuess` 由**词库构建**写入，所以改完必须重跑 `node tools/compute_chain_idx.js`（~90 秒）。
-2. `db.lite.json`（随仓库分发的轻量库）**没有**这两个字段，走中性默认。若要让便携版也享受该优化，需重建轻量库（已记入待办）。
+2. 现在只有一份词库 `data/db.json`，`conf`/`dGuess` 一定存在。旧词库（如 `public/vocab.json`）缺这两个字段时走中性默认 0.85。
 3. 调权重的入口是 `soft *= (0.60 + 0.40 * conf)` 里的 `0.60`：改成 `0.5` 表示最差词条只保留一半权重；改成 `1.0` 等于关闭该机制。
 
 ### Phase 2 — 工具链与产物治理（约 1～2 小时）
@@ -314,7 +320,8 @@ soft *= (0.60 + 0.40 * conf);        // 缺 conf 字段的旧词库按 0.85 中�
 > 1. **每个功能配一个 `test/` 下的测试文件**（现有 7 套测试是这项目的护城河，别让它退化）。
 > 2. **先写测试，再写实现**：尤其 4.2 / 4.4 涉及回合规则，靠肉眼测不完。
 > 3. **道具必须服务端权威**：客户端的积分/道具状态可被篡改（参考现有安全测试的思路）。
-> 4. **4.4 之后必须重建离线单文件**，否则便携版又落后。
+> 4. **删掉便携版后，`public/app.js` 里那 15 处 `window.__LOCAL_GAME__` 分支也要一起清**，
+>    否则读代码的人会以为还存在离线形态。清完跑 `node --check public/app.js` 看语法、再在浏览器里点一遍。
 
 #### 禁止回声 + 依赖型短词清理（房间对战体验的核心修复）
 
@@ -351,7 +358,7 @@ isTrusted(e) = (e.collins >= 1) || ((e.f || 0) >= ECHO_KEEP_F /* 0.65 */) || !!e
 仅 6 个边缘词受损（`um`/`ay`/`os`/`ger`/`fed`/`dal`，输入时仍可用"确认使用"方式出词）。
 
 **实现与必须同步的两处**（⚠️ 本项目唯一的"规则逻辑重复"点）：
-1. `public/logic.js` 的 `isEcho` + `canChain` —— 运行时规则（服务端/浏览器/便携版三方共用）
+1. `public/logic.js` 的 `isEcho` + `canChain` —— 运行时规则（服务端/浏览器共用）
 2. `tools/compute_chain_idx.js` 的 `isChainable` —— **构建期快速路径，必须同步**，
    否则构建时会把回声算成"可接"，使 `chain_idx` 虚高、与真实规则不符
    两处的 `ECHO_KEEP_F` 常量也必须一致。
@@ -422,7 +429,7 @@ if (!(e.collins > 0) && (GAME_JARGON_RE.test(e.zh || '') || CODE_WORD_RE.test(e.
 
 **作用范围（用户最终确认）**：
 - ✅ **只有联机房间启用**（`gameplay.createGame(players, { referee: true })` 才挂裁判）
-- ❌ 人机对战、本地同屏、离线便携版都**不弹验词** —— 这同时消掉了"离线版缺裁判"的缺口
+- ❌ 人机对战、本地同屏都**不弹验词**
 - 因此"出词过快"这个信号也只存在于房间（裁判本身只在房间存在）
 - 画像：房间里读**玩家自己的账户画像**（玩家名=用户名）；其它模式不涉及
 
@@ -451,7 +458,7 @@ if (!(e.collins > 0) && (GAME_JARGON_RE.test(e.zh || '') || CODE_WORD_RE.test(e.
 **架构：钩子注入（关键设计）**
 - 引擎 `public/logic.js` 只负责**存题、判分、推进回合**（`game.verify` / `answerVerify` / `game.aiReferee`）
 - 「什么算可疑、题目怎么出」全在服务端 `src/ai.js`，通过 `createGame` 时 `ai.attach(game)` 注入
-- 好处：**共用引擎不依赖服务端模块**，离线便携版照常运行（不注入钩子即"无裁判"，行为同旧版）
+- 好处：**共用引擎不依赖服务端模块**（不注入钩子即"无裁判"，行为同旧版）
 - 三种模式（人机 / 本地同屏 / 联机房间）都经过 `gameplay.createGame`，因此**一套判定全覆盖**
 
 **⚠️ 安全：答案绝不能下发**
@@ -567,22 +574,18 @@ var ITEM_QUOTA = 3;   // 每局每人可使用道具的总次数（三种卡合�
 | 4 | 历次对局画像的适用范围 | **只有联机要**，本地同屏不要 | 裁判只在房间启用；`ai.profileFor()` 房间读玩家自己的账户画像 |
 | 5 | 验词作答失败时按钮不恢复 → 弹窗无出口会卡死 | 保留修复 | 出错/网络异常时恢复按钮可点 |
 
-另外：**AI 裁判的作用范围最终收窄为"只有联机房间"**（见下方小节）——顺带消掉了原先"离线便携版缺裁判"的缺口。
+另外：**AI 裁判的作用范围最终收窄为"只有联机房间"**（见下方小节）。
 
 > **复核的价值**：这 5 处说明**每加一个新机制，都要回头检查它与旧机制的交互**。
 > 本项目最容易出问题的不是"功能有没有实现"，而是**计时器 / 统计口径 / 数据归属**这三类交叉点。
 
-**已知缺口（尚未处理）**：
-- **轻量词库 `data/db.lite.json` 已过期，且没有生成脚本**（用户 2026-09 决定：暂不处理，自己只用全量库）。
-  实测状态：36,809 词，其中 3,229 词**全量库早已淘汰**（`sis`/`te`/`ide`/`ole`/`mic`/`os` 等依附型/缩写词仍在）；
-  `kind` 用的是**修复前**的旧分类（`kind=0.05` 有 646 个，全量库只有 10 个；
-  `kind=0.1` 有 980 个，全量库有 7,046 个），且 `action`/`abroad`/`ace` 等超常用词**被误判为专名** ——
-  在联机房间里会占用每人每局 3 个的专名额度。字段还缺 `conf`/`dGuess`（`logic.js` 按中性 0.85 兜底）。
-  **影响范围**：只有"没跑过 `npm run build` 的全新克隆"和**离线便携版**（`build_standalone.js` 内嵌的就是它）。
-  本机存在 `data/db.json` 时游戏用的是已清理干净的全量库，不受影响。
-  **若将来要补**：建议写 `tools/build_lite_db.js`，按"现有词表 ∩ 当前全量库"取词（→ 约 33,580 词），
-  再用同一套 `computeSucc()` 逻辑**针对精简词表重算可接指数**（不能直接抄全量库的值 ——
-  全量库里 `water` 有 1070 个后继，精简库里只有 99 个）。
+**已解决（2026-09 大修）**：
+- ~~轻量词库 `db.lite.json` 过期且无生成脚本~~ → **直接废弃删除**（用户决定）。
+  它当时的状态足以说明"无脚本的生成物"有多危险：36,809 词里有 3,229 词**全量库早已淘汰**
+  （`sis`/`te`/`ide`/`mic`/`os` 等依附型/缩写词仍在）；`kind` 是修复前的旧分类；`action`/`abroad`/`ace`
+  被误判为专名（房间里白占专名额度）；还缺 `conf`/`dGuess` 字段。
+  与其维护一份注定过期的产物，不如让所有人用同一份可重现的词库 —— 代价是克隆后必须跑一次 `npm run build`。
+- ~~离线便携版~~ → 一并删除（它内嵌的正是上面那份词库，且 `app.js` 有 15 处离线分支）。
 
 **已完成（原 Phase 2 遗留）**：
 - `print_hard_list.js` 已修复 —— 它读的是 `rows`/`meta` 结构（旧版假设的 `words`/`summary` 早已不存在，这正是它崩溃的原因）。
@@ -602,27 +605,35 @@ var ITEM_QUOTA = 3;   // 每局每人可使用道具的总次数（三种卡合�
 
 ### 改代码时
 
-4. **改 `public/logic.js`（共用引擎）→ 必须跑三边**：
+4. **改 `public/logic.js`（共用引擎）→ 必须跑两边**：
    ```
    node test/test.js          # 规则单元
    node test/integration.js   # 真实词库
    node test/api-test.js      # 服务端
-   node tools/build_standalone.js   # 重建便携版
    ```
+   然后刷新浏览器点一遍关键流程（引擎同时被服务端与浏览器加载）。
 5. **改 `tools/compute_chain_idx.js` → 必须重跑构建并实测效果**："写了规则"≠"规则生效"（`[网络]` 空转就是教训）。
-6. **改过滤规则 → 必须双向验证**：既验证"该删的删了"，也验证"**不该删的没被删**"（常见词白名单抽查）。
+   只需重跑第 3 步（`node tools/compute_chain_idx.js`，约 30~90 秒），**原始库 `db.raw.json` 不会被动**。
+6. **改过滤规则 → 必须双向验证**：既验证"该删的删了"，也验证"**不该删的没被删**"。
+   跑 `node tools/check_db.js` 看 20 项硬指标 + 短词风险面；**新增规则后一定要在常用词上抽查**：
+   ```js
+   // 例：确认 all/back/body/part/action/salt 仍是 kind=0.9 的普通词
+   node -e "var d=require('./src/db.js');['all','back','body','part','action','salt'].forEach(function(w){var e=d.store.lookup(w);console.log(w, e?e.kind:'不在库');})"
+   ```
 
 ### 改完代码后
 
 7. **跑全套测试**：`npm.cmd test`（PowerShell 下 `npm test` 会被执行策略挡住）。
 8. **同步 4 处描述**：如果改了构建步骤，`package.json` / `build-db.sh` / `README.md` / `DEPLOY.md` 都要看一遍。
-9. **不要手改生成物**：`data/db.json`、`data/db.lite.json`、`public/vocab.json`、`hard_ends_report.json`、`word-chain-standalone.html` —— 改它们要通过生成脚本。
+9. **不要手改生成物**：`data/db.raw.json`、`data/db.json`、`public/vocab.json`、`tools/hard_ends_report.json` —— 改它们要通过生成脚本。
+   （`word-chain-standalone.html` 已随便携版一起删除。）
 
 ### 环境
 
 10. **PowerShell 里用 `npm.cmd`**，不要用 `npm`（`npm.ps1` 被执行策略挡住）。
 11. **Python 用 `python`**，不要用 `python3`（那是 Microsoft Store 的坏别名，会报"未找到"）。
-12. **重建词库前先备份**：`node tools/compute_chain_idx.js` 会**覆盖** `data/db.json`，且耗时 90 秒+。
+12. **不用再备份词库了**：第 3 步只写 `data/db.json`，原始库 `data/db.raw.json` 是只读输入、永不被改写。
+    改过滤规则直接重跑第 3 步即可（约 30~90 秒）。只有**重跑第 2 步**（Python）才会覆盖原始库。
 13. **别把 stderr 混进管道再判退出码**：`npm.cmd test 2>&1 | Select-String ...` 会把 Node 的
     `DEP0169` 弃用警告当成错误记录，导致外部看到的退出码是 **1**（实际测试全绿）。
     判断通过与否请用 **`npm.cmd test > $null 2>&1; $LASTEXITCODE`** —— 本项目的弃用警告不影响结果。
@@ -646,13 +657,15 @@ cd "E:\WorkFolder\DSH Desktop\word-chain"
 npm.cmd test
 
 # 关卡 2：服务端真能起来 + 接口正常
-$env:PORT=8099; node server.js    # 另开窗口，看启动横幅是否打印词库来源
+$env:PORT=8099; node server.js    # 另开窗口，看启动横幅是否打印词库路径与词条数
 # 访问 http://localhost:8099 与 /api/lookup?word=apple
 
-# 关卡 3：便携版能双击打开（改了前端时）
-
-# 关卡 4：词库体检（Phase 2 之后）
+# 关卡 3：词库体检（改了词库/过滤规则时必跑）
 node tools/check_db.js
+
+# 关卡 4：第 3 步能独立重跑，且不改动原始库（改过滤规则时验证这一点）
+#   node tools/compute_chain_idx.js        # 约 30~90 秒
+#   跑前后 Get-FileHash data\db.raw.json 应完全一致
 
 # 关卡 5：git 状态干净、提交信息可读
 git status
@@ -669,8 +682,8 @@ git log --oneline -5
 - [ ] 有工具脚本**跑不起来**了（字段名对不上、路径变了）
 - [ ] 有规则**写了但没生效**（正则匹配不到数据）
 - [ ] 入库的生成物**明显过期**（时间戳/规模与当前不符）
-- [ ] 便携版**落后于源码**
-- [ ] 新加的规则**没有配套测试**
+- [ ] 有人还在讨论**已经被删掉的东西**（如便携版、`db.lite.json`）
+- [ ] 新加的规则**没有配套测试**，也没在常用词上抽查误伤
 - [ ] 同一常量/语义在 **3 处以上**重复定义
 - [ ] README/DEPLOY/package.json 对同一件事的**描述不一致**
 - [ ] 提交信息只写"优化""修复"，看不出改了什么
@@ -685,19 +698,22 @@ git log --oneline -5
 | 中 | `[网络]` 规则**精度**问题：该规则连带删掉了个别"生僻但真实"的词（如 `niqab` 尼卡布、`sawm` 斋戒）。更优做法是**降权**（把这些词的 `kind` 降到 0.1，让 AI 避开而不从词库删除），需要先定策略 | Phase 3 | 需先定策略 |
 | 高 | 修专名正则（7,418 词漏网） | Phase 1 | 30 分钟 |
 | ~~高~~ | ~~重建离线单文件（补齐 2 个修复）~~ ✅ **已完成**（随密码修改功能一起重建，已含 `pluralBase`+`turnMsLeft`） | Phase 1 | — |
-| 中 | 新建 `check_db.js` 词库体检 | Phase 2 | 1 小时 |
-| 中 | 修 `print_hard_list.js` + 刷新过期报告 | Phase 2 | 30 分钟 |
-| 中 | 前端改完自动重建便携版（防再次落后） | Phase 2 | 20 分钟 |
+| ~~中~~ | ~~新建 `check_db.js` 词库体检~~ ✅ **已完成**（20 项硬指标 + 短词风险面） | Phase 2 | — |
+| ~~中~~ | ~~修 `print_hard_list.js` + 刷新过期报告~~ ✅ **已完成** | Phase 2 | — |
+| ~~中~~ | ~~前端改完自动重建便携版~~ ✅ **已作废**（便携版 2026-09 删除，不再有第二份前端） | Phase 2 | — |
 | 中 | 补 `pluralBase` 的测试 | Phase 2 | 20 分钟 |
 | 低 | 收敛 `aeiouy` 等重复常量 | Phase 2 | 1 小时 |
 | ~~高~~ | ~~模拟对局量化"生僻词被喂给玩家"的比例~~ ✅ **已完成**（结论：问题比词库统计显示的小得多） | Phase 3 | — |
 | ~~高~~ | ~~处理 2 字母回退导致的 `chain_idx` 虚高~~ ✅ **已完成并重新定性**：实为"难度全默认值"，已用 `dGuess` 修正 | Phase 3 | — |
 | ~~中~~ | ~~领域专业术语（`[医]`/`[化]`）限制~~ ✅ **已完成**（统一为 `conf` 可信度机制） | Phase 3 | — |
-| 中 | 用 4 个字生成词库时把 `conf`/`dGuess` 也写进 `db.lite.json`（当前轻量库缺这两个字段，走中性默认） | Phase 3 | 需重建轻量库 |
+| ~~中~~ | ~~把 `conf`/`dGuess` 写进轻量库~~ ✅ **已作废**（轻量库已删，现在只有一份成品库，天然带这两个字段） | Phase 3 | — |
+| 🆕 高 | **过滤规则避免"按释义关键词"误伤**：本项目已因同一类问题踩坑三次（`[域]` 误伤 to/be/as、`昵称` 误伤 bunny、`部/国` 误伤 231 个常用词）。建议**给 `check_db.js` 加一条常驻断言**：一份"最常用 100 词"白名单，每个都必须是 `kind=0.9`，构建后自动校验 | Phase 3 | 1 小时 |
+| 🆕 中 | **历史遗留的"就近改写"型脚本**：`sort_db.js` 已改指向原始库，但项目里可能还有别的"读 A 写 A"的脚本。建议每次改工具前先 grep `writeFileSync` / `fs.writeFile`，确认输入输出不是同一个文件 | Phase 2 | 30 分钟 |
 | ~~—~~ | ~~密码修改~~ ✅ **已完成** | Phase 4 | — |
 | — | 1v1 单挑 + 拒绝判负 | Phase 4 | 需先定规则 |
 | ~~—~~ | ~~积分系统~~ ✅ **已完成**（架构 + 计分 + 结算 + UI + 测试） | Phase 4 | — |
 | ~~—~~ | ~~道具系统~~ ✅ **基建 + 跳过卡 + 修改卡 已完成**（商店/库存/每局限额/服务端权威/UI/测试） | Phase 4 | — |
 | ~~—~~ | ~~1v1 单挑~~ ✅ **已完成**（房间内发起；按用户要求**无拒绝判负**） | Phase 4 | — |
 | ~~—~~ | ~~反转卡~~ ✅ **已完成**（按用户确认的 (b) 回合逆序） | Phase 4 | — |
-| — | 道具系统（跳过/反转/修改卡） | Phase 4 | 需先定回合语义 |
+| ~~—~~ | ~~道具系统（跳过/反转/修改卡）~~ ✅ **已完成**（三种卡全部可用；购买在商店，使用仅联机房间） | Phase 4 | — |
+| — | 道具效果平衡性观察（价格/每局 3 次上限是否合适） | Phase 4 | 需实测 |

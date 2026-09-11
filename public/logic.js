@@ -76,7 +76,7 @@
   /* ---- AI 裁判「验词」----
    * 可疑出词（词生僻 / 出词过快 / 偷懒 / 难度突跳）会暂停本轮，弹四选一让玩家认释义。
    * 引擎只负责"存题、判分、推进回合"，具体"什么算可疑、题目怎么出"由外部注入
-   * （game.aiReferee 钩子，见 src/ai.js）—— 这样共用引擎不依赖服务端模块，离线便携版照常可用。
+   * （game.aiReferee 钩子，见 src/ai.js）—— 这样共用引擎不依赖服务端模块，浏览器端也能直接跑。
    */
   var VERIFY_WRONG_PENALTY = 1;   // 答错扣 1 分（答对不扣；无论对错接龙都继续）
 
@@ -366,7 +366,7 @@
       // 词型惩罚：专名/地名/人名(kind=0.10) 大幅降权(但仍可选)
       if (kind < 0.90) soft = soft * (0.30 + 0.70 * (kind / 0.90));
       // 词条可信度：无权威佐证/无精讲的冷僻条目降权，专业术语再低一档
-      // （缺 conf 字段的旧词库如 db.lite.json / vocab.json 按中性 0.85 处理，行为不变）
+      // （缺 conf 字段的旧词库如 vocab.json 按中性 0.85 处理，行为不变）
       var conf = (c.conf == null ? 0.85 : c.conf);
       soft = soft * (0.60 + 0.40 * conf);
       // 结尾多样化：这个候选的结尾若最近已被 AI 频繁喂给玩家, 则降权 —— 逼它换开头
@@ -394,7 +394,7 @@
     return scorePick(store.candidates(rawPrev, usedRound, { strictEcho: !!(ctx && ctx.strictEcho) }), usage, target, ctx);
   }
 
-  /* ---- 用户学习画像（离线端：localengine 读取 localStorage 后调用）----
+  /* ---- 用户学习画像（服务端从账户数据构造后挂在 game.profile 上；浏览器端不构造）----
    * data = { games:[{words:[{word,d,playerIdx}], stats:{total,avgD,bestChain}}],
    *          usage:{word:count}, seen:[words], best:number }
    * 产出全方位画像：难度舒适区 skill / 已知词 known / 结尾→接词习惯 endingWords /
@@ -494,7 +494,7 @@
     this.chain = []; // 本轮接龙词（每轮清空），用于接龙面板
     this.allUsed = Object.create(null); // 会话级全时段已用计数(防疲劳软性，跨轮累计，换局才清空)
     this.aiEnds = [];  // 最近 AI 喂给玩家的结尾(末2字母), 用于结尾多样化激励
-    this.profile = null; // 用户学习画像(离线端由 localengine 注入), 用于难度贴合+教学导向
+    this.profile = null; // 用户学习画像(由服务端注入 game.profile), 用于难度贴合+教学导向
     this.explore = false; // 探索·发现：AI 随机给有趣的初始词
     this.reverseTurn = false; // 反转卡效果：为 true 时出词顺序倒转（接龙规则不变），跨轮保留
     this.verify = null;       // AI 裁判：待作答的验词 { playerIdx, word, options, answerIdx, correctZh, reasons }

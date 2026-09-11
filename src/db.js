@@ -1,10 +1,10 @@
 /* src/db.js — 加载词库文件，构建规则引擎 WordStore
  *
- * 词库有两份，按优先级自动选择（不需要手动配置）：
- *   1) data/db.json       全量词库（约 28 万词），由 `npm run build` 生成，需要 Python 3
- *   2) data/db.lite.json  轻量词库（约 3.7 万词），随项目一起提供，克隆下来就能直接运行
+ * 只加载一份词库：data/db.json（成品），由 `npm run build` 生成（需要 Python 3）。
+ *   克隆仓库后**必须先跑一次** npm run build —— 项目不再附带轻量词库。
+ *   （2026-09 之前附带 data/db.lite.json，但它没有生成脚本、会静默过期，已废弃。）
  *
- * 只有两份都找不到时才报错，并在错误信息里给出修复命令（而不是抛裸的 ENOENT）。
+ * 找不到时给出可照做的中文提示，而不是抛裸的 ENOENT。
  */
 'use strict';
 var fs = require('fs');
@@ -33,18 +33,18 @@ function readJson(filePath) {
 
 function loadVocab() {
   if (fs.existsSync(config.DB_PATH)) {
-    return { vocab: readJson(config.DB_PATH), path: config.DB_PATH, full: true };
-  }
-  if (fs.existsSync(config.LITE_DB_PATH)) {
-    return { vocab: readJson(config.LITE_DB_PATH), path: config.LITE_DB_PATH, full: false };
+    return { vocab: readJson(config.DB_PATH), path: config.DB_PATH };
   }
   throw new Error(
-    '找不到词库文件，游戏无法启动。已查找以下位置：\n' +
+    '找不到词库文件，游戏无法启动：\n' +
     '  ' + config.DB_PATH + '\n' +
-    '  ' + config.LITE_DB_PATH + '\n' +
-    '正常情况下轻量词库 data/db.lite.json 会随项目一起提供，请确认它没有被删除。\n' +
-    '若确实缺失，可以生成全量词库（需要先安装 Python 3）：\n' +
-    '  npm run build'
+    '\n' +
+    '词库需要用构建脚本生成一次（约 3~5 分钟，需要 Python 3 与 Node.js）：\n' +
+    '  npm run build\n' +
+    '\n' +
+    '说明：项目从 2026-09 起不再随仓库附带轻量词库 db.lite.json ——\n' +
+    '那个文件没有生成脚本、会静默过期（详见 README「词库是怎么选的」）。\n' +
+    '若 npm run build 跑到一半失败，请先看它的报错；缺源数据时它会提示怎么补齐。'
   );
 }
 
@@ -58,6 +58,5 @@ module.exports = {
   dbVocab: dbVocab,     // 原始词条数组
   wordCount: dbVocab.length,
   noteCount: dbVocab.filter(function (e) { return e.has_note; }).length,
-  dbPath: loaded.path,  // 实际加载的词库文件路径
-  isFullDb: loaded.full // true=全量词库(db.json) / false=轻量词库(db.lite.json)
+  dbPath: loaded.path   // 实际加载的词库文件路径
 };

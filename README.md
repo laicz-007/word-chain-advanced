@@ -57,9 +57,13 @@
 - **1v1 单挑**（仅联机房间）：房间里可向他人发起单挑，对方接受即开战（**拒绝不打、无任何惩罚**）；其他人等待或旁观。
 - **密码修改**：账号栏可直接改密码；改后**其他设备上的登录状态立即失效**（token 版本号机制）。
 
-> 两种交付形态：
-> - **网站版（本仓库 server.js）**：部署到服务器/VPS，支持**账号（注册+密码登录）+ 游客**；登录后**学习画像细化到账户**、对局记录/防疲劳/生词/最高纪录都存服务端，跨设备可读。游客只做**最低限度 localStorage**（同便携版），不登录、不做数据归并。
-> - **便携版（单文件 `word-chain-standalone.html`）**：双击即玩，**纯游客**，数据存浏览器 localStorage，并保留**以浏览器为单位的学习画像**（离线版不带账号，但画像功能与最初一致）。
+> **交付形态：网站版（本仓库 server.js）**——部署到服务器/VPS，支持**账号（注册+密码登录）+ 游客**；
+> 登录后**学习画像细化到账户**、对局记录/防疲劳/生词/最高纪录都存服务端，跨设备可读。
+> 游客只做**最低限度 localStorage**，不登录、不做数据归并。
+>
+> > 2026-09 起**不再维护离线便携版**（原 `word-chain-standalone.html` 单文件版）。
+> > 原因：它内嵌的轻量词库 `db.lite.json` 没有生成脚本、会静默过期，导致便携版长期落后于网站版
+> > （缺复数拒绝、倒计时修复，词库里还留着已被清理的缩写词）。如需离线玩，请在本机跑起网站版后访问 localhost。
 
 > 统一词库由脚本从 3 个开源项目自动整合（`python tools/build_unified_db.py`）：
 > - **ECDICT**(skywind3000/ECDICT)：兜底词覆盖 + 音标/中文释义/词频/考试标签/柯林斯星级（数十万词条）
@@ -68,11 +72,23 @@
 
 ## 运行
 
-只需要 **Node.js（≥14）**。
+需要 **Node.js（≥14）**；生成词库还需要 **Python 3**。
 
-### 方式一：直接跑（推荐，零构建）
+### 第一步：生成词库（必须，约 3~5 分钟）
 
-词库有两份，**轻量词库 `data/db.lite.json`（约 3.7 万词）已随项目提供**，所以拿到项目后**不需要任何构建步骤**：
+**项目不再附带词库文件**，克隆下来必须先构建一次：
+
+```bash
+npm run build         # 依次执行下面三步
+#   1. python tools/build_data.py         -> public/vocab.json（基础词池，不联网）
+#   2. python tools/build_unified_db.py   -> data/db.raw.json（原始词库，首次需联网下载约 80MB）
+#   3. node   tools/compute_chain_idx.js  -> data/db.json（成品：过滤 + 算好可接指数）
+```
+
+> 第 1 步的产物 `public/vocab.json` 已在仓库中，所以通常会自动跳过。
+> 第 2 步的源数据（`data/ecdict.csv`、`data/tofu_words.csv`、`data/kyle/`）如果已存在就**不联网**。
+
+### 第二步：启动
 
 ```bash
 node server.js        # 启动服务端
@@ -81,47 +97,34 @@ node server.js        # 启动服务端
 
 Windows 可直接双击 `启动游戏.bat`。换端口：`PORT=9000 node server.js`。
 
-启动时控制台会显示当前用的是哪份词库：
+启动时控制台会显示词库路径与规模：
 
 ```
-词库词条: 36809（含知识点: 13884）
-词库来源: 轻量词库 data/db.lite.json（随项目自带，可直接玩）
+词库词条: 307113（含知识点: 13873）
+词库来源: E:\...\data\db.json
 ```
 
-### 方式二：换成全量词库（可选，需要 Python 3）
+### 词库是怎么用的？
 
-全量词库 `data/db.json` 约 **28 万词**、文件 **84MB**，**没有随项目分发**（太大），需要自己生成。
-这一步额外需要 **Python 3**：
+**只有一份词库**：`data/db.json`（成品，约 30.7 万词），由 `npm run build` 生成。`src/db.js` 启动时直接加载它；
+文件不存在就报错并提示你运行 `npm run build`（不会抛裸的 ENOENT）。
 
-```bash
-npm run build         # 依次执行下面三步
-#   1. python tools/build_data.py         -> public/vocab.json（基础词库，不联网）
-#   2. python tools/build_unified_db.py   -> data/db.json（全量词库，首次需联网下载约 80MB）
-#   3. node   tools/compute_chain_idx.js  -> 预计算可接指数 + 过滤缩写/专名
-node server.js        # 存在 data/db.json 时会自动优先使用它
-```
+| 文件 | 角色 | 谁生成 | 进 git 吗 |
+|---|---|---|---|
+| `public/vocab.json` | 基础词池（2.8 万词），作为整合时的高优先来源 | `tools/build_data.py` | 是 |
+| `data/db.raw.json` | **原始**词库（33 万词），整合完但**未过滤** | `tools/build_unified_db.py` | 否 |
+| `data/db.json` | **成品**词库（30.7 万词），游戏实际加载 | `tools/compute_chain_idx.js` | 否 |
 
-> 第 1 步的产物 `public/vocab.json` 已在仓库中，所以通常会自动跳过。
-
-### 词库是怎么选的？
-
-**自动判断，不需要任何配置**：
-
-| 情况 | 使用的词库 | 词量 |
-|---|---|---|
-| `data/db.json` 存在（跑过 `npm run build`） | 全量 `data/db.json` | 约 30 万 |
-| 否则 `data/db.lite.json` 存在（默认情况） | 轻量 `data/db.lite.json` | 约 3.7 万 |
-| 两份都没有 | 启动时报错，并提示你运行 `npm run build` | — |
-
-两份词库都够正常游玩，全量库词更丰富、生僻词更多。
-
-> ⚠️ **已知差距：轻量词库 `db.lite.json` 停留在 2026-09-05，没有跟上后来的词库清理。**
-> 它里面还留着 `sis`（＝sister）、`te`、`ide`、`ole`、`mic`、`os` 这类依附型/缩写词，
-> 而且 `action`、`abroad`、`ace` 这些超常用词被旧版规则**误判成专名** ——
-> 在联机房间里会白白占用每人每局 3 个的专名额度。
-> 它也没有对应的生成脚本（是一次性产物），因此暂时无法一键重建。
-> **影响范围**：只有"没跑过 `npm run build` 的全新克隆"和"离线便携版（`word-chain-standalone.html`）"。
-> 本机只要存在 `data/db.json`，游戏用的就是已清理干净的全量库。
+> **为什么原始库和成品库要分成两个文件？**
+> 以前第 3 步是「读 `db.json` → 过滤 → 写回 `db.json`」，等于就地改写。
+> 过滤规则一旦删过头，那些词就**永久消失**——2026-09 实测因此丢了 25,183 个词
+> （`action`、`abroad`、`ace` 等常用词全不见，而且没有任何迹象）。
+> 拆开后，改过滤规则只需重跑第 3 步（约 30 秒）反复试，原始数据始终完好。
+>
+> **`db.lite.json` 已废弃**（2026-09 删除）。它曾经是"克隆即玩"的轻量词库，但**从来没有生成脚本**，
+> 是一次性快照，于是静默过期：里面还留着 `sis`（＝sister）、`te`、`ide`、`mic`、`os` 等已被清理的依附型/缩写词，
+> `action`/`abroad`/`ace` 这些超常用词被旧规则误判成专名（房间里会白占专名额度）。
+> 与其维护一份注定过期的产物，不如让所有人用同一份、可重现的词库。
 
 ## 游戏规则
 
@@ -205,21 +208,22 @@ word-chain/
 │   └── api.js             #   HTTP 路由 /api/* + 静态文件服务
 ├── 启动游戏.bat           # Windows 一键启动
 ├── package.json
-├── data/                  # 源数据 + 词库
-│   ├── db.lite.json       # (随项目提供) 轻量词库 3.7万词 —— 克隆下来即可直接运行
-│   ├── ecdict.csv         # (下载) ECDICT
-│   ├── tofu_words.csv     # (下载) Tofu
+├── data/                  # 源数据 + 词库（除 vocab.json 外全部不入 git）
+│   ├── ecdict.csv         # (下载) ECDICT 原始词典
+│   ├── tofu_words.csv     # (下载) Tofu 词典
 │   ├── kyle/              # (下载) Kyle 精讲 jsonl
-│   └── db.json            # (生成) 全量词库 28万词 —— npm run build 生成，存在时优先使用
+│   ├── db.raw.json        # (生成) 原始词库 33万词 —— 第 2 步产出，只读，别改它
+│   └── db.json            # (生成) 成品词库 30.7万词 —— 第 3 步产出，游戏实际加载它
 ├── tools/
-│   ├── build_unified_db.py   # 下载+整合 3 数据源 -> data/db.json
-│   ├── compute_chain_idx.js  # 预计算 词型分/可续性/可接指数 -> data/db.json
-│   ├── sort_db.js            # 词库按字母排序 + 去重
+│   ├── build_data.py         # word.csv -> public/vocab.json（基础词池）
+│   ├── build_unified_db.py   # 下载+整合 3 数据源 -> data/db.raw.json（原始库）
+│   ├── compute_chain_idx.js  # 过滤 + 预计算可接指数：db.raw.json -> db.json（成品库）
+│   ├── check_db.js           # 词库体检（改完词库先跑它，20 项硬指标）
+│   ├── check_echo.js         # 回声规则/词库清理验收
+│   ├── sort_db.js            # 词库排序去重（可选工具，只动原始库）
 │   ├── analyze_hard_ends.js  # 难接双辅音分析(按 MN 统计承接词数)
 │   ├── print_hard_list.js    # 打印难接清单
-│   ├── fetch.py              # 分块下载工具
-│   ├── localengine.js        # 浏览器本地引擎（单文件离线版复用）
-│   └── build_standalone.js   # 打包离线单文件 HTML
+│   └── fetch.py              # 分块下载工具
 ├── public/                # 前端(薄客户端, 只调 API)
 │   ├── index.html
 │   ├── style.css
@@ -244,19 +248,18 @@ word-chain/
 
 | 步骤 | 脚本 | 产出 | 是否联网 |
 |---|---|---|---|
-| 1 | `python tools/build_data.py` | `public/vocab.json`（基础词库，用 `data/word.csv`） | 否 |
-| 2 | `python tools/build_unified_db.py` | `data/db.json`（全量词库，整合 ECDICT/Tofu/Kyle） | 首次需联网，有缓存则离线 |
-| 3 | `node tools/compute_chain_idx.js` | 给 db.json 算可接指数 + 过滤缩写/专名 | 否 |
+| 1 | `python tools/build_data.py` | `public/vocab.json`（基础词池，用 `data/word.csv`） | 否 |
+| 2 | `python tools/build_unified_db.py` | `data/db.raw.json`（**原始**词库，整合 ECDICT/Tofu/Kyle） | 首次需联网，有缓存则离线 |
+| 3 | `node tools/compute_chain_idx.js` | `data/db.json`（**成品**：过滤 + 可接指数），读 raw 写成品 | 否 |
 
 ### 一键重建（推荐）
 
-`build-db.sh` 是上面三步的**一键入口**（内部依次调用 1/2/3），在项目根目录执行：
-
 ```bash
-bash build-db.sh
+npm run build         # 上面三步
+bash build-db.sh      # 等价入口（脚本内部也是这三步）
 ```
 
-等价于 `npm run build`（package.json 里已配成这三步）。跑完重启服务生效：
+跑完重启服务生效：
 
 ```bash
 sudo systemctl restart word-chain
@@ -265,14 +268,19 @@ sudo systemctl restart word-chain
 ### 单独跑某一步（维护时用）
 
 ```bash
-python tools/build_data.py                 # 只重建基础词库 vocab.json
-python tools/build_unified_db.py           # 只重新整合全量词库 db.json
-node tools/compute_chain_idx.js            # 只重算可接指数/过滤缩写
+python tools/build_data.py                 # 只重建基础词池 vocab.json
+python tools/build_unified_db.py           # 只重新整合 -> data/db.raw.json
+node tools/compute_chain_idx.js            # 只重跑过滤+可接指数（约 30 秒，改过滤规则时反复用这个）
 ```
 
-> 说明：`build_unified_db.py` 输出的是**全量** db.json（约 33 万词）；`compute_chain_idx.js` 会剔除缩写/专名（`kind<=0.1` 且不在常用词白名单）并写入可接指数，最终约 **28 万词**。
+> **改过滤规则的推荐循环**：改 `compute_chain_idx.js` → 跑它 → `node tools/check_db.js` 看体检 → 不对就再改。
+> 全程只要 30 秒一轮，**不用碰 Python**，原始库 `db.raw.json` 也不会被动。
 >
-> `data/db.lite.json` 是**另一份独立提供的轻量词库**（约 3.7 万词，随项目分发），离线单文件版与服务端兜底都用它。注意它是早期生成的快照，**不是**全量库按词切出来的子集：两者的词条集合与 `chain_idx` 数值并不一一对应（`chain_idx` 依赖各自词库内的后继词，词库不同则数值不同）。
+> 第 2 步输出的是**原始**词库（约 33 万词，11 个字段）；第 3 步会剔除缩写/专名/低质词
+> （`kind<=0.1` 且不在常用词白名单），并写入 `kind`/`chain_idx`/`conf` 等 9 个计算字段，最终约 **30.7 万词**。
+>
+> `npm run build` 里的 `python` 必须是可用的 Python 3。Windows 上如果装了 Microsoft Store 的
+> "python3" 假别名，请用 `python`（`build-db.sh` 已做实际可用性探测）。
 
 ## 运行测试
 

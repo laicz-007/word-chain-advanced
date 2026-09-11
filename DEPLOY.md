@@ -28,25 +28,28 @@ word-chain/
 ├── src/            # 8 个逻辑模块
 ├── public/         # 前端（index.html/app.js/style.css/login.css/主题/logic.js）
 └── data/
-    └── db.json     # 词库（可选，见下方说明）
+    └── db.json     # 词库（必须，见下方说明）
 ```
 
 用 scp / rsync / git 任一方式上传到 VPS，例如：
 
 ```bash
-# 本机执行（打包上传再解压）
-tar -czf word-chain.tgz server.js package.json src public data/db.lite.json
-#   想要全量词库：把上面的 data/db.lite.json 换成 data/db.json（需先在本机 npm run build）
+# 本机执行（打包上传再解压）。注意必须带上 data/db.json —— 没有词库服务起不来
+tar -czf word-chain.tgz server.js package.json src public data/db.json
 scp word-chain.tgz user@你的VPS:/home/user/
 # VPS 上解压
 cd /home/user && tar -xzf word-chain.tgz
 ```
 
-> **词库要传哪一份？** 服务端会自动选择：`data/db.json`（全量，约 28 万词）存在就用它，否则用 `data/db.lite.json`（轻量，约 3.7 万词）。两份都传则自动用全量。
-> - **省事**：只传 `data/db.lite.json`（12MB，随项目自带，不需要在本机构建）
-> - **要全量**：先在本机跑 `npm run build` 生成 `data/db.json`（84MB，需要 Python 3），再传它
+> **词库只有一份**：`data/db.json`（成品，约 30.7 万词 / 96MB）。
+> - 先在本机跑 `npm run build` 生成它（需要 Python 3），再传上去
+> - **VPS 上不需要安装 Python**：`npm run build` 只在你自己的机器上执行，`db.json` 只是一个普通数据文件
+> - 没传词库时服务启动会直接报错，并提示你运行 `npm run build`
 >
-> **VPS 上不需要安装 Python**：`npm run build` 只在你自己的机器上执行，产物 `db.json` 只是一个普通数据文件。若两份词库都没有上传，服务启动时会直接报错并提示怎么处理。
+> **不需要传** `data/db.raw.json`（33 万词的原始库，54MB）—— 那只是构建时的中间产物，游戏不读它。
+>
+> > 2026-09 起不再有轻量词库 `db.lite.json`。它曾经让"只传 12MB 就能跑"，但**没有生成脚本、会静默过期**，
+> > 导致线上词库与代码长期不一致（留着已清理的缩写词、常用词被误判成专名）。现在统一用一份可重现的成品库。
 
 > `data/usage.json`、`data/users.json`、`data/sync/`、`data/.secret` 会在首次运行时自动生成。
 
@@ -151,7 +154,7 @@ sudo certbot --nginx -d 你的域名
 tar -czf backup-$(date +%F).tgz data/
 ```
 
-`data/db.json` 或 `data/db.lite.json`（词库，静态，属可重新获取的文件）、`data/users.json`（账户）、`data/sync/`（每人画像/记录）、`data/.secret`（token 密钥，务必一起备份，否则用户 token 全失效）。
+`data/db.json`（词库，静态，属可重新获取的文件）、`data/users.json`（账户）、`data/sync/`（每人画像/记录）、`data/.secret`（token 密钥，务必一起备份，否则用户 token 全失效）。
 
 ## 8. 更新代码
 

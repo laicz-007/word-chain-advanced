@@ -404,7 +404,7 @@ t('AI 可信度: conf 低的冷僻条目被降权', function () {
   assert.ok(wins >= 45, '高可信度条目应稳定胜出, 实际 ' + wins + '/60');
 });
 
-t('AI 可信度: 缺 conf / dGuess 字段时不被单方面惩罚（兼容 db.lite.json / vocab.json）', function () {
+t('AI 可信度: 缺 conf / dGuess 字段时不被单方面惩罚（兼容 vocab.json 等旧词库）', function () {
   var base = { d: 3, f: 0.5, kind: 0.9, has_succ: true, chain_idx: 0.5 };
   var a = Object.assign({}, base, { w: 'aaa' });   // 两个词条都不带 conf/dGuess
   var b = Object.assign({}, base, { w: 'bbb' });
@@ -610,7 +610,7 @@ t('禁止回声: isEcho 判定', function () {
 });
 
 t('禁止回声: 只有 strictEcho（联机房间）才拦，其它模式放行', function () {
-  // 默认（人机对战 / 本地同屏 / 离线便携版）：允许回声
+  // 默认（人机对战 / 本地同屏）：允许回声
   assert.strictEqual(R.canChain('apple', 'le').ok, true, '非房间模式应允许回声');
   assert.strictEqual(R.canChain('abarticular', 'lar').ok, true, '非房间模式允许回声');
   // 联机房间（strictEcho）：拦

@@ -60,12 +60,6 @@
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
   function api(path, body) {
-    // 单文件离线版：使用本地引擎；否则走服务端 API
-    if (window.__LOCAL_GAME__) {
-      if (path === '/api/start') return window.__LOCAL_GAME__.start(body || {});
-      if (path === '/api/hint') return window.__LOCAL_GAME__.hint(body || {});
-      return window.__LOCAL_GAME__.action(body || {});
-    }
     var b = body || {};
     if (authToken) b.token = authToken;   // 登录态随请求带上（服务端据此绑定账户）
     return fetch(path, {
@@ -84,7 +78,6 @@
 
   // 快速查词(供乐观显示"我出的词"释义, 不参与AI思考)
   function lookup(word) {
-    if (window.__LOCAL_GAME__) return window.__LOCAL_GAME__.lookup(word);
     return fetch('/api/lookup?word=' + encodeURIComponent(word)).then(function (r) { return r.json(); }).catch(function () { return null; });
   }
   function fillOpInfo(word) {
@@ -111,7 +104,7 @@
     $('log-list').addEventListener('click', onPanelClick);  // 对战记录里的 🔊/提示 也要能响应
     renderPvpNames();
     wireAuth();
-    initGate();          // 网站版先出"登录/注册"门，离线版直接进游戏
+    initGate();          // 先出"登录/注册"门
     renderProfileBox();
     loadAuthSession();   // 既有 token → 拉取账户数据
   }
@@ -125,7 +118,6 @@
     }).then(function (r) { return r.json().then(function (j) { j._http = r.status; return j; }); });
   }
   function wireAuth() {
-    if (window.__LOCAL_GAME__) { if ($('auth')) $('auth').classList.add('hidden'); if ($('account-bar')) $('account-bar').classList.add('hidden'); return; } // 离线单文件：无账号
     $('login-tab').addEventListener('click', function () { setAuthMode(false); });
     $('register-tab').addEventListener('click', function () { setAuthMode(true); });
     $('auth-submit').addEventListener('click', onAuthSubmit);
@@ -165,7 +157,6 @@
   }
   // 【两页切换】登录页(#auth) ↔ 游玩页(#setup + #log + #account-bar)
   function showGate() {                      // 显示登录页，隐藏游玩页
-    if (window.__LOCAL_GAME__) return;
     $('app-header').classList.add('hidden');
     $('auth').classList.remove('hidden');
     $('setup').classList.add('hidden');
@@ -182,7 +173,6 @@
     renderSetup();                          // 登录后即刻按身份渲染（隐藏昵称/显示身份等）
   }
   function renderAccountBar() {
-    if (window.__LOCAL_GAME__) { $('account-bar').classList.add('hidden'); return; }
     if (authToken && !account) { $('account-bar').classList.add('hidden'); return; }  // 账户信息加载中
     var logged = loggedIn();
     $('account-bar').classList.remove('hidden');
@@ -238,16 +228,8 @@
       .catch(function () { pwMsg('✗ 网络错误，请重试', true); });
   }
   function initGate() {                       // 决定首次进入哪一页
-    if (window.__LOCAL_GAME__) {              // 离线：直接游玩页
-      if ($('auth')) $('auth').classList.add('hidden');
-      if ($('account-bar')) $('account-bar').classList.add('hidden');
-      if ($('app-header')) $('app-header').classList.remove('hidden');
-      $('setup').classList.remove('hidden');
-      $('log').classList.remove('hidden');
-      return;
-    }
-    if (authToken) enterGame();               // 网站 + 已登录：直接游玩页
-    else showGate();                          // 网站 + 未登录：登录页
+    if (authToken) enterGame();               // 已登录：直接游玩页
+    else showGate();                          // 未登录：登录页
   }
   function onAuthGuest() {
     account = null;
@@ -329,7 +311,7 @@
   }
 
   /* ---------- 联机房间（多设备服务器版） ---------- */
-  function onlineModeAvail() { return !window.__LOCAL_GAME__ && loggedIn(); }
+  function onlineModeAvail() { return loggedIn(); }
   function onlineMsg(m) { var el = $('online-msg'); if (el) el.textContent = m || ''; }
   function roomGetState() {
     return fetch('/api/room/state?token=' + encodeURIComponent(authToken) + '&roomId=' + encodeURIComponent(roomId))
@@ -632,28 +614,12 @@
     });
   }
 
-  // 学习画像面板 —— 便携版(离线): 本地画像; 网站版: 登录账户画像; 均仅"人机对战"
+  // 学习画像面板 —— 登录账户画像，仅"人机对战"显示
   function renderProfileBox() {
     var box = $('profile-box');
     if (!box || mode !== 'pve') { if (box) { box.classList.add('hidden'); box.innerHTML = ''; } return; }
 
-    // 便携版（离线单文件）：以浏览器为单位的本地画像
-    if (window.__LOCAL_GAME__) {
-      if (!window.__LOCAL_GAME__.profile) { box.classList.add('hidden'); return; }
-      window.__LOCAL_GAME__.profile().then(function (p) {
-        if (!p || !p.hasData) { box.classList.add('hidden'); return; }
-        var weak = (p.weakEndings || []).map(function (x) { return '「' + esc(x) + '」'; }).join(' ') || '暂无';
-        box.classList.remove('hidden');
-        box.innerHTML =
-          '<div class="profile-title">🧠 你的学习画像（以本浏览器为单位）</div>' +
-          '<div class="profile-row">难度水平 ≈ <b>' + p.skill + '</b>/10 · 已知 <b>' + p.knownCount +
-          '</b> 个词 · 学到知识点 <b>' + (p.noteSeen || 0) + '</b> · 最长接龙 <b>' + (p.bestChain || 0) + '</b> 词</div>' +
-          '<div class="profile-row">薄弱结尾：<b>' + weak + '</b>（AI 会优先在这些结尾给你练新词的机会）</div>';
-      }).catch(function () {});
-      return;
-    }
-
-    // 网站版：登录账户画像
+    // 必须登录才有画像
     if (!account || !account.username) { box.classList.add('hidden'); box.innerHTML = ''; return; }
     var p = account.profile || {};
     var weak = (p.weakEndings || []).map(function (x) { return '「' + esc(x) + '」'; }).join(' ') || '暂无';
@@ -667,7 +633,6 @@
   }
 
   function wireSetup() {
-    if (window.__LOCAL_GAME__) { var mo = $('mode-online'); if (mo) mo.disabled = true; } // 离线无联机
     document.querySelectorAll('input[name="mode"]').forEach(function (el) {
       el.addEventListener('change', function () {
         mode = el.value; renderSetup(); renderProfileBox();
@@ -704,13 +669,6 @@
     });
   }
   function applyTheme(file) {
-    if (window.__LOCAL_GAME__) {
-      // 单文件版：基础样式常开，切换各主题 <style> 是否启用
-      document.querySelectorAll('style[data-theme-file]').forEach(function (s) {
-        s.disabled = (file !== s.getAttribute('data-theme-file'));
-      });
-      return;
-    }
     $('theme-style').href = file || '';
   }
 
@@ -720,7 +678,7 @@
     $('online-config').classList.toggle('hidden', mode !== 'online');
     $('start-btn').classList.toggle('hidden', mode === 'online');   // 联机模式用房间按钮开局
     // 人机对战：登录后直接以账户身份进行，不再要求昵称
-    var logged = loggedIn() && !window.__LOCAL_GAME__;
+    var logged = loggedIn();
     $('pve-name-row').classList.toggle('hidden', logged);
     $('pve-account-note').classList.toggle('hidden', !logged);
     if (logged) $('pve-account-name').textContent = account.username;
@@ -767,7 +725,7 @@
 
   function buildPlayers() {
     if (mode === 'pve') {
-      var name = (loggedIn() && !window.__LOCAL_GAME__) ? account.username : (($('pve-name').value || '').trim() || '玩家');
+      var name = loggedIn() ? account.username : (($('pve-name').value || '').trim() || '玩家');
       return [{ name: name, type: 'human' }, { name: 'AI', type: 'ai' }];
     }
     var n = Number($('pvp-count').value); var arr = [];
@@ -854,7 +812,7 @@
       mine: tracking ? myLocalIdx : null
     };
     var rec = { at: Date.now(), words: words, stats: stats };
-    if (loggedIn() && !window.__LOCAL_GAME__) {
+    if (loggedIn()) {
       // 登录：本局记录存到服务端账户（不写入本地，避免与游客数据归并）
       fetchJSON('/api/record', 'POST', { token: authToken, record: rec }).then(function (res) {
         if (res.ok && res.games) {
@@ -1060,7 +1018,7 @@
   function renderItemBar() {
     var bar = $('item-bar');
     if (!bar) return;
-    if (!loggedIn() || !state || window.__LOCAL_GAME__) { bar.classList.add('hidden'); return; }
+    if (!loggedIn() || !state) { bar.classList.add('hidden'); return; }
     var left = myItemLeft();
     var inv = (account && account.items) || {};
     bar.classList.remove('hidden');

@@ -18,4 +18,5 @@
 
 ## 生成数据（不随本项目分发）
 
-`data/db.json`、`data/db.lite.json` 等由上述数据源自动生成（`npm run build`），生成物同样受上述各项目许可约束，请自行确认在部署/分发时的合规性。
+`data/db.raw.json`、`data/db.json` 由上述数据源自动生成（`npm run build`），生成物同样受上述各项目许可约束，请自行确认在部署/分发时的合规性。
+`public/vocab.json` 来自 LinXueyuanStdio/DictionaryData，随本项目分发，同样受其许可约束。

@@ -56,7 +56,6 @@ function pad(s, n) { s = String(s); while (s.length < n) s += ' '; return s; }
 /* ---------- 1. 现在用的是哪份词库 ---------- */
 head('1) 当前词库');
 info('实际加载文件', db.dbPath);
-info('类型', db.isFullDb ? '全量词库 db.json（AI/提示最准，开发用）' : '轻量词库 db.lite.json（随项目提供，开箱即用）');
 info('词条总数', list.length.toLocaleString('en-US'));
 info('带精讲(note)的词', db.noteCount.toLocaleString('en-US'));
 if (typeof list[0] !== 'object' || list[0] === null) {

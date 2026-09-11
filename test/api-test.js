@@ -7,9 +7,8 @@ var assert = require('assert');
 var fs = require('fs');
 var path = require('path');
 
-if (!fs.existsSync(path.join(__dirname, '..', 'data', 'db.json')) &&
-    !fs.existsSync(path.join(__dirname, '..', 'data', 'db.lite.json'))) {
-  console.log('未找到词库文件（data/db.json 或 data/db.lite.json 都没有）。');
+if (!fs.existsSync(path.join(__dirname, '..', 'data', 'db.json'))) {
+  console.log('未找到词库文件 data/db.json。');
   console.log('请在项目根目录运行: npm run build（需要 Python 3 和 Node.js）');
   process.exit(2);
 }

@@ -1,4 +1,5 @@
-/* compute_chain_idx.js — 为 data/db.json 预计算"可接指数"(常见词供给口径)
+/* compute_chain_idx.js — 读原始词库、过滤、为成品词库预计算"可接指数"(常见词供给口径)
+ *   data/db.raw.json ──(本脚本)──> data/db.json
  *
  * 背景：旧口径把"词库里所有能接的词"都算供给, 导致 ic/lf/er 这类"结尾墙"
  *       虽真实常见后续极少, 却因词库里有生僻词而拿到高可接指数, 把玩家逼进墙角。
@@ -23,8 +24,26 @@ var F_POW = 1.5;              // 常见度幂(越大越突出"常见"后继, 生
 var COMMON_THRESHOLD = 0.42;  // 常见后继阈值(词频>=此值才算常见; 重构后 f 均值~0.37, 故取高一点)
 var REF = 18.0;               // 归一化基准(常规数)
 
-var dbPath = path.join(__dirname, '..', 'data', 'db.json');
-var db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+/* 输入 = data/db.raw.json（第 2 步 build_unified_db.py 的原始产物，谁也不许改写它）
+ * 输出 = data/db.json    （过滤 + 算好可接指数的成品，游戏实际加载的就是它）
+ *
+ * ⚠️ 为什么分成两个文件：以前这里是【读 db.json 写回 db.json】，等于就地改写。
+ *    过滤规则一旦删过头，那些词就永久消失了 —— 2026-09 实测因此丢了 25,183 个词
+ *    （action/abroad/ace 等常用词全不见，且没有任何迹象）。拆开后：
+ *      · 改过滤规则 → 重跑本脚本（约 30 秒）即可反复试
+ *      · 原始数据 db.raw.json 始终完好，随时可以重来
+ */
+var RAW_PATH = path.join(__dirname, '..', 'data', 'db.raw.json');
+var OUT_PATH = path.join(__dirname, '..', 'data', 'db.json');
+
+if (!fs.existsSync(RAW_PATH)) {
+  console.error('找不到原始词库 ' + RAW_PATH);
+  console.error('请先运行上一步（几分钟，需要 Python 3）：');
+  console.error('  python tools/build_unified_db.py');
+  console.error('或者跑完整链路：npm run build');
+  process.exit(1);
+}
+var db = JSON.parse(fs.readFileSync(RAW_PATH, 'utf8'));
 /* ⚠️ store（前缀索引 by2/by3）**故意不在这里建** —— 它必须建在【过滤之后】，
  * 即文件末尾 `store = new R.WordStore(db);` 那一行。曾经建在这里（用过滤前的 db），后果是
  * succ_cnt/has_succ/chain_idx 把**已被删除的词**也算成后继：
@@ -311,7 +330,7 @@ kindMap = Object.create(null);
 db.forEach(function (e) { kindMap[e.w] = e.kind != null ? e.kind : 0.9; });
 computeSucc();
 
-fs.writeFileSync(dbPath, JSON.stringify(db), 'utf8');
+fs.writeFileSync(OUT_PATH, JSON.stringify(db), 'utf8');
 
 function pct(a, p) {
   a = a.slice().sort(function (x, y) { return x - y; });
