@@ -1,0 +1,12 @@
+# 统一行尾，避免 Windows 上的 CRLF 破坏 Linux 脚本
+#
+# 背景：本仓库主要在 Windows 上开发（core.autocrlf 常为 true），
+# 而 shell 脚本一旦带上 \r，在 Linux 上会报
+#   /usr/bin/env: 'bash\r': No such file or directory
+# 这里明确声明：脚本一律用 LF（仓库里存 LF，检出也是 LF）。
+
+*.sh   text eol=lf
+*.py   text eol=lf
+
+# JSON 词库很大，diff 无意义，也避免被当成文本处理
+*.json linguist-generated=true

@@ -169,20 +169,60 @@ tar -czf backup-$(date +%F).tgz data/
 
 `data/db.json`（词库，静态，属可重新获取的文件）、`data/users.json`（账户）、`data/sync/`（每人画像/记录）、`data/.secret`（token 密钥，务必一起备份，否则用户 token 全失效）。
 
-## 8. 更新代码
+## 8. 部署 / 更新
 
-### 8.1 用 git 更新（VPS 上已有仓库时，推荐）
+### 8.0 一条命令（推荐）
+
+仓库里带了一个 `deploy.sh`，**首次部署和以后更新是同一件事** —— 重复执行不会出错：
 
 ```bash
-cd /home/user/word-chain      # 你的项目目录
+# 首次部署
+git clone https://github.com/laicz-007/word-chain-advanced.git ~/word-chain
+cd ~/word-chain && bash deploy.sh
+
+# 以后更新（就这一条）
+cd ~/word-chain && bash deploy.sh
+```
+
+它依次做四件事：
+
+| 步骤 | 做什么 |
+|---|---|
+| 1/4 | `git pull` 更新代码 |
+| 2/4 | 从**最新 Release** 下载词库（词库不在 git 里，约 16MB） |
+| 3/4 | `node tools/check_db.js` 体检（20 项硬指标 + 校验词库与代码是否同版） |
+| 4/4 | 重启 systemd 服务并跑 `node healthcheck.js` 自检 |
+
+只想看看要不要更新、不做任何改动：
+
+```bash
+bash deploy.sh --check
+```
+
+> **为什么词库要单独下载**：`data/db.json` 有 96MB，不适合进 git（也超过仓库单文件限制）。
+> 它作为**发布附件**挂在 [Releases](https://github.com/laicz-007/word-chain-advanced/releases/latest) 上，
+> 所以 VPS 全程只跟 GitHub 打交道，不用碰你自己的电脑。
+
+### 8.1 手动更新（想看清楚每一步时）
+
+```bash
+cd ~/word-chain
 
 # ① 先备份账户数据（git 不会碰它们，但改版前留个底总没错）
 cp data/users.json data/users.json.bak 2>/dev/null; cp -r data/sync data/sync.bak 2>/dev/null
 
-# ② 拉代码
+# ② 取词库（96MB 的东西不在 git 里，必须单独拿）
+cd data
+curl -LO https://github.com/laicz-007/word-chain-advanced/releases/latest/download/db.json.gz
+curl -LO https://github.com/laicz-007/word-chain-advanced/releases/latest/download/db.build.json
+gunzip -f db.json.gz
+cd ..
+
+# ③ 拉代码
 git pull
 
-# ③ 重启
+# ④ 体检 + 重启 + 自检
+node tools/check_db.js
 sudo systemctl restart word-chain
 node healthcheck.js           # 26 项自检，确认真的活着
 ```
@@ -190,17 +230,17 @@ node healthcheck.js           # 26 项自检，确认真的活着
 > ### ⚠️ 三个必须知道的坑
 >
 > **① 词库不会跟着 git 走。** `data/db.json` 约 96MB，被 `.gitignore` 排除（太大，且受多个开源词典
-> 许可约束）。所以 `git pull` **只带来代码，不带来词库**。词库变了就得单独传一次（见 8.2）。
+> 许可约束）。`git pull` **只带来代码，不带来词库** —— 必须单独取（`deploy.sh` 里的第 2 步）。
 >
 > **② 从 2026-09 之前的版本升级时，`git pull` 会删掉 `data/db.lite.json`。**
 > 那个文件已被移除，而旧版的服务在没有 `data/db.json` 时会退回去用它 ——
 > 拉完代码它没了，服务就**起不来**了（会报"找不到词库文件"）。
-> **正确顺序：先把 `data/db.json` 传上去，再 `git pull`，最后重启。**
+> **正确顺序：先取词库，再 `git pull`，最后重启。**（`deploy.sh` 已经按这个顺序做）
 >
 > **③ `word-chain-standalone.html`（离线便携版）已废弃**，旧部署目录里若有这个文件，可以手动删掉，
 > 它不再被维护。
 
-### 8.2 更新词库（词库变了时）
+### 8.2 单独更新词库（词库变了时）
 
 > **怎么知道该不该传？** 在 VPS 上跑 `node tools/check_db.js`，看这两行：
 > - `✅ 词库与规则同版` + `✅ 词库与构建脚本同版` → **不用传**
