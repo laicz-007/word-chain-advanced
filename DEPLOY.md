@@ -41,16 +41,25 @@ scp word-chain.tgz user@你的VPS:/home/user/
 cd /home/user && tar -xzf word-chain.tgz
 ```
 
-> **词库只有一份**：`data/db.json`（成品，约 30.7 万词 / 96MB）。
-> - 先在本机跑 `npm run build` 生成它（需要 Python 3），再传上去
-> - **VPS 上不需要安装 Python**：`npm run build` 只在你自己的机器上执行，`db.json` 只是一个普通数据文件
-> - 没传词库时服务启动会直接报错，并提示你运行 `npm run build`
+> **词库只有一份**：`data/db.json`（成品，约 30.7 万词 / 96MB）—— **它不在 git 里**，`git pull` 拿不到。
+> 从 [GitHub Release](https://github.com/laicz-007/word-chain-advanced/releases/latest) 下载最省事：
 >
-> **`data/db.build.json`**（274 字节）是它的构建元数据，建议一起传 ——
+> ```bash
+> mkdir -p data && cd data
+> curl -LO https://github.com/laicz-007/word-chain-advanced/releases/latest/download/db.json.gz
+> curl -LO https://github.com/laicz-007/word-chain-advanced/releases/latest/download/db.build.json
+> gunzip -f db.json.gz
+> ```
+>
+> 也可以在本机跑 `npm run build` 生成后再传（见 8.2），或用上面的 `tar` 整包上传。
+> **VPS 上不需要安装 Python**：`db.json` 只是一个普通数据文件。
+> 没传词库时服务启动会直接报错，并提示你怎么做。
+>
+> **`data/db.build.json`**（274 字节）是它的构建元数据，建议一起拿 ——
 > 有了它，`node tools/check_db.js` 才能回答"这份词库是不是用当前代码构建的"。
-> 不传也能正常玩，只是体检时会提示"无法判断是否同版"。
+> 不拿也能正常玩，只是体检时会提示"无法判断是否同版"。
 >
-> **不需要传** `data/db.raw.json`（33 万词的原始库，54MB）—— 那只是构建时的中间产物，游戏不读它。
+> **不需要** `data/db.raw.json`（33 万词的原始库，54MB）—— 那只是构建时的中间产物，游戏不读它。
 >
 > > 2026-09 起不再有轻量词库 `db.lite.json`。它曾经让"只传 12MB 就能跑"，但**没有生成脚本、会静默过期**，
 > > 导致线上词库与代码长期不一致（留着已清理的缩写词、常用词被误判成专名）。现在统一用一份可重现的成品库。
@@ -191,18 +200,43 @@ node healthcheck.js           # 26 项自检，确认真的活着
 > **③ `word-chain-standalone.html`（离线便携版）已废弃**，旧部署目录里若有这个文件，可以手动删掉，
 > 它不再被维护。
 
-### 8.2 单独更新词库（词库变了时）
+### 8.2 更新词库（词库变了时）
 
 > **怎么知道该不该传？** 在 VPS 上跑 `node tools/check_db.js`，看这两行：
 > - `✅ 词库与规则同版` + `✅ 词库与构建脚本同版` → **不用传**
 > - 出现 `⚠️ 词库是用【旧规则】构建的` 或 `⚠️ 词库是用【旧版构建脚本】产出的` → **要传**
 >
-> 判断依据是构建时写进 `data/db.build.json` 的两个指纹。所以**元数据要跟词库一起传**（见下）。
+> 判断依据是构建时写进 `data/db.build.json` 的两个指纹。所以**元数据要跟词库一起拿**（见下）。
 
-在本机重新生成后，把**词库 + 它的构建元数据**一起打包上传：
+#### 方式一：从 GitHub Release 下载（推荐，全程在 VPS 上完成）
+
+词库作为**发布附件**挂在 Release 上（`db.json.gz` 约 16MB + `db.build.json` 274B）。
+这样它不受 git 单文件限制、不占仓库历史，VPS 上一条命令就拿到：
+
+```bash
+cd /home/user/word-chain/data
+curl -LO https://github.com/laicz-007/word-chain-advanced/releases/latest/download/db.json.gz
+curl -LO https://github.com/laicz-007/word-chain-advanced/releases/latest/download/db.build.json
+gunzip -f db.json.gz
+
+cd .. && node tools/check_db.js && sudo systemctl restart word-chain
+```
+
+`releases/latest/download/...` 永远指向**最新**那个 release，所以不用改版本号。
+
+**发新版本时（在你自己电脑上）**：
 
 ```powershell
-# 本机（Windows 自带 tar，PowerShell 里跑）
+cd "E:\WorkFolder\DSH Desktop\word-chain"
+npm run build                                   # 重建词库（约 11 秒）
+node -e "var fs=require('fs'),z=require('zlib');fs.writeFileSync('db.json.gz',z.gzipSync(fs.readFileSync('data/db.json'),{level:9}))"
+gh release create v1.2.0 db.json.gz data/db.build.json --title "v1.2.0" --notes "词库更新"
+Remove-Item db.json.gz
+```
+
+#### 方式二：本机 scp 上传（没有 gh、或想省 GitHub 流量时）
+
+```powershell
 cd "E:\WorkFolder\DSH Desktop\word-chain"
 tar -czf dbpack.tgz -C data db.json db.build.json     # 96MB -> 约 16MB
 scp dbpack.tgz user@你的VPS:/home/user/word-chain/data/
@@ -210,19 +244,17 @@ Remove-Item dbpack.tgz
 ```
 
 ```bash
-# VPS
 cd /home/user/word-chain/data
 tar -xzf dbpack.tgz && rm dbpack.tgz
-node ../tools/check_db.js      # 体检：应显示两条指纹都一致
-sudo systemctl restart word-chain
+cd .. && node tools/check_db.js && sudo systemctl restart word-chain
 ```
 
 > **`db.build.json` 是什么**：274 字节的构建元数据（构建时间、词条数、两个指纹）。
 > 它让 `check_db.js` 能回答"这份词库是不是用当前代码构建的"。
 > **少了它也不影响游戏运行**，只是体检时会提示"无法判断是否同版"。
 >
-> VPS 上**不需要** Python，也不建议在服务器上跑 `npm run build`（要下载 130MB 数据源、耗时数分钟）。
-> 在本机构建好、传成品，是更省事也更可控的做法。
+> VPS 上**不需要** Python，也不建议在服务器上跑 `npm run build`（要下载 130MB 数据源、且构建时需约 2GB 内存）。
+> 在本机构建好、通过 Release 分发，是更省事也更可控的做法。
 
 ### 8.3 不用 git 的更新方式
 
