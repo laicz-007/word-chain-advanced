@@ -30,6 +30,7 @@
     <!-- 账号状态条（进入游玩页后显示） -->
     <div id="account-bar" class="account-bar hidden">
       <span id="account-bar-text">游客</span>
+      <button id="account-bar-pw" class="btn btn-sm hidden">修改密码</button>
       <button id="account-bar-action" class="btn btn-sm">退出</button>
     </div>
 
@@ -229,6 +230,27 @@
         <p class="empty">还没有记录，先开始一局吧。</p>
       </div>
     </section>
+  </div>
+
+  <!-- 修改密码弹层（全局，仅登录用户可用） -->
+  <div id="pw-modal" class="report-modal hidden">
+    <div class="report-inner">
+      <div class="report-popup">
+        <h3>修改密码</h3>
+        <p class="auth-note">修改成功后，<b>其他设备上的登录状态会立即失效</b>；本设备会自动保持登录。</p>
+        <label class="login-field"><span>原密码</span>
+          <input id="pw-old" type="password" placeholder="当前密码" maxlength="64" autocomplete="current-password" /></label>
+        <label class="login-field"><span>新密码</span>
+          <input id="pw-new" type="password" placeholder="4-64 位" maxlength="64" autocomplete="new-password" /></label>
+        <label class="login-field"><span>确认新密码</span>
+          <input id="pw-new2" type="password" placeholder="再次输入新密码" maxlength="64" autocomplete="new-password" /></label>
+        <p id="pw-msg" class="login-msg"></p>
+      </div>
+      <div class="report-actions">
+        <button id="pw-submit" class="btn btn-primary">确认修改</button>
+        <button id="pw-cancel" class="btn">取消</button>
+      </div>
+    </div>
   </div>
 
   <script src="app.js"></script>

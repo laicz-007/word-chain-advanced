@@ -1,5 +1,5 @@
 'use strict';
-/* 账号系统集成测试：注册/登录/账户注入/存档/读取 */
+/* 账号系统集成测试：注册/登录/账户注入/存档/读取/修改密码 */
 var fs = require('fs');
 var path = require('path');
 var srv = require('../server.js');
@@ -55,6 +55,30 @@ function get(p) { return fetch(BASE + p).then(function (r) { return r.json(); })
   // 无效 token
   var meBad = await get('/api/me?token=garbage');
   check('无效 token 被拒', !!meBad.error);
+
+  /* ---- 修改密码 ---- */
+  var cpNoAuth = await post('/api/change-password', { token: 'garbage', oldPassword: 'pass1234', newPassword: 'newpass99' });
+  check('改密: 未登录被拒', !!cpNoAuth.error);
+  var cpBadOld = await post('/api/change-password', { token: token, oldPassword: 'wrongpass', newPassword: 'newpass99' });
+  check('改密: 原密码错误被拒', !!cpBadOld.error);
+  var cpShort = await post('/api/change-password', { token: token, oldPassword: 'pass1234', newPassword: '12' });
+  check('改密: 新密码过短被拒', !!cpShort.error);
+  var cpSame = await post('/api/change-password', { token: token, oldPassword: 'pass1234', newPassword: 'pass1234' });
+  check('改密: 新旧密码相同被拒', !!cpSame.error);
+  var cpBadOldStill = await post('/api/login', { username: uname, password: 'pass1234' });
+  check('改密失败后原密码仍可登录', cpBadOldStill.ok && !!cpBadOldStill.token);
+
+  var cp = await post('/api/change-password', { token: token, oldPassword: 'pass1234', newPassword: 'newpass99' });
+  check('改密成功并返回新 token', cp.ok && !!cp.token && cp.username === uname);
+
+  var oldTokenMe = await get('/api/me?token=' + encodeURIComponent(token));
+  check('改密后旧 token 立即失效', !!oldTokenMe.error);
+  var newTokenMe = await get('/api/me?token=' + encodeURIComponent(cp.token));
+  check('改密后新 token 可用', newTokenMe.ok && newTokenMe.username === uname);
+  var oldPwLogin = await post('/api/login', { username: uname, password: 'pass1234' });
+  check('改密后旧密码无法登录', !!oldPwLogin.error);
+  var newPwLogin = await post('/api/login', { username: uname, password: 'newpass99' });
+  check('改密后新密码可登录', newPwLogin.ok && !!newPwLogin.token);
 
   // 清理测试账户
   try {

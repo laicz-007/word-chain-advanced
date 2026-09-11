@@ -116,6 +116,12 @@
     $('auth-submit').addEventListener('click', onAuthSubmit);
     $('auth-guest-go').addEventListener('click', onAuthGuest);
     $('account-bar-action').addEventListener('click', onAccountBarAction);
+    $('account-bar-pw').addEventListener('click', openPwModal);
+    $('pw-submit').addEventListener('click', onSubmitPw);
+    $('pw-cancel').addEventListener('click', closePwModal);
+    ['pw-old', 'pw-new', 'pw-new2'].forEach(function (id) {
+      $(id).addEventListener('keydown', function (e) { if (e.key === 'Enter') onSubmitPw(); });
+    });
     $('auth-pass').addEventListener('keydown', function (e) { if (e.key === 'Enter') onAuthSubmit(); });
     $('auth-pass2').addEventListener('keydown', function (e) { if (e.key === 'Enter') onAuthSubmit(); });
     $('auth-user-in').addEventListener('keydown', function (e) { if (e.key === 'Enter') onAuthSubmit(); });
@@ -165,10 +171,47 @@
     $('account-bar').classList.remove('hidden');
     $('account-bar-text').textContent = logged ? ('已登录：' + account.username) : '游客身份（数据仅存本浏览器）';
     $('account-bar-action').textContent = logged ? '退出' : '登录';
+    $('account-bar-pw').classList.toggle('hidden', !logged);   // 只有登录用户才显示"修改密码"
   }
   function onAccountBarAction() {
     if (loggedIn()) onAuthLogout();                          // 退出 → 回登录页
     else { account = null; authMsg(''); showGate(); }        // 游客 → 去登录页
+  }
+
+  /* ---- 修改密码 ---- */
+  function pwMsg(m, err) {
+    var el = $('pw-msg');
+    if (!el) return;
+    el.textContent = m || '';
+    el.classList.toggle('err', !!err);
+  }
+  function openPwModal() {
+    if (!loggedIn()) return;
+    $('pw-old').value = ''; $('pw-new').value = ''; $('pw-new2').value = '';
+    pwMsg('');
+    $('pw-modal').classList.remove('hidden');
+    setTimeout(function () { $('pw-old').focus(); }, 0);
+  }
+  function closePwModal() {
+    $('pw-modal').classList.add('hidden');
+    pwMsg('');
+  }
+  function onSubmitPw() {
+    var oldPw = $('pw-old').value, newPw = $('pw-new').value, newPw2 = $('pw-new2').value;
+    if (!oldPw) { pwMsg('请输入原密码', true); return; }
+    if (!newPw || newPw.length < 4) { pwMsg('新密码需 4-64 位', true); return; }
+    if (newPw !== newPw2) { pwMsg('两次输入的新密码不一致', true); return; }
+    if (newPw === oldPw) { pwMsg('新密码不能与原密码相同', true); return; }
+    pwMsg('提交中…');
+    fetchJSON('/api/change-password', 'POST', { token: authToken, oldPassword: oldPw, newPassword: newPw })
+      .then(function (res) {
+        if (res.error) { pwMsg('✗ ' + res.error, true); return; }
+        // 改密后旧 token 已失效，必须保存服务端下发的新 token，否则本设备会被踢下线
+        if (res.token) setAuthToken(res.token);
+        closePwModal();
+        setMsg('✓ 密码已修改，其他设备的登录已失效。', 'info');
+      })
+      .catch(function () { pwMsg('✗ 网络错误，请重试', true); });
   }
   function initGate() {                       // 决定首次进入哪一页
     if (window.__LOCAL_GAME__) {              // 离线：直接游玩页

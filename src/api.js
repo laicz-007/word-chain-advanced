@@ -137,6 +137,19 @@ function handleApi(req, res, pathname) {
     return;
   }
 
+  /* 修改密码（需登录）。成功后旧 token 全部失效，所以必须下发新 token 供当前设备继续登录。 */
+  if (pathname === '/api/change-password' && req.method === 'POST') {
+    readBody(req, function (body) {
+      var pname = auth.verifyToken(body.token);
+      if (!pname || !auth.hasUser(pname)) { json(res, 401, { error: '未登录或登录已过期' }); return; }
+      var r = auth.changePw(pname, String(body.oldPassword || ''), String(body.newPassword || ''));
+      if (r.error) { json(res, 400, { error: r.error }); return; }
+      auth.persistUsers();
+      json(res, 200, { ok: true, username: pname, token: auth.makeToken(pname) });
+    });
+    return;
+  }
+
   if (pathname === '/api/me' && req.method === 'GET') {
     var mq = url.parse(req.url, true).query;
     var mname = auth.verifyToken(mq.token);
