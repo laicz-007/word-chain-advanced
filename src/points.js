@@ -17,6 +17,7 @@ var userdata = require('./userdata');
 
 // 返回该座位应结算到的用户名，或 null（不结算）
 function ownerOf(game, p, i) {
+  if (game.mode === 'local') return null;   // 本地同屏不结算积分（用户确认：同一台设备自己玩，不挣分）
   if (game.myPlayerIdx != null) return (i === game.myPlayerIdx) ? (game.user || null) : null;
   if (auth.hasUser(p.name)) return p.name;
   if (game.user && p.type === 'human') return game.user;

@@ -74,8 +74,7 @@
           properLeft: Math.max(0, R.PROPER_QUOTA - (p.properUsed || 0))
         };
       }),
-      properQuota: { perPlayer: R.PROPER_QUOTA, players: game.properQuotaInfo() },
-      itemState: { perPlayer: R.ITEM_QUOTA, players: game.itemState() },
+      // 专名限额/道具都只在联机房间（离线版没有），所以不下发这两份数据
       reverseTurn: !!game.reverseTurn,
       account: null, profile: profileSummary(game.profile),
       turn: game.turn, starter: game.starter, round: game.round, roundActive: game.roundActive,

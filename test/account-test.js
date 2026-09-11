@@ -133,15 +133,24 @@ function get(p) { return fetch(BASE + p).then(function (r) { return r.json(); })
   var meItems = await get('/api/me?token=' + encodeURIComponent(ptoken));
   check('道具: me 反映库存与积分', meItems.items.skip === 1 && meItems.points === 70);
 
-  /* ---- 道具使用（走完整服务端路径：登录校验 → 库存校验 → 引擎 → 扣减）---- */
+  /* ---- 道具使用（走完整服务端路径：模式校验 → 登录校验 → 库存校验 → 引擎 → 扣减）---- */
   // 用单人局，避免 AI 回合/认输带来的不确定性
   var ig = srv.createGame([{ name: 'p', type: 'human' }]);
   ig.user = ptsName;
+  ig.mode = 'room';                            // 道具只在联机房间可用
   ig.submitStart('apple');
   var useNoInv = srv.doAction(ig, 'item', null, false, 'swap');
   check('道具: 没有库存时使用被拒', !!useNoInv.error && /没有/.test(useNoInv.error));
 
+  // 非房间模式不允许用道具（用户确认：人机对战只挣分、不能用道具）
+  var igPve = srv.createGame([{ name: 'p', type: 'human' }]);
+  igPve.user = ptsName;                        // mode 默认 'pve'
+  igPve.submitStart('apple');
+  var usePve = srv.doAction(igPve, 'item', null, false, 'skip');
+  check('道具: 人机对战模式不允许使用道具', !!usePve.error && /联机房间/.test(usePve.error));
+
   var igGuest = srv.createGame([{ name: '游客', type: 'human' }]);
+  igGuest.mode = 'room';
   igGuest.submitStart('apple');
   var useGuest = srv.doAction(igGuest, 'item', null, false, 'skip');
   check('道具: 游客使用道具被拒（需登录）', !!useGuest.error && /登录/.test(useGuest.error));

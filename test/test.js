@@ -307,8 +307,9 @@ t('专名: isProperEntry 判定与 PROPER_QUOTA', function () {
   assert.strictEqual(R.PROPER_QUOTA, 3);
 });
 
-t('专名限额: 每局每人 3 个, 第 4 个被拒', function () {
+t('专名限额: 房间模式下每局每人 3 个, 第 4 个被拒', function () {
   var g = new R.Game(properFixture(), [{ name: '我', type: 'human' }]);
+  g.mode = 'room';                    // 专名限额只在联机房间生效
   assert.ok(g.submitStart('cola').ok, '普通词开局应成功');
   assert.strictEqual(g.players[0].properUsed, 0, '普通词不消耗专名额度');
   assert.ok(g.submitChain('laala').ok, '第 1 个专名应可用');
@@ -321,8 +322,18 @@ t('专名限额: 每局每人 3 个, 第 4 个被拒', function () {
   assert.strictEqual(g.players[0].properUsed, 3, '被拒后额度不应增加');
 });
 
+t('专名限额: 非房间模式（人机/同屏/离线）不限制专名个数', function () {
+  var g = new R.Game(properFixture(), [{ name: '我', type: 'human' }]);   // 默认 mode='pve'
+  assert.ok(g.submitStart('cola').ok);
+  assert.ok(g.submitChain('laala').ok);
+  assert.ok(g.submitChain('labla').ok);
+  assert.ok(g.submitChain('lacla').ok);
+  assert.ok(g.submitChain('ladla').ok, '非房间模式第 4 个专名也应放行');
+});
+
 t('专名限额: 换轮不重置（额度按"局"计，不按"轮"计）', function () {
   var g = new R.Game(properFixture(), [{ name: '我', type: 'human' }]);
+  g.mode = 'room';
   g.submitStart('cola');
   g.submitChain('laala'); g.submitChain('labla'); g.submitChain('lacla');
   g.concede('测试认输');
@@ -335,6 +346,7 @@ t('专名限额: 换轮不重置（额度按"局"计，不按"轮"计）', funct
 t('专名限额: 每位玩家各自独立计数', function () {
   var v = properFixture();
   var g = new R.Game(v, [{ name: '甲', type: 'human' }, { name: '乙', type: 'human' }]);
+  g.mode = 'room';
   g.submitStart('cola');                       // 甲 开局
   assert.ok(g.submitChain('laala').ok);        // 乙 用第 1 个
   assert.ok(g.submitChain('labla').ok);        // 甲 用第 1 个
@@ -597,43 +609,53 @@ t('禁止回声: isEcho 判定', function () {
   assert.strictEqual(R.isEcho('am', 'am'), true, '整词即末尾2字母');
 });
 
-t('禁止回声: canChain 拒绝回声，放行正常词', function () {
-  var r1 = R.canChain('apple', 'le');
-  assert.strictEqual(r1.ok, false, 'le 是苹果的末尾，应被拒');
+t('禁止回声: 只有 strictEcho（联机房间）才拦，其它模式放行', function () {
+  // 默认（人机对战 / 本地同屏 / 离线便携版）：允许回声
+  assert.strictEqual(R.canChain('apple', 'le').ok, true, '非房间模式应允许回声');
+  assert.strictEqual(R.canChain('abarticular', 'lar').ok, true, '非房间模式允许回声');
+  // 联机房间（strictEcho）：拦
+  var r1 = R.canChain('apple', 'le', { strictEcho: true });
+  assert.strictEqual(r1.ok, false, '房间模式应拒绝回声');
   assert.ok(/结尾/.test(r1.reason), '原因应说明不能拿结尾当词, 实际: ' + r1.reason);
-  // 用户举的场景
-  var r2 = R.canChain('abarticular', 'lar');
+  var r2 = R.canChain('abarticular', 'lar', { strictEcho: true });
   assert.strictEqual(r2.ok, false, 'lar 是 abarticular 的末尾，应被拒');
-  var r3 = R.canChain('abarticular', 'large');
+  var r3 = R.canChain('abarticular', 'large', { strictEcho: true });
   assert.strictEqual(r3.ok, true, 'large 以 lar 开头但不是回声，应放行');
-  var r4 = R.canChain('abate', 'ate');
+  var r4 = R.canChain('abate', 'ate', { strictEcho: true });
   assert.strictEqual(r4.ok, false, 'ate 是 abate 的末尾，应被拒');
 });
 
-t('禁止回声: candidates() 不再把回声列为可接词', function () {
+t('禁止回声: candidates() 在 strictEcho 下不再把回声列为可接词', function () {
   var v = new R.WordStore([
     { w: 'abler', zh: 'x', d: 1, f: 0.5, kind: 0.9, has_succ: true, chain_idx: 0.5 },
     { w: 'er', zh: 'x', d: 1, f: 0.5, kind: 0.9, has_succ: true, chain_idx: 0.5 },
     { w: 'erlow', zh: 'x', d: 1, f: 0.5, kind: 0.9, has_succ: true, chain_idx: 0.5 }
   ]);
-  var ws = v.candidates('abler', null).map(function (x) { return x.w; });
-  assert.strictEqual(ws.indexOf('er'), -1, '回声词 er 不应出现在可接列表');
-  assert.ok(ws.indexOf('erlow') !== -1, '非回声词应保留');
+  var plain = v.candidates('abler', null).map(function (x) { return x.w; });
+  assert.ok(plain.indexOf('er') !== -1, '非房间模式：回声词应可接');
+  var strict = v.candidates('abler', null, { strictEcho: true }).map(function (x) { return x.w; });
+  assert.strictEqual(strict.indexOf('er'), -1, '房间模式：回声词不应出现在可接列表');
+  assert.ok(strict.indexOf('erlow') !== -1, '非回声词应保留');
 });
 
-t('禁止回声: 提交回声词被拒且不加分', function () {
+t('禁止回声: 房间模式下提交回声词被拒且不加分', function () {
   var v = new R.WordStore([
     { w: 'abler', zh: 'x', d: 1, f: 0.5, kind: 0.9, has_succ: true, chain_idx: 0.5 },
     { w: 'er', zh: 'x', d: 1, f: 0.5, kind: 0.9, has_succ: true, chain_idx: 0.5 },
     { w: 'erlow', zh: 'x', d: 1, f: 0.5, kind: 0.9, has_succ: true, chain_idx: 0.5 }
   ]);
   var g = new R.Game(v, [{ name: '我', type: 'human' }]);
+  g.mode = 'room';                      // 只有房间模式才拦回声
   g.submitStart('abler');
   var before = g.players[0].points;
   var r = g.submitChain('er');
-  assert.strictEqual(r.ok, false, '回声词应被拒');
+  assert.strictEqual(r.ok, false, '房间模式下回声词应被拒');
   assert.strictEqual(g.lastWord, 'abler', '待接词不应改变');
   assert.strictEqual(g.players[0].points, before, '被拒不应加分');
+  // 同样条件下非房间模式应放行
+  var g2 = new R.Game(v, [{ name: '我', type: 'human' }]);
+  g2.submitStart('abler');
+  assert.ok(g2.submitChain('er').ok, '非房间模式（人机/同屏/离线）应允许回声');
 });
 
 /* ---- 回声门控：高频词允许回声，生僻词不允许（用户要求）---- */
@@ -647,20 +669,21 @@ t('回声门控: isTrustedEntry 判定（柯林斯≥1 / f≥0.65 / 有精讲）
   assert.strictEqual(R.ECHO_KEEP_F, 0.65);
 });
 
-t('回声门控: 默认拒绝回声，显式 echoOk 才放行（供高频词使用）', function () {
-  assert.strictEqual(R.canChain('into', 'to').ok, false, '默认应拒绝回声');
-  assert.strictEqual(R.canChain('into', 'to', { echoOk: true }).ok, true, '高频词应放行');
-  assert.strictEqual(R.canChain('into', 'tonic').ok, true, '非回声词不受影响');
+t('回声门控: 房间模式下高频词放行、生僻词拦截', function () {
+  assert.strictEqual(R.canChain('into', 'to').ok, true, '非房间模式：一律放行');
+  assert.strictEqual(R.canChain('into', 'to', { strictEcho: true, echoOk: true }).ok, true, '房间模式：高频词放行');
+  assert.strictEqual(R.canChain('into', 'to', { strictEcho: true }).ok, false, '房间模式：未标 echoOk 的回声拦截');
+  assert.strictEqual(R.canChain('into', 'tonic', { strictEcho: true }).ok, true, '非回声词不受影响');
 });
 
-t('回声门控: candidates() 放行高频回声词、拦掉生僻回声词', function () {
+t('回声门控: 房间模式下 candidates() 放行高频回声词、拦掉生僻回声词', function () {
   // 高频回声词（le 是 able 的末尾 2 字母，但 collins=5 → 可信）→ 放行
   var v1 = new R.WordStore([
     { w: 'able', zh: 'x', d: 1, f: 0.9, kind: 0.9, has_succ: true, chain_idx: 0.5, collins: 3 },
     { w: 'le', zh: 'x', d: 1, f: 0.9, kind: 0.9, has_succ: true, chain_idx: 0.5, collins: 5 },
     { w: 'lemon', zh: 'x', d: 1, f: 0.5, kind: 0.9, has_succ: true, chain_idx: 0.5, collins: 0 }
   ]);
-  var ws1 = v1.candidates('able', null).map(function (x) { return x.w; });
+  var ws1 = v1.candidates('able', null, { strictEcho: true }).map(function (x) { return x.w; });
   assert.ok(ws1.indexOf('le') !== -1, '高频回声词应放行');
   assert.ok(ws1.indexOf('lemon') !== -1, '非回声词应保留');
 
@@ -670,7 +693,7 @@ t('回声门控: candidates() 放行高频回声词、拦掉生僻回声词', fu
     { w: 'lar', zh: 'x', d: 1, f: 0.3, kind: 0.9, has_succ: true, chain_idx: 0.5, collins: 0 },
     { w: 'large', zh: 'x', d: 1, f: 0.5, kind: 0.9, has_succ: true, chain_idx: 0.5, collins: 0 }
   ]);
-  var ws2 = v2.candidates('abarticular', null).map(function (x) { return x.w; });
+  var ws2 = v2.candidates('abarticular', null, { strictEcho: true }).map(function (x) { return x.w; });
   assert.strictEqual(ws2.indexOf('lar'), -1, '生僻回声词应被拦（用户抱怨的偷懒招）');
   assert.ok(ws2.indexOf('large') !== -1, '非回声词应保留');
 });

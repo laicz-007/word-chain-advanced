@@ -22,6 +22,7 @@ function createGame(players, opts) {
 function useItem(game, kind) {
   var cur = game.currentPlayer();
   if (!cur) return { error: '没有当前玩家' };
+  if (game.mode !== 'room') return { error: '道具只能在联机房间使用' };   // 用户确认：人机/同屏都不用道具
   if (cur.type !== 'human') return { error: '当前不是你的回合' };
   if (!db.R.itemInfo(kind)) return { error: '未知道具' };
   var uname = game.user || (auth.hasUser(cur.name) ? cur.name : null);

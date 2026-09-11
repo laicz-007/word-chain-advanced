@@ -85,7 +85,8 @@ function snapshot(game, sessionId, lastAI, pending, aiConceded) {
         properLeft: Math.max(0, db.R.PROPER_QUOTA - (p.properUsed || 0))
       };
     }),
-    properQuota: { perPlayer: db.R.PROPER_QUOTA, players: game.properQuotaInfo() },
+    // 专名限额只有联机房间有 → 非房间不下发这份数据（前端据此隐藏「专名 N/3」）
+    properQuota: game.mode === 'room' ? { perPlayer: db.R.PROPER_QUOTA, players: game.properQuotaInfo() } : null,
     itemState: { perPlayer: db.R.ITEM_QUOTA, players: game.itemState() },
     reverseTurn: !!game.reverseTurn,   // 反转卡效果：出词顺序是否已倒转
     verify: verifyForClient(game.verify),   // AI 裁判：待作答的验词（不含答案）
@@ -117,7 +118,7 @@ function computeHint(game) {
   if (game.currentPlayer().type !== 'human') return { error: '现在不是你的回合。' };
   var prev = game.lastWord, p2 = prev.slice(-2), p3 = prev.length >= 3 ? prev.slice(-3) : null;
   var prefixes = (p3 && p3 !== p2) ? [p2, p3] : [p2];
-  var cands = db.store.candidates(prev, game.used).filter(function (c) { return c.has_succ !== false; }).slice(0, 3);
+  var cands = db.store.candidates(prev, game.used, { strictEcho: game.mode === 'room' }).filter(function (c) { return c.has_succ !== false; }).slice(0, 3);
   var samples = cands.map(function (c) { return { word: c.w, zh: c.zh || '', phonetic: c.phonetic || '', note: c.note || '', d: c.d }; });
   return { ok: true, prefixes: prefixes, samples: samples };
 }

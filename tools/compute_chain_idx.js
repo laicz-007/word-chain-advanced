@@ -97,8 +97,10 @@ db.forEach(function (e) {
 var kindMap = Object.create(null);
 db.forEach(function (e) { kindMap[e.w] = e.kind != null ? e.kind : 0.9; });
 
-var ECHO_KEEP_F = 0.65;   // ⚠️ 与 public/logic.js 的同名常量必须保持一致
-// 高频/可信词条：柯林斯≥1星，或常见度 f≥0.65，或 Kyle 精讲词。高频词允许"回声"（用户要求）。
+var ECHO_KEEP_F = 0.65;   // ⚠️ 与 public/logic.js 的同名常量保持一致（两处都表示"高频/可信"口径）
+/* 高频/可信词条：柯林斯≥1星，或常见度 f≥0.65，或 Kyle 精讲词。
+ * 用途：① 词库清理时"非高频的依赖型短词/回声热词"才删（见下方过滤块）；
+ *      ② 与 logic.js 的 isTrustedEntry 口径一致（那边用于"是否允许回声"）。 */
 function isTrusted(e) { return (e.collins >= 1) || ((e.f || 0) >= ECHO_KEEP_F) || !!e.has_note; }
 
 var maxChain = 0;
@@ -110,12 +112,8 @@ var total = db.length;
 function isChainable(prev, s) {
   var w = s.w;
   if (w === prev) return false;
-  // 禁止回声（必须与 logic.js 的 canChain 口径一致）：高频词允许回声，生僻词不允许。
-  // 否则构建期会把回声算成"可接"，使 chain_idx 虚高、与真实规则不符。
-  if (w.length === 2 || w.length === 3) {
-    var echo = (w.length === 2) ? (w === prev.slice(-2)) : (w === prev.slice(-3));
-    if (echo && !isTrusted(s)) return false;
-  }
+  // 说明：这里【不】应用"禁止回声"规则 —— 该规则只在联机房间运行时生效（用户确认的范围），
+  // 人机对战/本地同屏/离线版都允许回声，所以词库层面的可接指数不应把它算掉。
   // 结尾最多3字母须含元音
   var tail = w.length <= 3 ? w : w.slice(-3);
   var hasV = false;

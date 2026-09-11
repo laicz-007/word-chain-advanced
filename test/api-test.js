@@ -158,10 +158,11 @@ t('专名限额: 真实词库里的专名被正确识别', function () {
   assert.ok(props.length >= annotated.length, '专名识别数不应少于注记词数');
 });
 
-t('专名限额: 快照暴露额度，开局用专名会消耗额度', function () {
+t('专名限额: 房间模式下快照暴露额度，开局用专名会消耗额度', function () {
   var g = S.createGame([{ name: '我', type: 'human' }]);
+  g.mode = 'room';                       // 专名限额只在联机房间
   var snap0 = S.snapshot(g, 'sid', '', null);
-  assert.ok(snap0.properQuota, '快照应含 properQuota');
+  assert.ok(snap0.properQuota, '房间模式快照应含 properQuota');
   assert.strictEqual(snap0.properQuota.perPlayer, S.R.PROPER_QUOTA, '每局额度应为 PROPER_QUOTA');
   assert.strictEqual(snap0.players[0].properLeft, S.R.PROPER_QUOTA, '开局前额度应满');
 
@@ -187,6 +188,11 @@ t('专名限额: 快照暴露额度，开局用专名会消耗额度', function 
   assert.ok(/专名/.test(out2.error), '拒绝原因应说明是专名限额, 实际: ' + out2.error);
 });
 
+t('专名限额: 非房间模式不下发额度数据（前端据此隐藏「专名 N/3」）', function () {
+  var g = S.createGame([{ name: '我', type: 'human' }, { name: 'AI', type: 'ai' }]);   // mode='pve'
+  assert.strictEqual(S.snapshot(g, 'sid', '', null).properQuota, null, '人机对战不应有专名额数据');
+});
+
 t('回归: interesting 词表必须全是合法开局词（曾致"探索·发现"约10%静默失败）', function () {
   var bad = S.store.interesting.filter(function (e) { return !S.R.canStart(e.w).ok; });
   assert.strictEqual(bad.length, 0,
@@ -208,20 +214,23 @@ t('回归: 探索·发现开局必须稳定成功（曾约 10% 概率失败且�
   assert.strictEqual(failN, 0, '120 次探索开局不应失败, 实际失败 ' + failN + ' 次 (' + sample + ')');
 });
 
-t('禁止回声: 词库构建与引擎规则一致（apteryx 只剩回声可接 → 应为死路）', function () {
-  // apteryx(几维鸟) 结尾 -yx，全库只有 "yx" 能接；而 yx 是回声词 → 禁回声后它应是死路。
-  // 这同时验证了 tools/compute_chain_idx.js 的 isChainable 与 logic.js 的 canChain 保持一致。
+t('禁止回声: 构建期【不】套用该规则，运行期只在房间拦', function () {
+  // 该规则按用户确认只作用于联机房间，而 chain_idx 是人机/同屏/离线都在用的，
+  // 所以构建脚本不能把回声算掉 —— 否则这三个模式的可接指数会偏悲观。
   var e = S.store.lookup('apteryx');
   assert.ok(e, 'apteryx 应在词库');
-  assert.strictEqual(e.has_succ, false, 'apteryx 已无合法后继，has_succ 应为 false（证明构建期也应用了禁回声）');
-  var cands = S.store.candidates('apteryx', null).map(function (x) { return x.w; });
-  assert.strictEqual(cands.length, 0, '不应有可接词, 实际: ' + cands.join(','));
+  var yx = S.store.lookup('yx');
+  if (yx) {
+    assert.strictEqual(e.has_succ, true, 'yx 在库时 apteryx 应算作有后继（构建期不套用回声规则）');
+    assert.ok(S.R.canChain('apteryx', 'yx').ok, '非房间模式：回声应放行');
+    assert.strictEqual(S.R.canChain('apteryx', 'yx', { strictEcho: true }).ok, false, '房间模式：回声应拦');
+  }
 });
 
-t('禁止回声: 真实词库中回声词被 canChain 拒绝', function () {
-  assert.strictEqual(S.R.canChain('abarticular', 'lar').ok, false, 'lar 是回声');
-  // 换一个以 lar 开头、且满足"末尾含元音"的词（larch 结尾 rch 无元音，会被元音规则先拒掉）
-  assert.strictEqual(S.R.canChain('abarticular', 'large').ok, true, 'large 不是回声，应放行');
+t('禁止回声: 真实词库里回声词分模式处理', function () {
+  assert.strictEqual(S.R.canChain('abarticular', 'lar').ok, true, '非房间模式放行回声');
+  assert.strictEqual(S.R.canChain('abarticular', 'lar', { strictEcho: true }).ok, false, '房间模式拦回声');
+  assert.strictEqual(S.R.canChain('abarticular', 'large', { strictEcho: true }).ok, true, 'large 不是回声');
 });
 
 t('词库清理: 保留有独立意思的短词，删除依赖型短词/生僻回声词', function () {
@@ -236,14 +245,13 @@ t('词库清理: 保留有独立意思的短词，删除依赖型短词/生僻�
   });
 });
 
-t('回声门控: 高频词在真实词库中可回声，生僻词被拦', function () {
+t('回声门控: 高频词允许回声、生僻词被拦（房间模式）', function () {
   var to = S.store.lookup('to');
   assert.ok(to && S.R.isTrustedEntry(to), 'to 是高频词');
   assert.strictEqual(S.store.echoOkFor('to'), true, 'to 允许回声');
-  assert.strictEqual(S.store.echoOkFor('oat'), false, 'oat 虽是真词但非高频 → 不允许回声');
-  // 走真实 store 的 candidates：以 abarticular 结尾后，lar 已从库中删除
-  var cands = S.store.candidates('abarticular', null).map(function (x) { return x.w; });
-  assert.strictEqual(cands.indexOf('lar'), -1, 'lar 已被清理');
+  assert.strictEqual(S.store.echoOkFor('oat'), false, 'oat 虽是真词但非高频 → 房间模式下不允许回声');
+  // lar 已被词库清理删除（词库层面的改动不受模式影响）
+  assert.strictEqual(S.store.lookup('lar'), null, 'lar 已从词库删除');
 });
 
 t('AI 裁判: 快照不下发答案（防作弊）', function () {

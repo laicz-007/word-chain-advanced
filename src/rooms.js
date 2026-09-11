@@ -169,6 +169,7 @@ function respondChallenge(username, roomId, accept) {
     return { ok: true, accepted: false, cancelled: true };
   }
   r.game = gameplay.createGame([{ name: c.from, type: 'human' }, { name: username, type: 'human' }], { referee: true });
+  r.game.mode = 'room';
   r.duel = { players: [c.from, username], at: Date.now() };
   r.status = 'duel';
   r.notice = '单挑开始：' + c.from + ' vs ' + username;
@@ -240,6 +241,7 @@ function startRoom(username, roomId) {
   if (r.players.length < 2) return { error: '至少需要 2 人才能开始' };
   var players = r.players.map(function (n) { return { name: n, type: 'human' }; });
   r.game = gameplay.createGame(players, { referee: true });   // 只联机房间挂 AI 裁判
+  r.game.mode = 'room';                                       // 房间才启用禁止回声/专名限额/道具
   r.status = 'playing';
   r.notice = '房主开始了对局';
   r.updatedAt = Date.now();

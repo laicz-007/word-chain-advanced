@@ -118,8 +118,9 @@
       }
       return { ok: false, reason: '需以「' + p2 + '」或「' + prev.slice(-3) + '」开头。' };
     }
-    // 禁止回声（高频词例外，由调用方通过 opts.echoOk 放行）
-    if (isEcho(prev, w) && !(opts && opts.echoOk)) {
+    // 禁止回声：**只有联机房间**拦（用户确认：人机对战/本地同屏/离线版都不拦）。
+    // 高频词例外见 isTrustedEntry —— to/be/as 这类常见词回一遍不算偷懒。
+    if (isEcho(prev, w) && opts && opts.strictEcho && !opts.echoOk) {
       return { ok: false, echo: true, reason: '不能直接把上词的结尾「' + w + '」当作你要出的词，请另找一个词。' };
     }
     if (!hasVowelEnding(w)) return { ok: false, reason: '结尾 3 个字母必须含有 1 个元音（a e i o u y）。' };
@@ -152,8 +153,9 @@
   }
 
   // 该玩家是否还有专名额度；返回 null 表示可用，否则返回拒绝原因
-  function properQuotaError(pl, entry) {
-    if (!isProperEntry(entry)) return null;
+  // strict=true 时才检查（只有联机房间传 true；人机/同屏不限专名个数）
+  function properQuotaError(pl, entry, strict) {
+    if (!strict || !isProperEntry(entry)) return null;
     var used = pl.properUsed || 0;
     if (used >= PROPER_QUOTA) {
       return '「' + entry.w + '」是人名/地名/姓氏（专名），每人每局最多使用 ' + PROPER_QUOTA +
@@ -270,7 +272,8 @@
     return isTrustedEntry(this.lookup(raw));
   };
 
-  WordStore.prototype.candidates = function (rawPrev, used) {
+  WordStore.prototype.candidates = function (rawPrev, used, opts) {
+    var strictEcho = !!(opts && opts.strictEcho);
     var prev = normalize(rawPrev);
     var out = [];
     var seen = {};
@@ -290,7 +293,7 @@
 
     return out.filter(function (e) {
       if (used && used[e.w]) return false;
-      return canChain(prev, e.w, { echoOk: isTrustedEntry(e) }).ok;
+      return canChain(prev, e.w, { strictEcho: strictEcho, echoOk: isTrustedEntry(e) }).ok;
     });
   };
 
@@ -388,7 +391,7 @@
 
   // 接龙选词：prev 上词；usedRound 本轮已用(规则5硬性)；usage 会话使用次数(防疲劳软性)；target 玩家目标难度
   function aiChoose(store, rawPrev, usedRound, usage, target, ctx) {
-    return scorePick(store.candidates(rawPrev, usedRound), usage, target, ctx);
+    return scorePick(store.candidates(rawPrev, usedRound, { strictEcho: !!(ctx && ctx.strictEcho) }), usage, target, ctx);
   }
 
   /* ---- 用户学习画像（离线端：localengine 读取 localStorage 后调用）----
@@ -496,6 +499,10 @@
     this.reverseTurn = false; // 反转卡效果：为 true 时出词顺序倒转（接龙规则不变），跨轮保留
     this.verify = null;       // AI 裁判：待作答的验词 { playerIdx, word, options, answerIdx, correctZh, reasons }
     this.aiReferee = null;    // 注入的裁判钩子 (game, playerIdx, entry, opts) => 验词对象 | null
+    /* 对局模式：'pve'(人机) | 'local'(本地同屏) | 'room'(联机房间)。
+     * ⚠️ 三种"竞技规则"都只在对局模式为 'room' 时生效（用户逐条确认的范围）：
+     *   禁止回声 / 专名限额 / 道具使用 —— 人机对战与本地同屏都不加这些限制。 */
+    this.mode = 'pve';
   }
 
   Game.prototype.addLog = function (entry) {
@@ -661,9 +668,9 @@
       return { ok: false, pending: 'non-vocab', word: w, reason: '「' + w + '」不在词库中，不计入难度统计，请确认是否使用。' };
     }
 
-    // 专名限额（人名/地名/姓氏）：超出每局上限则拒绝
+    // 专名限额（人名/地名/姓氏）：**只有联机房间**限制每局个数
     var properEntry = inVocab ? this.store.lookup(w) : null;
-    var quotaErr = properQuotaError(pl, properEntry);
+    var quotaErr = properQuotaError(pl, properEntry, this.mode === 'room');
     if (quotaErr) return { ok: false, reason: quotaErr };
     var isProper = isProperEntry(properEntry);
 
@@ -703,7 +710,7 @@
   Game.prototype.submitChain = function (raw, opts) {
     opts = opts || {};
     if (this.needsStart()) return { ok: false, reason: '当前需要先给出开局词。' };
-    var res = canChain(this.lastWord, raw, { echoOk: this.store.echoOkFor(raw) });
+    var res = canChain(this.lastWord, raw, { strictEcho: this.mode === 'room', echoOk: this.store.echoOkFor(raw) });
     if (!res.ok) return { ok: false, reason: res.reason };
     var w = res.word;
     var pl = this.currentPlayer();
@@ -725,9 +732,9 @@
       return { ok: false, pending: 'non-vocab', word: w, reason: '「' + w + '」不在词库中，不计入难度统计，请确认是否使用。' };
     }
 
-    // 专名限额（人名/地名/姓氏）：超出每局上限则拒绝
+    // 专名限额（人名/地名/姓氏）：**只有联机房间**限制每局个数
     var properEntry = inVocab ? this.store.lookup(w) : null;
-    var quotaErr = properQuotaError(pl, properEntry);
+    var quotaErr = properQuotaError(pl, properEntry, this.mode === 'room');
     if (quotaErr) return { ok: false, reason: quotaErr };
     var isProper = isProperEntry(properEntry);
 
@@ -870,7 +877,7 @@
     if (this.needsStart()) {
       // AI 作为开局者：探索·发现模式随机给有趣的词；否则评分挑一个好开的词
       var target = this.aiTarget();
-      var ctx = { recentEnds: this.aiEnds, profile: this.profile, noProper: aiNoProper };
+      var ctx = { recentEnds: this.aiEnds, profile: this.profile, noProper: aiNoProper, strictEcho: this.mode === 'room' };
       var choice;
       if (this.explore) {
         // 探索·发现："有趣"开局词也结合画像 —— 难度贴合 + 优先"含知识点且你未见过"的新词
@@ -904,7 +911,7 @@
     } else {
       // AI 接龙：本轮已用(硬)+会话使用次数(软防疲劳)
       var target2 = this.aiTarget();
-      var cand = aiChoose(this.store, this.lastWord, this.used, this.allUsed, target2, { recentEnds: this.aiEnds, profile: this.profile, noProper: aiNoProper });
+      var cand = aiChoose(this.store, this.lastWord, this.used, this.allUsed, target2, { recentEnds: this.aiEnds, profile: this.profile, noProper: aiNoProper, strictEcho: this.mode === 'room' });
       if (!cand) {
         this.concede('AI 没有合法的接龙词');
         return { action: 'concede' };

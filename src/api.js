@@ -43,6 +43,9 @@ function handleApi(req, res, pathname) {
         ? body.playerArray
         : [{ name: body.name || '玩家', type: 'human' }, { name: 'AI', type: 'ai' }];
       var game = gameplay.createGame(players);
+      // 对局模式：有 AI = 人机对战；全人类 = 本地同屏。
+      // 它决定哪些"竞技规则"生效（禁止回声/专名限额/道具都只在 'room' 模式，房间侧另行设置）
+      game.mode = players.some(function (p) { return p.type === 'ai'; }) ? 'pve' : 'local';
       // 绑定登录账号（token 有效且用户存在时）
       var uname = body.token ? auth.verifyToken(body.token) : null;
       if (uname && auth.hasUser(uname)) game.user = uname;
