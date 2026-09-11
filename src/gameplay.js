@@ -4,10 +4,12 @@ var db = require('./db');
 var view = require('./view');
 var auth = require('./auth');
 var userdata = require('./userdata');
+var ai = require('./ai');
 
 var sessions = {}; // sessionId -> game
 
-function createGame(players) { return new db.R.Game(db.store, players); }
+// 建局时挂上 AI 裁判（人机/本地同屏/联机房间三条路径都经过这里）
+function createGame(players) { return ai.attach(new db.R.Game(db.store, players)); }
 
 /* 使用道具（服务端权威）：校验登录 → 校验库存 → 交给引擎执行 → 扣减库存。
  * 账户归属：人机对战用对局绑定的 game.user；联机房间用玩家名（房间玩家名就是用户名）。
@@ -30,10 +32,10 @@ function useItem(game, kind) {
   return { ok: true, effect: r };
 }
 
-// 只要轮到 AI 就替它出词，直到轮到人类 / AI 认输（暂停）/ 无动作
+// 只要轮到 AI 就替它出词，直到轮到人类 / AI 认输（暂停）/ 有待作答的验词 / 无动作
 function advanceAI(game, state) {
   var guard = 0;
-  while (game.roundActive && game.currentPlayer().type === 'ai' && guard < 30) {
+  while (game.roundActive && !game.verify && game.currentPlayer().type === 'ai' && guard < 30) {
     var r = game.tickAI();
     if (r && (r.action === 'start' || r.action === 'chain')) state.lastAI = view.formatAI(r);
     else if (r && r.action === 'concede') { state.lastAI = view.formatAI({ action: 'concede' }); state.aiConceded = true; break; } // 暂停，等待玩家确认
@@ -42,22 +44,35 @@ function advanceAI(game, state) {
   }
 }
 
-// 处理一次人类动作（start/chain/concede/continue-round/item）+ 自动处理 AI 回合
-function doAction(game, kind, word, confirmed, itemKind) {
-  var state = { lastAI: '', pending: null, aiConceded: false, itemEffect: null };
+// 处理一次人类动作（start/chain/concede/continue-round/item/verify）+ 自动处理 AI 回合
+function doAction(game, kind, word, confirmed, itemKind, choice) {
+  var state = { lastAI: '', pending: null, aiConceded: false, itemEffect: null, verify: null };
 
   advanceAI(game, state); // 先自动跑 AI，确保轮到人类
 
+  // 有待作答的验词时，除了作答本身，其它动作一律拒绝（答完接龙才继续）
+  if (game.verify && kind !== 'verify') return { error: '你有一道验词待作答，请先完成它' };
+
   if (kind === 'start' || kind === 'chain') {
     if (game.currentPlayer().type !== 'human') return { error: '当前不是你的回合' };
+    // 距上一个出词的间隔：供 AI 裁判判断"出词过快"
+    var elapsedMs = game._lastSubmitAt ? (Date.now() - game._lastSubmitAt) : null;
     var res = kind === 'start'
-      ? game.submitStart(word, { confirmed: !!confirmed })
-      : game.submitChain(word, { confirmed: !!confirmed });
+      ? game.submitStart(word, { confirmed: !!confirmed, elapsedMs: elapsedMs })
+      : game.submitChain(word, { confirmed: !!confirmed, elapsedMs: elapsedMs });
     if (res && res.pending === 'non-vocab') {
       state.pending = { word: res.word, reason: res.reason };
     } else if (res && !res.ok) {
       return { error: res.reason };
+    } else {
+      game._lastSubmitAt = Date.now();
+      if (res && res.verify) state.verify = res.verify;
     }
+  } else if (kind === 'verify') {
+    // AI 裁判作答：答错扣分，无论对错接龙继续（引擎负责推进回合）
+    var vr = game.answerVerify(choice);
+    if (vr.error) return { error: vr.error };
+    state.verifyResult = vr;
   } else if (kind === 'item') {
     // 使用道具（服务端权威：校验登录/库存/每局限额，成功才扣）
     var iu = useItem(game, itemKind);
@@ -78,7 +93,13 @@ function doAction(game, kind, word, confirmed, itemKind) {
 
   advanceAI(game, state); // 人类行动后，再次自动推进 AI
 
-  return { ok: true, lastAI: state.lastAI, pending: state.pending, aiConceded: state.aiConceded, itemEffect: state.itemEffect };
+  return {
+    ok: true, lastAI: state.lastAI, pending: state.pending, aiConceded: state.aiConceded,
+    itemEffect: state.itemEffect, verify: state.verify, verifyResult: state.verifyResult
+  };
 }
 
-module.exports = { sessions: sessions, createGame: createGame, advanceAI: advanceAI, doAction: doAction, useItem: useItem };
+module.exports = {
+  sessions: sessions, createGame: createGame, advanceAI: advanceAI, doAction: doAction,
+  useItem: useItem, ai: ai
+};

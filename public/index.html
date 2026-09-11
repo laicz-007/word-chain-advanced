@@ -273,6 +273,19 @@
     </div>
   </div>
 
+  <!-- AI 裁判验词弹层（可疑出词时弹出，四选一） -->
+  <div id="verify-modal" class="report-modal hidden">
+    <div class="report-inner">
+      <div class="report-popup">
+        <h3>🧐 验词</h3>
+        <p id="verify-why" class="auth-note"></p>
+        <p class="verify-word">「<b id="verify-word"></b>」是什么意思？</p>
+        <div id="verify-options" class="verify-options"></div>
+        <p id="verify-msg" class="login-msg"></p>
+      </div>
+    </div>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>

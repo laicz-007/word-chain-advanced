@@ -154,6 +154,18 @@ function get(p) { return fetch(BASE + p).then(function (r) { return r.json(); })
   var useAgain = srv.doAction(ig, 'item', null, false, 'skip');
   check('道具: 用完后再次使用被拒', !!useAgain.error && /没有/.test(useAgain.error));
 
+  // AI 裁判答错 → 账户积分跟着扣（结算改为双向）
+  var pBeforeV = srv.loadUserData(ptsName).points;
+  var vg = srv.createGame([{ name: 'p', type: 'human' }]);
+  vg.user = ptsName;
+  vg.players[0].points = 5;
+  srv.points.credit(vg);
+  var afterCredit = srv.loadUserData(ptsName).points;
+  vg.players[0].points = 4;                    // 模拟 AI 裁判答错扣 1 分
+  var d2 = srv.points.credit(vg);
+  check('AI 裁判: 答错扣分计入账户（双向结算）',
+    afterCredit === pBeforeV + 5 && d2 === -1 && srv.loadUserData(ptsName).points === afterCredit - 1);
+
   // 清理测试账户
   try {
     var usersFile = path.join(__dirname, '..', 'data', 'users.json');

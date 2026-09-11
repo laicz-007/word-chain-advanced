@@ -673,5 +673,104 @@ t('回声门控: candidates() 放行高频回声词、拦掉生僻回声词', fu
   assert.ok(ws2.indexOf('large') !== -1, '非回声词应保留');
 });
 
+/* ---- AI 裁判（验词）---- */
+function refereeFixture() {
+  return new R.WordStore([
+    { w: 'abler', zh: '可开局的词', d: 1, f: 0.9, kind: 0.9, has_succ: true, chain_idx: 0.5, collins: 3 },
+    { w: 'erlow', zh: '生僻接龙词', d: 1, f: 0.3, kind: 0.9, has_succ: true, chain_idx: 0.5, collins: 0 },
+    { w: 'erup', zh: '另一个词', d: 1, f: 0.5, kind: 0.9, has_succ: true, chain_idx: 0.5, collins: 0 }
+  ]);
+}
+// 假裁判：一律判可疑，从而不依赖真实词库的阈值
+function alwaysSuspect(game, pi, entry) {
+  if (!entry) return null;
+  return {
+    playerIdx: pi, playerName: game.players[pi].name, word: entry.w,
+    options: ['选项A', '选项B', '选项C', '以上都不对'], answerIdx: 1,
+    correctZh: '选项B', reasons: ['测试']
+  };
+}
+
+t('AI 裁判: 可疑出词会暂停本轮等作答（回合不推进）', function () {
+  var g = new R.Game(refereeFixture(), [{ name: '甲', type: 'human' }, { name: '乙', type: 'human' }]);
+  g.aiReferee = alwaysSuspect;
+  var s = g.submitStart('abler');
+  assert.ok(s.verify, '可疑开局词应触发验词');
+  assert.ok(g.verify, 'game.verify 应已挂上');
+  assert.strictEqual(g.turn, 0, '等作答期间回合不推进');
+  assert.strictEqual(g.lastWord, 'abler', '词本身已被接受（接龙会继续）');
+  assert.strictEqual(g.verify.options.length, 4, '应是四选一（3 释义 + 以上都不对）');
+  assert.strictEqual(g.verify.options[3], '以上都不对');
+});
+
+t('AI 裁判: 答错扣 1 分且接龙继续；答对不扣', function () {
+  // 答错
+  var g = new R.Game(refereeFixture(), [{ name: '甲', type: 'human' }, { name: '乙', type: 'human' }]);
+  g.aiReferee = alwaysSuspect;
+  g.submitStart('abler');
+  var pts0 = g.players[0].points;
+  var bad = (g.verify.answerIdx + 1) % g.verify.options.length;
+  var r = g.answerVerify(bad);
+  assert.strictEqual(r.correct, false, '应判为答错');
+  assert.strictEqual(r.penalty, R.VERIFY_WRONG_PENALTY);
+  assert.strictEqual(g.players[0].points, pts0 - R.VERIFY_WRONG_PENALTY, '应扣 1 分');
+  assert.strictEqual(g.verify, null, '作答后清空验词');
+  assert.strictEqual(g.turn, 1, '接龙继续（回合推进到乙）');
+  assert.ok(g.log.some(function (e) { return e.kind === 'verify' && e.correct === false; }), '日志应记录验词结果');
+
+  // 答对
+  var g2 = new R.Game(refereeFixture(), [{ name: '甲', type: 'human' }, { name: '乙', type: 'human' }]);
+  g2.aiReferee = alwaysSuspect;
+  g2.submitStart('abler');
+  var pts2 = g2.players[0].points;
+  var r2 = g2.answerVerify(g2.verify.answerIdx);
+  assert.strictEqual(r2.correct, true);
+  assert.strictEqual(r2.penalty, 0);
+  assert.strictEqual(g2.players[0].points, pts2, '答对不扣分');
+  assert.strictEqual(g2.turn, 1, '接龙继续');
+});
+
+t('AI 裁判: 未作答时不能继续出词；无效选项被拒', function () {
+  var g = new R.Game(refereeFixture(), [{ name: '甲', type: 'human' }, { name: '乙', type: 'human' }]);
+  g.aiReferee = alwaysSuspect;
+  g.submitStart('abler');
+  assert.ok(g.verify, '应有待作答的验词');
+  assert.strictEqual(g.answerVerify(99).error ? true : false, true, '越界选项应被拒');
+  assert.strictEqual(g.answerVerify(-1).error ? true : false, true, '负数选项应被拒');
+  assert.ok(g.verify, '无效作答不应清空题目');
+  // 引擎层面：验词期间再次提交应被 gameplay 层拦住（此处直接验证 answerVerify 后回合才推进）
+  var r = g.answerVerify(g.verify.answerIdx);
+  assert.ok(r.ok);
+  assert.strictEqual(g.turn, 1);
+});
+
+t('AI 裁判: 无验词时作答返回错误；换轮清空未作答的题', function () {
+  var g = new R.Game(refereeFixture(), [{ name: '甲', type: 'human' }]);
+  assert.ok(g.answerVerify(0).error, '没有验词时应报错');
+  // 换轮清空
+  var g2 = new R.Game(refereeFixture(), [{ name: '甲', type: 'human' }, { name: '乙', type: 'human' }]);
+  g2.aiReferee = alwaysSuspect;
+  g2.submitStart('abler');
+  assert.ok(g2.verify);
+  g2.concede('测试'); g2.newRound();
+  assert.strictEqual(g2.verify, null, '换轮应清掉未作答的验词');
+});
+
+t('AI 裁判: 钩子返回 null 时不触发（常用词不受影响）', function () {
+  var g = new R.Game(refereeFixture(), [{ name: '甲', type: 'human' }, { name: '乙', type: 'human' }]);
+  g.aiReferee = function () { return null; };
+  var s = g.submitStart('abler');
+  assert.ok(!s.verify, '不应触发验词');
+  assert.strictEqual(g.verify, null);
+  assert.strictEqual(g.turn, 1, '回合正常推进');
+});
+
+t('AI 裁判: 未注入钩子时完全不介入（离线/旧行为）', function () {
+  var g = new R.Game(refereeFixture(), [{ name: '甲', type: 'human' }, { name: '乙', type: 'human' }]);
+  var s = g.submitStart('abler');
+  assert.ok(!s.verify && !g.verify, '没有裁判钩子时不该有验词');
+  assert.strictEqual(g.turn, 1);
+});
+
 console.log('\n结果: ' + pass + ' 通过, ' + fail + ' 失败');
 process.exit(fail ? 1 : 0);

@@ -73,6 +73,13 @@
    * 注意：词长 >3 的词不可能是回声（匹配只看末尾 2/3 字母），故只需判 2 与 3 字母。 */
   var ECHO_KEEP_F = 0.65;   // ⚠️ 与 tools/compute_chain_idx.js 的同名常量必须保持一致
 
+  /* ---- AI 裁判「验词」----
+   * 可疑出词（词生僻 / 出词过快 / 偷懒 / 难度突跳）会暂停本轮，弹四选一让玩家认释义。
+   * 引擎只负责"存题、判分、推进回合"，具体"什么算可疑、题目怎么出"由外部注入
+   * （game.aiReferee 钩子，见 src/ai.js）—— 这样共用引擎不依赖服务端模块，离线便携版照常可用。
+   */
+  var VERIFY_WRONG_PENALTY = 1;   // 答错扣 1 分（答对不扣；无论对错接龙都继续）
+
   // 高频/可信词条：柯林斯≥1星，或常见度 f≥0.65，或 Kyle 精讲词
   function isTrustedEntry(e) {
     if (!e) return true;    // 词库外的词（玩家自己填的）：不拦回声
@@ -486,6 +493,8 @@
     this.profile = null; // 用户学习画像(离线端由 localengine 注入), 用于难度贴合+教学导向
     this.explore = false; // 探索·发现：AI 随机给有趣的初始词
     this.reverseTurn = false; // 反转卡效果：为 true 时出词顺序倒转（接龙规则不变），跨轮保留
+    this.verify = null;       // AI 裁判：待作答的验词 { playerIdx, word, options, answerIdx, correctZh, reasons }
+    this.aiReferee = null;    // 注入的裁判钩子 (game, playerIdx, entry, opts) => 验词对象 | null
   }
 
   Game.prototype.addLog = function (entry) {
@@ -679,6 +688,12 @@
       note: inVocab ? '' : '（不在词库中，不计入难度统计）'
     }));
 
+    // AI 裁判：可疑开局词同样要验（与接龙一致）
+    if (this.aiReferee && !(opts && opts.noVerify)) {
+      var vres0 = this.aiReferee(this, this.turn, inVocab ? this.store.lookup(w) : null, opts || {});
+      if (vres0) { this.verify = vres0; return { ok: true, word: w, inVocab: inVocab, verify: vres0 }; }
+    }
+
     this.startNextTurn();
     return { ok: true, word: w, inVocab: inVocab };
   };
@@ -737,9 +752,37 @@
       note: inVocab ? '' : '（不在词库中，不计入难度统计）'
     }));
 
+    // AI 裁判：可疑出词 → 暂不推进回合，等玩家作答（作答后由 answerVerify 推进）
+    if (this.aiReferee && !(opts && opts.noVerify)) {
+      var vres = this.aiReferee(this, this.turn, inVocab ? this.store.lookup(w) : null, opts || {});
+      if (vres) { this.verify = vres; return { ok: true, word: w, inVocab: inVocab, verify: vres }; }
+    }
+
     this.startNextTurn();
     return { ok: true, word: w, inVocab: inVocab };
-  };
+  }
+
+  /* 回答验词：答错扣分；无论对错都推进回合（"接龙继续"）。
+   * choiceIdx = 玩家选择的选项下标（0-based） */
+  Game.prototype.answerVerify = function (choiceIdx) {
+    var v = this.verify;
+    if (!v) return { error: '没有待作答的验词' };
+    var idx = Number(choiceIdx);
+    if (!(idx >= 0 && idx < (v.options || []).length)) return { error: '选项无效' };
+    var correct = (idx === v.answerIdx);
+    var p = this.players[v.playerIdx];
+    if (!correct) p.points = Math.max(0, (p.points || 0) - VERIFY_WRONG_PENALTY);
+    this.addLog({
+      kind: 'verify', player: p.name, playerIdx: v.playerIdx, playerType: p.type,
+      word: v.word, correct: correct, choice: idx, answer: v.answerIdx, reasons: (v.reasons || []).slice()
+    });
+    this.verify = null;
+    this.startNextTurn();   // 接龙继续
+    return {
+      ok: true, correct: correct, answerIdx: v.answerIdx, correctZh: v.correctZh,
+      penalty: correct ? 0 : VERIFY_WRONG_PENALTY, points: p.points
+    };
+  };;
 
   // 认输 / AI 无词可接。返回本轮得分与新的 starter。
   Game.prototype.concede = function (reason) {
@@ -785,6 +828,7 @@
     this.round += 1;
     this.roundActive = true;
     this.chain = [];
+    this.verify = null;   // 换轮清掉未作答的验词
   };
 
   // 记录一个"AI 喂给玩家"的结尾(末2字母), 供结尾多样化激励
@@ -881,6 +925,7 @@
     isEcho: isEcho,
     isTrustedEntry: isTrustedEntry,
     ECHO_KEEP_F: ECHO_KEEP_F,
+    VERIFY_WRONG_PENALTY: VERIFY_WRONG_PENALTY,
     canStart: canStart,
     canChain: canChain,
     WordStore: WordStore,

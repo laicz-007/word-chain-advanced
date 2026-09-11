@@ -15,6 +15,7 @@ var view = require('./src/view');
 var gameplay = require('./src/gameplay');
 var rooms = require('./src/rooms');
 var api = require('./src/api');
+var ai = require('./src/ai');
 
 var server = api.createServer();
 
@@ -52,6 +53,8 @@ module.exports = {
   // 积分与道具
   points: points,
   POINTS: db.R.POINTS,
+  // AI 裁判（验词）
+  ai: ai,
   // 账号
   makeToken: auth.makeToken,
   verifyToken: auth.verifyToken,

@@ -227,14 +227,16 @@ function terminateRoom(username, roomId) {
 }
 
 // 处理一次行动（仅限当前回合玩家）。返回 {ok} 或 {error}；结束后由客户端轮询同步。
-function roomAction(username, roomId, kind, word, confirmed, itemKind) {
+function roomAction(username, roomId, kind, word, confirmed, itemKind, choice) {
   var r = rooms[roomId];
   if (!r) return { error: '房间不存在' };
   if ((r.status !== 'playing' && r.status !== 'duel') || !r.game) return { error: '对局未在进行' };
   var g = r.game;
+  // 验词作答由本人提交（此时回合仍停在他身上），其余动作仍须轮到自己
   var cur = g.players[g.turn];
-  if (!cur || cur.name !== username) return { error: '还没轮到你出词' };
-  var out = gameplay.doAction(g, kind, word, confirmed, itemKind);
+  var isVerifying = (kind === 'verify' && g.verify && g.verify.playerIdx === g.turn && cur && cur.name === username);
+  if (!isVerifying && (!cur || cur.name !== username)) return { error: '还没轮到你出词' };
+  var out = gameplay.doAction(g, kind, word, confirmed, itemKind, choice);
   if (out.error) return { error: out.error };
   points.credit(g);   // 联机房间：玩家名就是用户名 → 各自结算到自己的账户（幂等）
   r.updatedAt = Date.now();

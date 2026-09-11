@@ -61,6 +61,18 @@ function profileSummary(p) {
     bestChain: p.bestChain, avgChain: p.avgChain, games: p.games, knownCount: p.knownCount, noteSeen: p.noteSeen };
 }
 
+// 验词信息（发给前端）：⚠️ 绝不能带 answerIdx / correctZh —— 否则玩家在响应里就能看到答案
+function verifyForClient(v) {
+  if (!v) return null;
+  return {
+    player: v.playerName,
+    word: v.word,
+    options: (v.options || []).slice(),
+    reasons: (v.reasons || []).slice(),
+    score: v.score
+  };
+}
+
 function snapshot(game, sessionId, lastAI, pending, aiConceded) {
   var aiTarget = game.aiTarget();
   return {
@@ -76,6 +88,7 @@ function snapshot(game, sessionId, lastAI, pending, aiConceded) {
     properQuota: { perPlayer: db.R.PROPER_QUOTA, players: game.properQuotaInfo() },
     itemState: { perPlayer: db.R.ITEM_QUOTA, players: game.itemState() },
     reverseTurn: !!game.reverseTurn,   // 反转卡效果：出词顺序是否已倒转
+    verify: verifyForClient(game.verify),   // AI 裁判：待作答的验词（不含答案）
     account: game.user || null,
     profile: game.profile ? profileSummary(game.profile) : null,
     turn: game.turn,
@@ -113,5 +126,6 @@ module.exports = {
   formatAI: formatAI,
   profileSummary: profileSummary,
   snapshot: snapshot,
-  computeHint: computeHint
+  computeHint: computeHint,
+  verifyForClient: verifyForClient
 };

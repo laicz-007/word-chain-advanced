@@ -34,7 +34,8 @@ function credit(game) {
     var done = game._credited[i] || 0;
     var cur = p.points || 0;
     var delta = cur - done;
-    if (delta > 0) {
+    // 双向结算：AI 裁判答错会扣分（负增量），账户也要跟着扣，否则惩罚只停留在界面显示上
+    if (delta !== 0) {
       userdata.addPoints(uname, delta);
       game._credited[i] = cur;
       total += delta;

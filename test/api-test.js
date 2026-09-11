@@ -246,5 +246,55 @@ t('回声门控: 高频词在真实词库中可回声，生僻词被拦', functi
   assert.strictEqual(cands.indexOf('lar'), -1, 'lar 已被清理');
 });
 
+t('AI 裁判: 快照不下发答案（防作弊）', function () {
+  var W = S.R.WordStore, G = S.R.Game;
+  var v = new W([
+    { w: 'abler', zh: '可开局的词', d: 1, f: 0.9, kind: 0.9, has_succ: true, chain_idx: 0.5, collins: 3 },
+    { w: 'erlow', zh: '生僻接龙词', d: 1, f: 0.3, kind: 0.9, has_succ: true, chain_idx: 0.5, collins: 0 }
+  ]);
+  var g = new G(v, [{ name: '甲', type: 'human' }, { name: '乙', type: 'human' }]);
+  g.aiReferee = function (game, pi, entry) {
+    if (!entry) return null;
+    return {
+      playerIdx: pi, playerName: game.players[pi].name, word: entry.w,
+      options: ['选项A', '选项B', '选项C', '以上都不对'], answerIdx: 1, correctZh: '选项B', reasons: ['测试']
+    };
+  };
+  g.submitStart('abler');
+  var snap = S.snapshot(g, 'sid', '', null, false);
+  assert.ok(snap.verify, '快照应含验词');
+  assert.strictEqual(snap.verify.answerIdx, undefined, '⚠️ 绝不能下发 answerIdx（否则响应里就能看到答案）');
+  assert.strictEqual(snap.verify.correctZh, undefined, '⚠️ 绝不能下发 correctZh');
+  assert.deepStrictEqual(snap.verify.options, ['选项A', '选项B', '选项C', '以上都不对'], '四个选项应原样下发');
+  assert.ok(snap.verify.word && snap.verify.reasons.length, '词与判定原因应下发（供弹窗说明）');
+  // 作答后才揭示答案
+  var r = g.answerVerify(1);
+  assert.strictEqual(r.correct, true);
+  assert.strictEqual(r.answerIdx, 1);
+  assert.ok(r.correctZh);
+});
+
+t('AI 裁判: 待作答时其它动作被拒（经 doAction 层）', function () {
+  var W = S.R.WordStore, G = S.R.Game;
+  var v = new W([
+    { w: 'abler', zh: '可开局的词', d: 1, f: 0.9, kind: 0.9, has_succ: true, chain_idx: 0.5, collins: 3 },
+    { w: 'erlow', zh: '生僻接龙词', d: 1, f: 0.3, kind: 0.9, has_succ: true, chain_idx: 0.5, collins: 0 }
+  ]);
+  var g = new G(v, [{ name: '甲', type: 'human' }, { name: '乙', type: 'human' }]);
+  g.aiReferee = function (game, pi, entry) {
+    if (!entry) return null;
+    return { playerIdx: pi, playerName: game.players[pi].name, word: entry.w, options: ['A', 'B', 'C', '以上都不对'], answerIdx: 0, correctZh: 'A', reasons: ['测试'] };
+  };
+  var out = S.doAction(g, 'start', 'abler', false);
+  assert.ok(g.verify, '应生成验词');
+  assert.ok(out.verify, 'doAction 应把验词带回给调用方');
+  var blocked = S.doAction(g, 'chain', 'erlow', false);
+  assert.ok(blocked.error && /验词/.test(blocked.error), '待作答时出词应被拒, 实际: ' + blocked.error);
+  var answered = S.doAction(g, 'verify', null, false, null, 0);
+  assert.ok(answered.ok && answered.verifyResult && answered.verifyResult.correct === true, '作答应成功');
+  assert.strictEqual(g.verify, null, '作答后清空');
+  assert.ok(!S.doAction(g, 'verify', null, false, null, 0).error ? false : true, '重复作答应报错');
+});
+
 console.log('\n结果: ' + pass + ' 通过, ' + fail + ' 失败');
 process.exit(fail ? 1 : 0);

@@ -560,11 +560,55 @@
     }
   }
   // 出词/认输等动作：联机走房间，本地走会话
-  function submitAction(kind, word, confirmed, item) {
+  function submitAction(kind, word, confirmed, item, choice) {
     if (mode === 'online' && onlineActive) {
-      return api('/api/room/action', { roomId: roomId, kind: kind, word: word, confirmed: !!confirmed, item: item });
+      return api('/api/room/action', { roomId: roomId, kind: kind, word: word, confirmed: !!confirmed, item: item, choice: choice });
     }
-    return api('/api/action', { sessionId: sessionId, kind: kind, word: word, confirmed: !!confirmed, item: item });
+    return api('/api/action', { sessionId: sessionId, kind: kind, word: word, confirmed: !!confirmed, item: item, choice: choice });
+  }
+
+  /* ---------- AI 裁判：验词弹窗 ---------- */
+  function renderVerify() {
+    var box = $('verify-modal');
+    if (!box) return;
+    var v = state && state.verify;
+    // 联机模式下题目只该给"该作答的人"看（服务端也只把题目发给他）
+    var mine = v && (mode === 'online' && onlineActive ? (v.player === myName) : true);
+    if (!mine) { box.classList.add('hidden'); return; }
+    box.classList.remove('hidden');
+    $('verify-word').textContent = v.word;
+    var why = (v.reasons || []).join('、') || '有点可疑';
+    $('verify-why').textContent = 'AI 裁判觉得这个词' + why + '。答错扣 1 分，答对不扣；接龙都会继续。';
+    var opts = $('verify-options');
+    opts.innerHTML = '';
+    (v.options || []).forEach(function (o, i) {
+      var b = document.createElement('button');
+      b.className = 'btn verify-opt';
+      b.textContent = String.fromCharCode(65 + i) + '. ' + o;
+      b.addEventListener('click', function () { onAnswerVerify(i); });
+      opts.appendChild(b);
+    });
+    verifyMsg('');
+  }
+  function verifyMsg(m, err) {
+    var el = $('verify-msg');
+    if (!el) return;
+    el.textContent = m || '';
+    el.classList.toggle('err', !!err);
+  }
+  function onAnswerVerify(i) {
+    var opts = $('verify-options');
+    Array.prototype.forEach.call(opts.querySelectorAll('button'), function (b) { b.disabled = true; });
+    verifyMsg('提交中…');
+    submitAction('verify', null, false, null, i).then(function (res) {
+      if (res.error) { verifyMsg('✗ ' + res.error, true); return; }
+      var r = res.verifyResult || {};
+      var tip = r.correct
+        ? '✓ 答对了，验词通过'
+        : ('✗ 答错了，扣 ' + r.penalty + ' 分；正确答案是「' + (r.correctZh || '') + '」');
+      if (mode === 'online' && onlineActive) { onlineMsg(tip); pollRoom(true); }
+      else { state = res; setMsg(tip, r.correct ? 'info' : 'err'); render(); focusInput(); }
+    }).catch(function () { verifyMsg('✗ 网络错误，请重试', true); });
   }
 
   // 学习画像面板 —— 便携版(离线): 本地画像; 网站版: 登录账户画像; 均仅"人机对战"
@@ -1031,6 +1075,7 @@
     renderAI();
     renderRecords();
     renderAIConfirm();
+    renderVerify();
     renderControls();
     renderItemBar();
     renderModeActions();

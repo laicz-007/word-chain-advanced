@@ -65,12 +65,13 @@ function handleApi(req, res, pathname) {
       var game = gameplay.sessions[body.sessionId];
       if (!game) { json(res, 404, { error: '会话不存在' }); return; }
       var preLen = game.log.length;
-      var out = gameplay.doAction(game, body.kind, body.word, body.confirmed, body.item);
+      var out = gameplay.doAction(game, body.kind, body.word, body.confirmed, body.item, body.choice);
       if (out.error) { json(res, 400, { error: out.error }); return; }
       usage.recordUsage(game, preLen); // 把本回合新用的词计入持久化防疲劳
       points.credit(game);             // 把本局累积的积分结算到账户（幂等：只结算未结算的增量）
       var snap = view.snapshot(game, body.sessionId, out.lastAI, out.pending, out.aiConceded);
       if (out.itemEffect) snap.itemEffect = out.itemEffect;
+      if (out.verifyResult) snap.verifyResult = out.verifyResult;   // 作答后揭示正确答案
       if (game.user) {
         var aud = userdata.loadUserData(game.user);
         snap.accountPoints = aud.points;
@@ -260,7 +261,7 @@ function handleApi(req, res, pathname) {
   if (pathname === '/api/room/action' && req.method === 'POST') {
     readBody(req, function (body) {
       var n = roomName(body); if (!n) return;
-      var rr = rooms.roomAction(n, body.roomId, body.kind, body.word, body.confirmed, body.item);
+      var rr = rooms.roomAction(n, body.roomId, body.kind, body.word, body.confirmed, body.item, body.choice);
       if (rr.error) json(res, 400, rr); else json(res, 200, rr);
     });
     return;
