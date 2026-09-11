@@ -8,6 +8,9 @@
 
 ## 1. 项目概况（30 秒看懂）
 
+> **架构层面（依赖关系、分层、模块职责、性能分析）见 `ARCHITECTURE.md`。**
+> 本文只讲"怎么改、按什么顺序改、踩过哪些坑"。
+
 ### 1.1 交付形态
 
 | 形态 | 入口 | 依赖 | 数据存哪 |
@@ -73,22 +76,25 @@ tools/analyze_hard_ends.js ─> public/logic.js   ★ 同一份引擎
 
 ```
 data/word.csv + word_translation.csv
-        │  python tools/build_data.py
+        │  python tools/build_data.py                 0.6 秒
         ▼
    public/vocab.json ──────────────┐  （28,531 词，基础池）★ 入库
-                                    │  python tools/build_unified_db.py
+                                    │  python tools/build_unified_db.py   8.3 秒
    data/ecdict.csv ────────────────┤  （联网下载 ECDICT/Tofu/Kyle）
    data/tofu_words.csv ────────────┤
    data/kyle/*.jsonl ──────────────┘
                                     ▼
                         data/db.raw.json（331,961 词）★ 原始库，只读，别改它
-                                    │  node tools/compute_chain_idx.js
+                                    │  node tools/compute_chain_idx.js   1.7 秒
                                     │  （过滤 + 算 kind/可接指数/conf）
                                     ▼
                         data/db.json（307,113 词）★ 成品库，src/db.js 加载它
 
 tools/analyze_hard_ends.js ─> tools/hard_ends_report.json ─> tools/print_hard_list.js
 ```
+
+**全链路约 11 秒**（2026-09 前是 111 秒，第 3 步从 102 秒降到 1.7 秒）。
+第 3 步内部净耗时：读取 0.38s → 算 kind 0.11s → 过滤 0.30s → **可接指数 0.25s** → 写盘 0.68s。
 
 > **★ 为什么原始库和成品库是两个文件**：第 3 步以前是「读 db.json → 过滤 → 写回 db.json」，
 > 就地改写。过滤规则删过头，词就**永久消失**——2026-09 实测因此丢了 25,183 个词。
@@ -127,7 +133,7 @@ score = 硬门禁(合规+非死路) × (0.30·防疲劳 + 0.23·难度贴合 + 0
 | 8 | **有规则但没测试** | `pluralBase`（复数拒绝）在 `test/` 里出现 **0 次** | 改坏了没人知道 | 新增规则必须配套测试 |
 | 9 | **环境陷阱** | ① PowerShell 下 `npm test` 被执行策略挡住（`npm.ps1` 无法加载）② `python3` 是坏的 Microsoft Store 别名 | 照 README 直接敲命令**会失败**，误判为项目坏了 | 用 `npm.cmd test`；用 `python`（不是 `python3`） |
 | 10 | **链路描述重复 4 处** | `package.json` build / `build-db.sh` / `README.md` / `DEPLOY.md` | 改一步要同步 4 处，必然漂移 | 以 `package.json` 为唯一真相源，其余只做引用 |
-| 11 | **重建词库代价高** | `compute_chain_idx.js` 遍历 33 万词约 **90 秒+**，成品 `db.json` 约 96MB | 误跑/反复跑浪费时间。第 2 步（Python 整合）更慢，要几分钟 | **拆库后已大幅缓解**：改过滤规则只需重跑第 3 步（30~90 秒），不用碰 Python；第 2 步的产物 `db.raw.json` 永久保留 |
+| 11 | ~~**重建词库代价高**~~ ✅ **已优化 60 倍** | 原 `compute_chain_idx.js` 遍历 33 万词的候选桶，复杂度是准平方级，实测 **102 秒** | 改一次过滤规则要等近两分钟，严重拖慢迭代 | 2026-09 用"按前缀桶离线聚合"重写为严格 O(N)：**102 秒 → 1.7 秒**。全链路 111 秒 → 11 秒。算法说明见 `ARCHITECTURE.md` §7 |
 | 12 | **房间是内存态** | `src/rooms.js` 用普通对象存 `rooms`/`userRoom` | 服务重启房间全丢，无法多进程部署 | 现状可接受；若要多进程必须先落盘 |
 | 13 | **构建期索引建在过滤之前**（本轮新发现，已修复） | `compute_chain_idx.js` 原第 28 行 `var store = new R.WordStore(db)` 用的是**过滤前**的全量库，而过滤在其后 200 行才执行 | `succ_cnt`/`has_succ`/`chain_idx` 把**已被删除的词**也算成后继：**29,770 个词后继数虚高**，**20 个词被错标为"接得上"**（`onyx`/`oryx`/`coccyx`/`archaeopteryx` — 它们唯一的接法是被删掉的 `yx`/`alx`）。AI 会以为某个词还能接下去 | 已改为"**先过滤 → 再建索引 → 再算可接指数**"（把这段包成 `computeSucc()`，在过滤之后调用）。**通用教训：凡是"先算指标、后裁剪数据"的脚本，裁剪后的指标一定是脏的** —— 顺序必须是先裁剪再计算 |
 

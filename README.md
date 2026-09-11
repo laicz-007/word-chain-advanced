@@ -220,6 +220,7 @@ word-chain/
 │   ├── compute_chain_idx.js  # 过滤 + 预计算可接指数：db.raw.json -> db.json（成品库）
 │   ├── check_db.js           # 词库体检（改完词库先跑它，20 项硬指标）
 │   ├── check_echo.js         # 回声规则/词库清理验收
+│   ├── diff_db.js            # 两份词库逐字段对拍（改生成算法后证明结果没变）
 │   ├── sort_db.js            # 词库排序去重（可选工具，只动原始库）
 │   ├── analyze_hard_ends.js  # 难接双辅音分析(按 MN 统计承接词数)
 │   ├── print_hard_list.js    # 打印难接清单
@@ -240,7 +241,11 @@ word-chain/
     └── security-test.js # 安全 密码散列/路径穿越/token伪造/原型污染
 ```
 
-> 部署到 VPS 见 `DEPLOY.md`（Node 安装、systemd 常驻、Nginx + HTTPS、备份、防火墙）。
+> **文档导航**：
+> - `ARCHITECTURE.md` —— 架构梳理：分层、依赖关系、模块职责、性能分析
+> - `WORKFLOW.md` —— 维护工作流：按什么顺序改、每步注意什么、踩过哪些坑
+> - `TESTING.md` —— 浏览器自测清单（改完在页面上挨个点）
+> - `DEPLOY.md` —— 部署到 VPS（Node 安装、systemd 常驻、Nginx + HTTPS、备份、防火墙）
 
 ## 重新构建词库
 
@@ -273,8 +278,11 @@ python tools/build_unified_db.py           # 只重新整合 -> data/db.raw.json
 node tools/compute_chain_idx.js            # 只重跑过滤+可接指数（约 30 秒，改过滤规则时反复用这个）
 ```
 
-> **改过滤规则的推荐循环**：改 `compute_chain_idx.js` → 跑它 → `node tools/check_db.js` 看体检 → 不对就再改。
-> 全程只要 30 秒一轮，**不用碰 Python**，原始库 `db.raw.json` 也不会被动。
+> **改过滤规则的推荐循环**：改 `compute_chain_idx.js` → 跑它（**约 1.7 秒**）→ `node tools/check_db.js` 看体检 → 不对就再改。
+> 全程不用碰 Python，原始库 `db.raw.json` 也不会被动。
+>
+> **改了生成算法**（不只是规则）时，先存一份旧产物、再用 `node tools/diff_db.js 旧.json 新.json` 对拍，
+> 确认整数字段逐位相同 —— 摘要统计一样不代表 30 万个词逐个一样。
 >
 > 第 2 步输出的是**原始**词库（约 33 万词，11 个字段）；第 3 步会剔除缩写/专名/低质词
 > （`kind<=0.1` 且不在常用词白名单），并写入 `kind`/`chain_idx`/`conf` 等 9 个计算字段，最终约 **30.7 万词**。

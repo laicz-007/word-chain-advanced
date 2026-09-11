@@ -18,11 +18,15 @@
 'use strict';
 var fs = require('fs');
 var path = require('path');
-var R = require('../public/logic.js');
 
 var F_POW = 1.5;              // 常见度幂(越大越突出"常见"后继, 生僻几乎不计)
 var COMMON_THRESHOLD = 0.42;  // 常见后继阈值(词频>=此值才算常见; 重构后 f 均值~0.37, 故取高一点)
 var REF = 18.0;               // 归一化基准(常规数)
+
+/* 分段计时（结尾打印）。用于回答"时间花在哪"，改算法后一眼看出收益。 */
+var T0 = Date.now();
+var PH = {};
+function mark(name) { PH[name] = Date.now() - T0; }
 
 /* 输入 = data/db.raw.json（第 2 步 build_unified_db.py 的原始产物，谁也不许改写它）
  * 输出 = data/db.json    （过滤 + 算好可接指数的成品，游戏实际加载的就是它）
@@ -44,14 +48,28 @@ if (!fs.existsSync(RAW_PATH)) {
   process.exit(1);
 }
 var db = JSON.parse(fs.readFileSync(RAW_PATH, 'utf8'));
-/* ⚠️ store（前缀索引 by2/by3）**故意不在这里建** —— 它必须建在【过滤之后】，
- * 即文件末尾 `store = new R.WordStore(db);` 那一行。曾经建在这里（用过滤前的 db），后果是
- * succ_cnt/has_succ/chain_idx 把**已被删除的词**也算成后继：
- *   · 29,770 个词的后继数被虚高
- *   · 20 个词被错标为 has_succ=true，其实一个词都接不上
- *     （onyx 缟玛瑙 / oryx 剑羚 / coccyx 尾骨 / archaeopteryx 始祖鸟 / calx…，它们唯一的接法是 yx/alx）
- * 运行时用的是"过滤后"的词库，构建期这份索引必须与它一致，否则 AI 会以为某个词还接得下去。 */
-var store;
+mark('读取+解析');
+
+/* 前置校验：本脚本用"完美哈希"把词的前 2/3 个字母映射到定长数组下标（见下方算法说明），
+ * 因此**必须**保证每个词都是纯小写 a-z 且长度 ≥2，否则下标会越界、把词串到别的桶里。
+ * 这与运行时 WordStore 的收录条件一致（那边是 `/[^a-z]/.test(w) || w.length < 2 → 跳过`）。
+ * 以前这里靠 `new R.WordStore(db)` 顺手做了这层过滤，现在那层没了，就显式校验一遍 ——
+ * 宁可启动时大声报错，也不要静默产出错误的可接指数（铁律：绝不静默失败）。 */
+(function validateWords() {
+  var bad = [];
+  for (var i = 0; i < db.length; i++) {
+    var w = db[i].w;
+    if (typeof w !== 'string' || w.length < 2 || !/^[a-z]+$/.test(w)) {
+      if (bad.length < 5) bad.push(JSON.stringify(w));
+    }
+  }
+  if (bad.length) {
+    console.error('原始词库里有非法词条（必须是小写纯字母且长度 ≥2）：' + bad.join(', '));
+    console.error('文件：' + RAW_PATH);
+    console.error('请检查上一步 build_unified_db.py 的输出，或先运行 node tools/check_db.js 看完整报告。');
+    process.exit(1);
+  }
+})();
 
 var VOWELS = 'aeiouy';
 var PROPER_RE = /\[(地名|人名|姓|音|圣经|宗|国|地|人|城|河|山|岛|族|币)\]/;
@@ -122,6 +140,7 @@ function computeKind(e) {
 }
 
 db.forEach(function (e) { e.kind = computeKind(e); });
+mark('算 kind');
 
 /* 词条可信度 conf (0.3~0.9) 与 难度猜测标记 dGuess
  *
@@ -163,39 +182,140 @@ var maxChain = 0;
 var rawDist = [];   // 观测 chain_raw 分布以校验 REF
 var total = db.length;
 
-// 快路径：直接遍历 by2/by3 前缀桶，避免 candidates() 里对每个候选做 canChain 正则
-// 前缀桶里的词开头已对上，只需再校验"结尾元音 + 禁止结尾"两条（纯字符串操作）
-function isChainable(prev, s) {
-  var w = s.w;
-  if (w === prev) return false;
-  // 说明：这里【不】应用"禁止回声"规则 —— 该规则只在联机房间运行时生效（用户确认的范围），
-  // 人机对战/本地同屏/离线版都允许回声，所以词库层面的可接指数不应把它算掉。
-  // 结尾最多3字母须含元音
-  var tail = w.length <= 3 ? w : w.slice(-3);
+/* ★ 可接指数计算（succ_cnt / c_cnt / has_succ / chain_raw / chain_idx）
+ *
+ * 【算法：按前缀桶离线聚合，把 O(Σ|桶|) 降到 O(N)】
+ *
+ * 朴素做法：对每个词 w，遍历"以 w 末尾 2 字母开头"和"以 w 末尾 3 字母开头"两个桶，
+ *   对桶里每个候选 s 调一次判断。总代价 = Σ_w [ B(末2(w)) + B(末3(w)) ]，
+ *   其中 B(P) = 以 P 开头的词数。英语前缀是重尾分布（in/re/er/st/co… 开头的词成千上万），
+ *   而大量词又共享同一个词尾，于是这个和是**准平方级**的：实测 33 万词要跑 100 秒以上。
+ *
+ * 关键观察（OI 里典型的"把聚合提到循环外"／离线预处理）：
+ *   判断 `isChainable(prev, s)` 里，除了一句 `s.w === prev`（排除自己），
+ *   其余两条（末尾 3 字母含元音、不以 ry/ht/ck 结尾）**只取决于 s，与 prev 无关**。
+ *   也就是说：同一个前缀桶，对"所有以它开头的候选"给出的贡献是**一模一样**的。
+ *   于是可以对每个前缀桶**只聚合一次**，之后每个词 O(1) 查表。
+ *
+ *   记桶 P 的三个聚合量（只统计"合格词" valid(s)）：
+ *     cnt[P] = 合格候选个数      cmn[P] = 其中常见候选个数(f ≥ COMMON_THRESHOLD)
+ *     sm[P]  = Σ kind(s)·f(s)^F_POW
+ *   则对词 w（令 p2 = 末 2 字母，p3 = 末 3 字母）：
+ *     succ_cnt = cnt[p2] + cnt[p3] − |A∩B| − 自己
+ *   其中 A = 以 p2 开头的词集，B = 以 p3 开头的词集（p3 比 p2 多一个前导字母）。
+ *   两项修正都很小、都可 O(1) 判定：
+ *
+ *   · 交集 A∩B：B ⊆ A 当且仅当 p2 恰好等于 p3 的前两个字母。
+ *     设 a = w[L-3], b = w[L-2], c = w[L-1]（都是 0..25 的字母序号），该条件即
+ *         a·26 + b == b·26 + c   ⟺   26(a−b) + (b−c) == 0
+ *     由于 |26(a−b)| ≤ 650 而 |b−c| ≤ 25，要抵消只能是 a−b == 0 且 b−c == 0，
+ *     即 **a == b == c**：末三个字母全同（"ooo"/"sss" 这种）。
+ *     此时 A∩B = B，修正量就是整个桶三的聚合量。
+ *
+ *   · 自己：w 若正好以自己开头（first2(w) == last2(w) 或 first3(w) == last3(w)），
+ *     它会被算进自己那一桶里一次（朴素版靠 `s.w === prev` 排掉），减 1。
+ *     注意与交集修正**不会重复计**：无论它同时在 A、B 还是只在其中一个，朴素版都只算一次。
+ *
+ * 复杂度：聚合阶段每个词恰好进 1 个二字母桶 + 1 个三字母桶 → 严格 O(N)；
+ *         查表阶段每词 O(1) → 严格 O(N)。整体从准平方降到线性。
+ *
+ * 【哈希：不用字符串当 key，用"完美哈希"落到定长类型数组】
+ *   2 字母 → (c0−97)·26 + (c1−97)                     ∈ [0, 676)
+ *   3 字母 → (c0−97)·676 + (c1−97)·26 + (c2−97)        ∈ [0, 17576)
+ *   查表/累加全是数组下标，没有字符串哈希，也没有每词一个 `seen` 对象的分配与 GC。
+ *   （朴素版每个词都 `Object.create(null)` 建一个去重表，33 万次分配。）
+ *
+ * 【为什么仍然用 Math.pow 而不是 f*sqrt(f)】
+ *   f^1.5 == f·√f 在数学上成立，但 IEEE754 下 Math.pow 与 Math.sqrt 的舍入路径不同，
+ *   结果可能差最后 1 位。本函数的结果要拿去和旧词库逐字段对拍，所以保持 Math.pow 原样 ——
+ *   反正现在它每个词只算一次，不再是热路径。
+ *
+ * ⚠️ 结果与旧的"逐桶遍历"版：所有整数字段（succ_cnt/c_cnt/has_succ）逐位相同；
+ *    浮点字段 chain_raw 只差在**求和顺序**（新的先各自求桶内和再相加），
+ *    相对误差在 1e-15 量级，对 chain/chain_idx 与 AI 排序无任何影响。
+ */
+var A2 = 26, A2N = 26 * 26, A3N = 26 * 26 * 26;   // 26 / 676 / 17576
+
+/* 判断一个"候选词"是否合格（可充当别人的后继）—— 即原 isChainable 里与 prev 无关的那两条。
+ * 说明：这里【不】应用"禁止回声"规则 —— 该规则只在联机房间运行时生效（用户确认的范围），
+ * 人机对战/本地同屏都允许回声，所以词库层面的可接指数不应把它算掉。 */
+function validSucc(w) {
+  var L = w.length;
+  // 结尾最多 3 字母须含元音
+  var tail = L <= 3 ? w : w.slice(-3);
   var hasV = false;
   for (var i = 0; i < tail.length; i++) { if (VOWELS.indexOf(tail.charAt(i)) !== -1) { hasV = true; break; } }
   if (!hasV) return false;
   // 禁止结尾 ry/ht/ck
-  var c1 = w.charCodeAt(w.length - 1), c2 = w.charCodeAt(w.length - 2);
-  if ((c2 === 114 && c1 === 121) || (c2 === 104 && c1 === 116) || (c2 === 99 && c1 === 107)) return false; // ry/ht/ck
+  var c1 = w.charCodeAt(L - 1), c2 = w.charCodeAt(L - 2);
+  if ((c2 === 114 && c1 === 121) || (c2 === 104 && c1 === 116) || (c2 === 99 && c1 === 107)) return false;
   return true;
 }
 
-/* ★ 可接指数计算（succ_cnt / c_cnt / has_succ / chain_raw / chain_idx）。
- * ⚠️ 必须在【过滤之后】调用 —— 它依赖 store（前缀索引 by2/by3），而 store 必须由"过滤后"的词库建立。
- *    曾经的写法是把这段直接跑在文件中间（过滤之前），后果见文件顶部 store 处的说明。 */
+var gCnt2, gCmn2, gSum2, gCnt3, gCmn3, gSum3;
+
+function buildPrefixAggregates() {
+  gCnt2 = new Int32Array(A2N); gCmn2 = new Int32Array(A2N); gSum2 = new Float64Array(A2N);
+  gCnt3 = new Int32Array(A3N); gCmn3 = new Int32Array(A3N); gSum3 = new Float64Array(A3N);
+  for (var i = 0; i < db.length; i++) {
+    var e = db[i], w = e.w, L = w.length;
+    if (!validSucc(w)) continue;          // 不合格的词不充当任何人的后继
+    var f = e.f || 0;
+    var term = kindMap[w] * Math.pow(f, F_POW);
+    var cm = f >= COMMON_THRESHOLD ? 1 : 0;
+    var i2 = (w.charCodeAt(0) - 97) * A2 + (w.charCodeAt(1) - 97);
+    gCnt2[i2]++; gCmn2[i2] += cm; gSum2[i2] += term;
+    if (L >= 3) {
+      var i3 = i2 * A2 + (w.charCodeAt(2) - 97);
+      gCnt3[i3]++; gCmn3[i3] += cm; gSum3[i3] += term;
+    }
+  }
+}
+
+/* ★ 必须在【过滤之后】调用 —— 它只应统计"过滤后仍在库"的词。
+ *   曾经的写法把这段跑在过滤之前，导致 succ_cnt/has_succ 把已被删除的词也算成后继：
+ *   29,770 个词后继数虚高，onyx/oryx/coccyx/archaeopteryx 等 20 个词被错标为"接得上"。 */
 function computeSucc() {
   maxChain = 0; rawDist = []; total = db.length;
 
-  db.forEach(function (e, idx) {
-    var w = e.w;
-    var seen = Object.create(null);
-    var succ_cnt = 0, c_cnt = 0, sum = 0;
-    var p2 = w.slice(-2), p3 = w.length >= 3 ? w.slice(-3) : null;
+  buildPrefixAggregates();
 
-    var bucket = store.by2[p2]; var b, s;
-    if (bucket) for (b = 0; b < bucket.length; b++) { s = bucket[b]; if (!isChainable(w, s)) continue; if (seen[s.w]) continue; seen[s.w] = 1; succ_cnt++; var f = (s.f || 0); if (f >= COMMON_THRESHOLD) c_cnt++; sum += kindMap[s.w] * Math.pow(f, F_POW); }
-    if (p3) { bucket = store.by3[p3]; if (bucket) for (b = 0; b < bucket.length; b++) { s = bucket[b]; if (!isChainable(w, s)) continue; if (seen[s.w]) continue; seen[s.w] = 1; succ_cnt++; var f2 = (s.f || 0); if (f2 >= COMMON_THRESHOLD) c_cnt++; sum += kindMap[s.w] * Math.pow(f2, F_POW); } }
+  for (var i = 0; i < total; i++) {
+    var e = db[i], w = e.w, L = w.length;
+
+    // 末 2 字母的哈希 —— 它是"候选词的前缀"，不是 w 自己的前缀
+    var b = w.charCodeAt(L - 2) - 97, c = w.charCodeAt(L - 1) - 97;
+    var p2 = b * A2 + c;
+
+    var succ_cnt = gCnt2[p2], c_cnt = gCmn2[p2], sum = gSum2[p2];
+
+    if (L >= 3) {
+      var a = w.charCodeAt(L - 3) - 97;
+      var p3 = a * A2N + p2;
+      if (a === b && b === c) {
+        // 末三字母全同 → B ⊆ A，三字母桶整个已经在二字母桶里算过了，不重复计入
+      } else {
+        succ_cnt += gCnt3[p3]; c_cnt += gCmn3[p3]; sum += gSum3[p3];
+      }
+    }
+
+    // 排除"自己"：w 若以自己开头，会被自己那一桶算进去
+    if (validSucc(w)) {
+      var first2 = (w.charCodeAt(0) - 97) * A2 + (w.charCodeAt(1) - 97);
+      var isSelf = (first2 === p2);                 // w ∈ A
+      if (!isSelf && L >= 3) {                      // 否则再看 w ∈ B
+        var first3 = (w.charCodeAt(0) - 97) * A2N + (w.charCodeAt(1) - 97) * A2 + (w.charCodeAt(2) - 97);
+        var last3 = (w.charCodeAt(L - 3) - 97) * A2N + (w.charCodeAt(L - 2) - 97) * A2 + (w.charCodeAt(L - 1) - 97);
+        isSelf = (first3 === last3);
+      }
+      if (isSelf) {
+        // 朴素版无论 w 落在 A、B 还是两者，都只被计一次（去重），所以这里也只减 1
+        succ_cnt -= 1;
+        var fw = e.f || 0;
+        if (fw >= COMMON_THRESHOLD) c_cnt -= 1;
+        sum -= kindMap[w] * Math.pow(fw, F_POW);
+      }
+    }
 
     e.succ_cnt = succ_cnt;
     e.c_cnt = c_cnt;
@@ -205,17 +325,18 @@ function computeSucc() {
     if (sum > maxChain) maxChain = sum;
 
     // 进度条：每 1% 打印一次
-    if (idx % 5000 === 0 || idx === total - 1) {
-      var pctDone = ((idx + 1) / total * 100).toFixed(1);
-      process.stdout.write('\r  进度: ' + (idx + 1) + '/' + total + ' (' + pctDone + '%)');
+    if (i % 5000 === 0 || i === total - 1) {
+      var pctDone = ((i + 1) / total * 100).toFixed(1);
+      process.stdout.write('\r  进度: ' + (i + 1) + '/' + total + ' (' + pctDone + '%)');
     }
-  });
+  }
   process.stdout.write('\n');
 
-  db.forEach(function (e) {
-    e.chain = e.chain_raw > 0 ? (1 - Math.exp(-e.chain_raw / REF)) : 0;
-    e.chain_idx = e.kind * e.chain;
-  });
+  for (var j = 0; j < total; j++) {
+    var x = db[j];
+    x.chain = x.chain_raw > 0 ? (1 - Math.exp(-x.chain_raw / REF)) : 0;
+    x.chain_idx = x.kind * x.chain;
+  }
 }
 
 // 过滤缩写/专名：剔除 kind<=0.1 的词，但保留常用词白名单
@@ -318,19 +439,23 @@ db = db.filter(function (e) {
   return true;
 });
 console.log('过滤(缩写碎片/无元音/黑名单/[网络]低质/游戏黑话·代码·后缀名/依赖型短词/生僻回声热词；专名保留待限额): ' + before + ' -> ' + db.length + '（保留白名单 ' + KEEP.size + ' 个常用词）');
+mark('过滤');
 console.log('  kind 分布: ' +
   '普通词 ' + db.filter(function (e) { return e.kind >= 0.5; }).length +
   ' / 专名 ' + db.filter(function (e) { return e.kind > 0.06 && e.kind < 0.5; }).length +
   ' / 缩写 ' + db.filter(function (e) { return e.kind <= 0.06; }).length);
 
-/* ★ 过滤完成 —— 现在才建前缀索引、重取 kind、计算可接指数。
- * 顺序不能颠倒：store 必须与运行时 src/db.js 建的那份是同一套（过滤后的）词库。 */
-store = new R.WordStore(db);
+/* ★ 过滤完成 —— 现在才计算可接指数。
+ * ⚠️ 顺序不能颠倒：computeSucc 只应统计"过滤后仍在库"的词。
+ *    曾经的写法把 succ 计算跑在过滤【之前】，导致 succ_cnt/has_succ 把已被删除的词也算成后继
+ *    （29,770 个词后继数虚高；onyx/oryx/coccyx/archaeopteryx 等 20 个词被错标为"接得上"）。 */
 kindMap = Object.create(null);
 db.forEach(function (e) { kindMap[e.w] = e.kind != null ? e.kind : 0.9; });
 computeSucc();
+mark('算可接指数');
 
 fs.writeFileSync(OUT_PATH, JSON.stringify(db), 'utf8');
+mark('序列化+写盘');
 
 function pct(a, p) {
   a = a.slice().sort(function (x, y) { return x - y; });
@@ -344,3 +469,13 @@ console.log('  succ 常见占比字段已写 c_cnt');
 console.log('  F_POW=' + F_POW + ' COMMON_THRESHOLD=' + COMMON_THRESHOLD + ' REF=' + REF);
 console.log('  chain_raw p10/p50/p90/p99: ' + pct(rawDist, .1).toFixed(2) + ' / ' + pct(rawDist, .5).toFixed(2) + ' / ' + pct(rawDist, .9).toFixed(2) + ' / ' + pct(rawDist, .99).toFixed(2));
 console.log('  maxChain=' + maxChain.toFixed(2));
+/* 分段耗时（每段净耗时）。可接指数那一段从 100 秒降到 0.2 秒级，见上方 computeSucc 的算法说明。 */
+(function () {
+  var order = ['读取+解析', '算 kind', '过滤', '算可接指数', '序列化+写盘'];
+  var prev = 0, parts = [];
+  order.forEach(function (k) {
+    var d = PH[k] - prev; prev = PH[k];
+    parts.push(k + ' ' + d + 'ms');
+  });
+  console.log('  耗时: ' + parts.join(' → ') + '   合计 ' + PH['序列化+写盘'] + 'ms');
+})();
