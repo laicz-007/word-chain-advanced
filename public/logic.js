@@ -153,8 +153,11 @@
     }
     for (var j = 0; j < this.list.length; j++) {
       var x = this.list[j];
-      if (canStart(x.w).ok) this.startable.push(x);
-      if (isInterestingStart(x)) this.interesting.push(x);
+      var okStart = canStart(x.w).ok;
+      if (okStart) this.startable.push(x);
+      // "有趣开局词"必须【同时】是合法开局词。否则 AI 会挑到 ry/ht/ck 结尾或结尾无元音的词，
+      // 而 tickAI 里 submitStart 的失败曾被静默忽略 —— 实测"探索·发现"开局约 10% 失败。
+      if (okStart && isInterestingStart(x)) this.interesting.push(x);
     }
   }
 
@@ -253,7 +256,10 @@
       if (ctx.noProper && kind > 0.06 && kind < 0.5) continue;
       var cnt = (usage && usage[c.w]) || 0;
       var S1 = Math.pow(0.5, cnt);                                  // 防疲劳: 没用过=1
-      var S2 = (target == null) ? 0.5 : Math.max(0, 1 - Math.abs((c.d || 5) - target) / 10); // 难度贴合
+      // 难度贴合：若该词难度只是"词长兜底推断"(dGuess)，视为未知 → 中性 0.5。
+      // 否则 22.5 万个 d=5 的"难度未知"词会对中等玩家全部拿满分 S2=1.0，
+      // 反而压过真正有难度数据的词 —— 等于奖励"未知"。见 compute_chain_idx.js 的 conf/dGuess。
+      var S2 = (target == null || c.dGuess === true) ? 0.5 : Math.max(0, 1 - Math.abs((c.d || 5) - target) / 10);
       var S3 = clamp01(c.f || 0);                                   // 词频
       var S4 = clamp01(c.chain_idx != null ? c.chain_idx : ((c.kind != null ? c.kind : 0.5) * 0.5)); // 可接指数
       // 对可接指数做非线性饱和：墙(低值)仍压到很低, 但避免对"高产带"(0.8~0.95)过度拉开, 减小带状集中
@@ -261,6 +267,10 @@
       var soft = AI_WEIGHTS.fatigue * S1 + AI_WEIGHTS.diff * S2 + AI_WEIGHTS.freq * S3 + AI_WEIGHTS.chainIdx * S4;
       // 词型惩罚：专名/地名/人名(kind=0.10) 大幅降权(但仍可选)
       if (kind < 0.90) soft = soft * (0.30 + 0.70 * (kind / 0.90));
+      // 词条可信度：无权威佐证/无精讲的冷僻条目降权，专业术语再低一档
+      // （缺 conf 字段的旧词库如 db.lite.json / vocab.json 按中性 0.85 处理，行为不变）
+      var conf = (c.conf == null ? 0.85 : c.conf);
+      soft = soft * (0.60 + 0.40 * conf);
       // 结尾多样化：这个候选的结尾若最近已被 AI 频繁喂给玩家, 则降权 —— 逼它换开头
       var end = c.w.length >= 2 ? c.w.slice(-2) : c.w;
       var endCnt = countEnd(recentEnds, end);
@@ -632,6 +642,16 @@
         return 'concede';
       }
       var res = this.submitStart(choice.w);
+      if (!res.ok) {
+        // 兜底：候选若仍被 canStart 拒绝（历史上 interesting 未与 startable 求交集），
+        // 换一个合法开局词，绝不静默失败（否则 AI 卡在当前回合，游戏无法继续）
+        var alt = scorePick(this.store.sampleStarts(this.used), this.allUsed, target, ctx);
+        if (alt) { choice = alt; res = this.submitStart(alt.w); }
+      }
+      if (!res.ok) {
+        this.concede('AI 无词可开局: ' + (res.reason || '未知'));
+        return 'concede';
+      }
       this.pushAiEnd(choice.w);
       return { action: 'start', result: res, target: target };
     } else {
@@ -643,6 +663,11 @@
         return { action: 'concede' };
       }
       var res2 = this.submitChain(cand.w);
+      if (!res2.ok) {
+        // 同样不静默失败：宁可认输，也不让 AI 卡在当前回合导致游戏无法继续
+        this.concede('AI 无法接龙: ' + (res2.reason || '未知'));
+        return { action: 'concede' };
+      }
       this.pushAiEnd(cand.w);
       return {
         action: 'chain',

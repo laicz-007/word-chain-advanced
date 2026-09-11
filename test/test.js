@@ -364,5 +364,49 @@ t('专名限额: AI 额度用完后不再选专名（宁可认输）', function 
   assert.ok(r2 && r2.action === 'concede', '额度用完后 AI 不应选专名, 实际 ' + JSON.stringify(r2));
 });
 
+/* ---- AI 词条可信度 conf / 难度猜测标记 dGuess ---- */
+// scorePick 内含 S5∈[0.93,1.07] 随机因子，单次结果不稳，故用多次试验看胜率
+function winRate(a, b, target, trials) {
+  var wa = 0;
+  for (var i = 0; i < trials; i++) {
+    var r = R.scorePick([a, b], {}, target, {});
+    if (r && r.w === a.w) wa++;
+  }
+  return wa;
+}
+
+t('AI 可信度: 难度为"词长兜底推断"(dGuess) 的词不再被难度贴合奖励', function () {
+  // 两词各项相同、d 都=5；只有 dGuess 不同。target=5 时旧逻辑会给两者同样满分 S2=1.0。
+  var base = { w: 'aaa', d: 5, f: 0.8, kind: 0.9, has_succ: true, chain_idx: 0.9, conf: 0.9 };
+  var known = Object.assign({}, base, { dGuess: false });   // 有真实难度佐证
+  var guessed = Object.assign({}, base, { w: 'bbb', dGuess: true }); // 难度仅由词长兜底
+  var wins = winRate(known, guessed, 5, 60);
+  assert.ok(wins >= 45, '有真实难度的词应稳定胜出, 实际 ' + wins + '/60');
+});
+
+t('AI 可信度: conf 低的冷僻条目被降权', function () {
+  var base = { d: 3, f: 0.8, kind: 0.9, has_succ: true, chain_idx: 0.9 };
+  var good = Object.assign({}, base, { w: 'aaa', conf: 0.9 });
+  var bad = Object.assign({}, base, { w: 'bbb', conf: 0.3 });
+  var wins = winRate(good, bad, 3, 60);
+  assert.ok(wins >= 45, '高可信度条目应稳定胜出, 实际 ' + wins + '/60');
+});
+
+t('AI 可信度: 缺 conf / dGuess 字段时不被单方面惩罚（兼容 db.lite.json / vocab.json）', function () {
+  var base = { d: 3, f: 0.5, kind: 0.9, has_succ: true, chain_idx: 0.5 };
+  var a = Object.assign({}, base, { w: 'aaa' });   // 两个词条都不带 conf/dGuess
+  var b = Object.assign({}, base, { w: 'bbb' });
+  var wa = winRate(a, b, 3, 60);
+  assert.ok(wa > 10 && wa < 50, '两者应互有胜负(说明未被单方面惩罚), 实际 ' + wa + '/60');
+});
+
+t('AI 可信度: 专业术语(conf=0.3) 显著劣于精讲词(conf=0.9)', function () {
+  var base = { d: 5, f: 0.5, kind: 0.9, has_succ: true, chain_idx: 0.9 };
+  var curated = Object.assign({}, base, { w: 'aaa', conf: 0.9, has_note: true });
+  var jargon = Object.assign({}, base, { w: 'bbb', conf: 0.3 });
+  var wins = winRate(curated, jargon, 5, 60);
+  assert.ok(wins >= 45, '精讲词应稳定胜出, 实际 ' + wins + '/60');
+});
+
 console.log('\n结果: ' + pass + ' 通过, ' + fail + ' 失败');
 process.exit(fail ? 1 : 0);

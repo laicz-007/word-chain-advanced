@@ -57,6 +57,34 @@ function computeKind(e) {
 
 db.forEach(function (e) { e.kind = computeKind(e); });
 
+/* 词条可信度 conf (0.3~0.9) 与 难度猜测标记 dGuess
+ *
+ * 背景（实测）：build_unified_db.py 的 _derive_diff 以 best=5 起步，仅凭
+ *   考试标签 / 柯林斯星级 / 词频 / 词长 推导难度；因此对"无任何佐证"的词，
+ *   难度实际上只由词长决定（≤13 字母→5，>13→7）。全库 227,775 个词是 d=5，
+ *   占 80.7%，彼此完全没有区分度。
+ *
+ * 危害：AI 的难度贴合项 S2 = 1-|d-target|/10，对中等水平玩家(target≈5)来说，
+ *   这 22.5 万个"难度未知"的词【全部拿满分 S2=1.0】，反而比真正有难度数据的词
+ *   更占优 —— 难度匹配变成了奖励"未知"的假信号。模拟对局证实 AI 出词中
+ *   35% 是 d=5、20% 是生僻词(f<0.45)。
+ *
+ * 处理：① dGuess 标记"难度来自词长兜底"的词，打分时把它们的 S2 降为中性；
+ *      ② conf 给出"这个词值不值得喂给学习者"的可信度，供 AI 降权使用。
+ * 取值依据：Kyle 精讲(为学习者精选) > 权威佐证 > 无佐证 > 无佐证的专业术语
+ */
+var DOMAIN_TAG = /\[[^\]]{1,4}\]/;   // [医] [化] [计] [军] [网络] 等标签
+db.forEach(function (e) {
+  var authed = (e.collins > 0) || ((e.frq || 0) > 0);
+  e.dGuess = !authed && !e.has_note;                 // 难度仅为词长兜底推断
+  var conf;
+  if (e.has_note) conf = 0.9;                        // Kyle 精讲：为学习者精选
+  else if (authed) conf = 0.8;                       // 有考试标签/柯林斯/词频佐证
+  else if (DOMAIN_TAG.test(e.zh || '')) conf = 0.3;  // 无佐证的专业术语（医/化/计…）
+  else conf = 0.45;                                  // 无任何佐证
+  e.conf = conf;
+});
+
 // 预取 kind（后继里要频繁用）
 var kindMap = Object.create(null);
 db.forEach(function (e) { kindMap[e.w] = e.kind != null ? e.kind : 0.9; });

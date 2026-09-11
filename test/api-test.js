@@ -187,5 +187,26 @@ t('专名限额: 快照暴露额度，开局用专名会消耗额度', function 
   assert.ok(/专名/.test(out2.error), '拒绝原因应说明是专名限额, 实际: ' + out2.error);
 });
 
+t('回归: interesting 词表必须全是合法开局词（曾致"探索·发现"约10%静默失败）', function () {
+  var bad = S.store.interesting.filter(function (e) { return !S.R.canStart(e.w).ok; });
+  assert.strictEqual(bad.length, 0,
+    'interesting 里不应有非法开局词(ry/ht/ck 结尾或结尾无元音), 实际 ' + bad.length +
+    ' 个, 例如 ' + (bad[0] && bad[0].w) + ' -> ' + (bad[0] && S.R.canStart(bad[0].w).reason));
+  assert.ok(S.store.interesting.length > 1000, 'interesting 不应为空, 实际 ' + S.store.interesting.length);
+  // startable 是 interesting 的超集，便于核对
+  assert.ok(S.store.startable.length >= S.store.interesting.length, 'startable 应包含所有 interesting 词');
+});
+
+t('回归: 探索·发现开局必须稳定成功（曾约 10% 概率失败且被静默忽略）', function () {
+  var failN = 0, sample = '';
+  for (var i = 0; i < 120; i++) {
+    var g = S.createGame([{ name: '人', type: 'human' }, { name: 'AI', type: 'ai' }]);
+    g.explore = true; g.starter = 1; g.turn = 1;
+    g.tickAI();
+    if (!g.lastWord) { failN++; if (!sample) sample = '第 ' + i + ' 次'; }
+  }
+  assert.strictEqual(failN, 0, '120 次探索开局不应失败, 实际失败 ' + failN + ' 次 (' + sample + ')');
+});
+
 console.log('\n结果: ' + pass + ' 通过, ' + fail + ' 失败');
 process.exit(fail ? 1 : 0);
