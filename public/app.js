@@ -39,10 +39,10 @@
   var myLocalIdx = -1;              // 本地同屏"统计我的出词"：我的玩家下标(-1=不统计)
   var shopCatalogCache = null;      // 商店目录缓存
   var shopQuota = 3;                // 每局道具使用上限（服务端下发）
-  // 本版本已实现的道具（反转卡语义待确认，暂不列出）
   var ITEM_KINDS = [
     { kind: 'skip', name: '跳过卡', desc: '跳过本次接龙（不算认输，直接轮到下一位）' },
-    { kind: 'swap', name: '修改卡', desc: '把你要接的词换成另一个更好接的词（可接指数更高）' }
+    { kind: 'swap', name: '修改卡', desc: '把你要接的词换成另一个更好接的词（可接指数更高）' },
+    { kind: 'reverse', name: '反转卡', desc: '倒转出词顺序（词接法不变），自身本轮免接' }
   ];
 
   function loadSet(k) { try { return new Set(JSON.parse(localStorage.getItem(k) || '[]')); } catch (e) { return new Set(); } }
@@ -1121,14 +1121,17 @@
     var box = $('turn-banner');
     var cur = state.players[state.turn];
     var online = (mode === 'online' && onlineActive);
+    // 反转卡生效提示（出词顺序已倒转）
+    var rev = state.reverseTurn
+      ? ' <span class="rev-badge" title="反转卡生效中：出词顺序已倒转（接龙规则不变）">🔄 顺序反转</span>' : '';
     if (online && !(myName && cur && cur.name === myName)) {
-      box.innerHTML = '⏳ <b>' + esc(cur.name) + '</b> 接龙中…' + turnCountdown();
+      box.innerHTML = '⏳ <b>' + esc(cur.name) + '</b> 接龙中…' + turnCountdown() + rev;
       return;
     }
     if (state.needsStart) {
-      box.innerHTML = '轮到 <b>' + esc(cur.name) + '</b> 给出开局词 <span class="hint">(≥3字母，结尾含元音，非 ry/ht/ck 结尾)</span>' + turnCountdown();
+      box.innerHTML = '轮到 <b>' + esc(cur.name) + '</b> 给出开局词 <span class="hint">(≥3字母，结尾含元音，非 ry/ht/ck 结尾)</span>' + turnCountdown() + rev;
     } else {
-      box.innerHTML = '轮到 <b>' + esc(cur.name) + '</b> 接龙 <span class="hint">(接「' + esc(state.lastWord) + '」)</span>' + turnCountdown();
+      box.innerHTML = '轮到 <b>' + esc(cur.name) + '</b> 接龙 <span class="hint">(接「' + esc(state.lastWord) + '」)</span>' + turnCountdown() + rev;
     }
   }
 

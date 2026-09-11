@@ -155,8 +155,8 @@
   var ITEMS = {
     skip: { name: '跳过卡', price: 30, desc: '跳过本次接龙（不算认输，直接轮到下一位）', available: true },
     swap: { name: '修改卡', price: 50, desc: '把你要接的词换成另一个更好接的词（可接指数更高）', available: true },
-    // ⚠️ 语义待用户确认：(a)反向匹配（下家需接上词"开头"）还是 (b)回合逆序。确认前不出售。
-    reverse: { name: '反转卡', price: 40, desc: '反转接龙方向（语义待确认，暂未开放）', available: false }
+    // 反转卡 = 回合逆序：只倒转"谁先出词"的顺序，词本身的接法完全不变；使用者自己本轮免接。
+    reverse: { name: '反转卡', price: 40, desc: '倒转出词顺序（词接法不变），自身本轮免接', available: true }
   };
   var ITEM_QUOTA = 3;   // 每局每人可使用道具的总次数（三种合计）
 
@@ -454,6 +454,7 @@
     this.aiEnds = [];  // 最近 AI 喂给玩家的结尾(末2字母), 用于结尾多样化激励
     this.profile = null; // 用户学习画像(离线端由 localengine 注入), 用于难度贴合+教学导向
     this.explore = false; // 探索·发现：AI 随机给有趣的初始词
+    this.reverseTurn = false; // 反转卡效果：为 true 时出词顺序倒转（接龙规则不变），跨轮保留
   }
 
   Game.prototype.addLog = function (entry) {
@@ -544,6 +545,19 @@
       return { ok: true, effect: 'swap', word: pick.w, from: from };
     }
 
+    if (kind === 'reverse') {
+      if (this.lastWord == null) return { error: '还没有待接的词，先出开局词' };
+      // 反转卡 = 回合逆序：切换推进方向，然后按【新方向】推进 → 使用者自己本轮免接
+      this.reverseTurn = !this.reverseTurn;
+      this.addLog({
+        kind: 'item', item: 'reverse', player: pl.name, playerIdx: this.turn, playerType: pl.type,
+        reversed: this.reverseTurn, word: this.lastWord
+      });
+      this.startNextTurn();
+      pl.itemsUsed = (pl.itemsUsed || 0) + 1;
+      return { ok: true, effect: 'reverse', reversed: this.reverseTurn };
+    }
+
     return { error: '「' + info.name + '」暂未实现' };
   };
 
@@ -576,7 +590,10 @@
   };
 
   Game.prototype.startNextTurn = function () {
-    this.turn = (this.turn + 1) % this.players.length;
+    var n = this.players.length;
+    // 反转卡（回合逆序）：只倒转推进方向，接龙匹配规则完全不变
+    if (this.reverseTurn) this.turn = (this.turn - 1 + n) % n;
+    else this.turn = (this.turn + 1) % n;
   };
 
   // 提交开局词

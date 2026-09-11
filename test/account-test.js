@@ -112,9 +112,10 @@ function get(p) { return fetch(BASE + p).then(function (r) { return r.json(); })
   var sme = await get('/api/shop?token=garbage');
   check('道具: 未登录不能查看商店', !!sme.error);
   var shop = await get('/api/shop?token=' + encodeURIComponent(ptoken));
-  check('道具: 商店目录可获取且不含未实现道具',
-    shop.ok === true && shop.catalog.length > 0 &&
-    shop.catalog.every(function (i) { return i.kind !== 'reverse' && i.price > 0; }));
+  check('道具: 商店目录含三种卡且价格合法',
+    shop.ok === true && shop.catalog.length === 3 &&
+    shop.catalog.every(function (i) { return i.price > 0; }) &&
+    shop.catalog.map(function (i) { return i.kind; }).sort().join(',') === 'reverse,skip,swap');
   check('道具: 商店返回每局上限', shop.quota === srv.R.ITEM_QUOTA);
 
   var poorBuy = await post('/api/shop/buy', { token: ptoken, item: 'skip' });
@@ -124,8 +125,8 @@ function get(p) { return fetch(BASE + p).then(function (r) { return r.json(); })
   var buy = await post('/api/shop/buy', { token: ptoken, item: 'skip' });
   check('道具: 购买成功并扣积分、加库存', buy.ok === true && buy.points === 70 && buy.items.skip === 1);
 
-  var buyBad = await post('/api/shop/buy', { token: ptoken, item: 'reverse' });
-  check('道具: 未实现的道具不可购买', !!buyBad.error);
+  var buyBad = await post('/api/shop/buy', { token: ptoken, item: '__nope__' });
+  check('道具: 未知道具不可购买', !!buyBad.error);
   var buyUnknown = await post('/api/shop/buy', { token: ptoken, item: '__nope__' });
   check('道具: 未知道具不可购买', !!buyUnknown.error);
 

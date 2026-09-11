@@ -465,16 +465,14 @@ function itemFixture() {
   ]);
 }
 
-t('道具: 商店只出售已实现的道具（反转卡暂不开放）', function () {
+t('道具: 商店目录含三种卡且字段完整', function () {
   var cat = R.shopCatalog();
-  var kinds = cat.map(function (i) { return i.kind; });
-  assert.ok(kinds.indexOf('skip') >= 0, '跳过卡可售');
-  assert.ok(kinds.indexOf('swap') >= 0, '修改卡可售');
-  assert.strictEqual(kinds.indexOf('reverse'), -1, '未实现的道具不应出售（避免卖坏道具）');
+  var kinds = cat.map(function (i) { return i.kind; }).sort();
+  assert.deepStrictEqual(kinds, ['reverse', 'skip', 'swap'], '三种卡都应可售');
   assert.ok(cat.every(function (i) { return i.price > 0 && i.name && i.desc; }), '目录项应含价格与说明');
   assert.strictEqual(R.ITEM_QUOTA, 3);
   assert.strictEqual(R.itemInfo('nope'), null, '未知道具返回 null');
-  assert.strictEqual(R.itemInfo('reverse').available, false, '反转卡标记为未开放');
+  assert.strictEqual(R.itemInfo('reverse').available, true, '反转卡已开放（按"回合逆序"实现）');
 });
 
 t('道具-跳过卡: 跳过本次接龙（待接词不变、不算认输）', function () {
@@ -533,12 +531,48 @@ t('道具: 每局每人最多 3 次（跨轮不重置）', function () {
   assert.ok(g.useItem('skip').error, '换轮后仍应被拒');
 });
 
-t('道具: 未开放的道具不可用', function () {
+t('道具: 未知道具不可用', function () {
   var g = new R.Game(itemFixture(), [{ name: '我', type: 'human' }]);
   g.submitStart('abler');
-  var r = g.useItem('reverse');
-  assert.ok(r.error && /暂未开放/.test(r.error), '反转卡应提示暂未开放, 实际: ' + (r && r.error));
+  var r = g.useItem('__nope__');
+  assert.ok(r.error, '未知道具应被拒');
   assert.strictEqual(g.players[0].itemsUsed, 0, '失败不应消耗次数');
+});
+
+/* 反转卡 = 回合逆序：只倒转"谁先出词"，接龙匹配规则完全不变 */
+t('道具-反转卡: 倒转出词顺序且自身本轮免接', function () {
+  var g = new R.Game(itemFixture(), [{ name: '甲', type: 'human' }, { name: '乙', type: 'human' }, { name: '丙', type: 'human' }]);
+  g.submitStart('abler');                       // 甲 开局 → 正序轮到乙
+  assert.strictEqual(g.turn, 1, '正序轮到乙');
+  var r = g.useItem('reverse');
+  assert.ok(r.ok && r.effect === 'reverse' && r.reversed === true, '反转卡应生效');
+  assert.strictEqual(g.reverseTurn, true);
+  assert.strictEqual(g.turn, 0, '倒转后应轮到甲（乙自己被跳过）');
+  assert.strictEqual(g.players[1].itemsUsed, 1, '计入使用者的道具次数');
+  assert.strictEqual(g.lastWord, 'abler', '待接词不变');
+  // 关键：接龙规则不变 —— 仍然按"末尾 2 字母"接
+  var ok = g.submitChain('erlow');
+  assert.ok(ok.ok, '反转后接龙规则不变，erlow 仍能接 abler');
+  assert.strictEqual(g.turn, 2, '继续倒转：0 → 2（丙）');
+});
+
+t('道具-反转卡: 再用一次可恢复正序', function () {
+  var g = new R.Game(itemFixture(), [{ name: '甲', type: 'human' }, { name: '乙', type: 'human' }, { name: '丙', type: 'human' }]);
+  g.submitStart('abler');
+  g.useItem('reverse');                          // 乙：1 → 0，反序生效
+  assert.strictEqual(g.turn, 0);
+  var r2 = g.useItem('reverse');                 // 甲：再按一次 → 恢复正序，0 → 1
+  assert.ok(r2.ok);
+  assert.strictEqual(g.reverseTurn, false, '应恢复正序');
+  assert.strictEqual(g.turn, 1, '恢复正序后 0 → 1');
+});
+
+t('道具-反转卡: 效果跨轮保留', function () {
+  var g = new R.Game(itemFixture(), [{ name: '甲', type: 'human' }, { name: '乙', type: 'human' }]);
+  g.submitStart('abler');
+  g.useItem('reverse');
+  g.concede('测试'); g.newRound();
+  assert.strictEqual(g.reverseTurn, true, '换轮后反转仍生效（本局内持续）');
 });
 
 t('道具: 道具日志不计入长接龙词数（countWords）', function () {
