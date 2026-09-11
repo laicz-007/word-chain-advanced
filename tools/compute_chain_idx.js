@@ -122,9 +122,13 @@ db = db.filter(function (e) {
   if (JUNK.has(e.w)) return false;                    // 明确垃圾黑名单
   if (e.kind <= 0.1) return KEEP.has(e.w);            // 缩写/专名：只留白名单常用词
   if (e.w.length >= 4 && !/[aeiouy]/.test(e.w)) return false;  // 无元音长串(代码/缩写碎片)
+  // [网络] 标签且无权威佐证(collins/词频)：低质机翻/游戏黑话，剔除
+  // 注意：ECDICT 里 [网络] 从不位于释义开头（实际写法是 "n. 野猫\n[网络] 野猫赛；美国原装进口"），
+  //       所以必须用【不锚定】的匹配。曾经写成 /^\[网络\]/，结果一个词都匹配不到（规则空转）。
+  if (/\[网络\]/.test(e.zh || '') && !(e.collins > 0) && !((e.frq || 0) > 0)) return false;
   return true;
 });
-console.log('过滤缩写/专名/无元音碎片/黑名单: ' + before + ' -> ' + db.length + '（保留白名单 ' + KEEP.size + ' 个常用词）');
+console.log('过滤(缩写/专名/无元音/黑名单/[网络]低质): ' + before + ' -> ' + db.length + '（保留白名单 ' + KEEP.size + ' 个常用词）');
 
 fs.writeFileSync(dbPath, JSON.stringify(db), 'utf8');
 
