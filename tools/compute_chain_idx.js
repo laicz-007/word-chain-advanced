@@ -18,6 +18,18 @@
 'use strict';
 var fs = require('fs');
 var path = require('path');
+/* ★ 复用运行期的规则引擎，而不是在本文件里再写一遍规则。
+ *
+ * 为什么必须这样做：构建期要判断"一个词能否充当别人的后继"（末尾含元音、禁 ry/ht/ck），
+ * 运行期（public/logic.js 的 Game.submitChain）要判断同一件事。**两处必须是同一套判据**。
+ * 历史教训：本项目已经因为"同一规则写两遍"踩过坑 ——
+ *   · isTrustedEntry / ECHO_KEEP_F 在本文件与 logic.js 各有一份，注释里只能靠"⚠️ 两边要一致"提醒；
+ *   · `[网络]` 过滤正则曾在构建期与预期不符，规则看似存在却一个词都没匹配到（空转）。
+ * 一旦两边分叉，症状是**静默的**：词库照常生成、测试全绿，
+ * 但 AI 会以为某个词接得下去，运行时却被拒绝 —— 极难定位。
+ * 所以这里直接调 logic.js 导出的 hasVowelEnding / forbiddenEnding / isTrustedEntry。 */
+var R = require('../public/logic.js');
+var fingerprint = require('./rules_fingerprint.js');
 
 var F_POW = 1.5;              // 常见度幂(越大越突出"常见"后继, 生僻几乎不计)
 var COMMON_THRESHOLD = 0.42;  // 常见后继阈值(词频>=此值才算常见; 重构后 f 均值~0.37, 故取高一点)
@@ -39,6 +51,7 @@ function mark(name) { PH[name] = Date.now() - T0; }
  */
 var RAW_PATH = path.join(__dirname, '..', 'data', 'db.raw.json');
 var OUT_PATH = path.join(__dirname, '..', 'data', 'db.json');
+var BUILD_META_PATH = path.join(__dirname, '..', 'data', 'db.build.json');
 
 if (!fs.existsSync(RAW_PATH)) {
   console.error('找不到原始词库 ' + RAW_PATH);
@@ -71,7 +84,9 @@ mark('读取+解析');
   }
 })();
 
-var VOWELS = 'aeiouy';
+var VOWELS = R.VOWELS;   // 元音集合：与运行期共用（logic.js 是唯一真相源）
+// 由 VOWELS 派生的正则，供"整词里有没有元音"这类词形启发式使用（不再是写死的 [aeiouy]）
+var VOWEL_RE = new RegExp('[' + VOWELS + ']');
 var PROPER_RE = /\[(地名|人名|姓|音|圣经|宗|国|地|人|城|河|山|岛|族|币)\]/;
 var PROPER_RE2 = /\((美国|英国|德国|法国|日本|意大利|俄国|希腊|罗马|圣经|姓氏|地名|人名|首都|首府|城市|河流|山脉|岛屿)[^)]*\)/;
 /* 专名注记式（补 PROPER_RE/PROPER_RE2 的漏网）。
@@ -84,20 +99,21 @@ var PROPER_RE3 = /([)）]\s*(人名|地名|姓氏))|([（(](人名|地名|姓氏
 var POS_RE = /\b(n|v|vt|vi|adj|adv|prep|conj|pron|num|int|interj|abbr|a|ad)\./;
 var CAT_TAG_RE = /^\[[^\]]{1,4}\]/;
 
-/* 高频/可信词条：柯林斯≥1星，或常见度 f≥0.65，或 Kyle 精讲词。
+/* 高频/可信词条的定义**不在这里**，而是直接用 logic.js 的 isTrustedEntry
+ * （柯林斯≥1星 或 常见度 f≥R.ECHO_KEEP_F 或 Kyle 精讲词）。
  * 用途：① 词库清理时"非高频的依赖型短词/回声热词"才删（见下方过滤块）；
- *      ② 与 logic.js 的 isTrustedEntry 口径一致（那边用于"是否允许回声"）；
- *      ③ computeKind 里当"这不可能是专名/缩写"的守卫（见下面 L56/L69 两处）。
- * ⚠️ 必须定义在 computeKind 使用它【之前】：ECHO_KEEP_F 是 var，赋值在运行时才发生，
- *    若写在后面，computeKind 读到的会是 undefined，守卫会【静默失效】（不报错但不起作用）。 */
-var ECHO_KEEP_F = 0.65;   // ⚠️ 与 public/logic.js 的同名常量保持一致（两处都表示"高频/可信"口径）
-function isTrusted(e) { return (e.collins >= 1) || ((e.f || 0) >= ECHO_KEEP_F) || !!e.has_note; }
+ *      ② 运行期用它决定"这个回声词允不允许"（logic.js 的 canChain → echoOkFor）；
+ *      ③ computeKind 里当"这不可能是专名/缩写"的守卫（见下面两处）。
+ * ⚠️ 曾经这里有一份自己的 ECHO_KEEP_F 和 isTrusted()，靠注释提醒"两处要一致" ——
+ *    那种约定迟早会分叉。现在结构上只剩一份实现。 */
+var isTrusted = R.isTrustedEntry;
+var ECHO_KEEP_F = R.ECHO_KEEP_F;   // 仅用于日志/提示显示
 
 function computeKind(e) {
   var w = e.w, zh = e.zh || '';
   var L = w.length;
   // 纯缩写/代码/碎片：无元音短词、abbr 前缀、中文缩略标记、领域标签+短词、英文短语式释义
-  if (L <= 4 && !/[aeiouy]/.test(w)) return 0.05;
+  if (L <= 4 && !VOWEL_RE.test(w)) return 0.05;
   if (/^abbr\./i.test(zh.trim())) return 0.05;
   /* 中文缩略标记（缩写/缩略/简称/首字母）。
    * ⚠️ 这条曾经【没有长度限制也没有高频守卫】，实测误删 18 个常用词，其中最严重的是
@@ -174,10 +190,6 @@ db.forEach(function (e) {
 var kindMap = Object.create(null);
 db.forEach(function (e) { kindMap[e.w] = e.kind != null ? e.kind : 0.9; });
 
-var ECHO_KEEP_F = 0.65;   // ⚠️ 与 public/logic.js 的同名常量保持一致（两处都表示"高频/可信"口径）
-/* 高频/可信词条：柯林斯≥1星，或常见度 f≥0.65，或 Kyle 精讲词。
- * （定义已上移到 computeKind 之前，见文件上方 —— computeKind 的 L56/L69 守卫要用它） */
-
 var maxChain = 0;
 var rawDist = [];   // 观测 chain_raw 分布以校验 REF
 var total = db.length;
@@ -237,19 +249,13 @@ var total = db.length;
 var A2 = 26, A2N = 26 * 26, A3N = 26 * 26 * 26;   // 26 / 676 / 17576
 
 /* 判断一个"候选词"是否合格（可充当别人的后继）—— 即原 isChainable 里与 prev 无关的那两条。
+ * ★ 两条判据都直接调用运行期（logic.js）的实现，而不是在这里再写一遍：
+ *     R.hasVowelEnding  = 结尾最多 3 字母须含元音（VOWELS = aeiouy）
+ *     R.forbiddenEnding = 禁止结尾 ry / ht / ck
  * 说明：这里【不】应用"禁止回声"规则 —— 该规则只在联机房间运行时生效（用户确认的范围），
  * 人机对战/本地同屏都允许回声，所以词库层面的可接指数不应把它算掉。 */
 function validSucc(w) {
-  var L = w.length;
-  // 结尾最多 3 字母须含元音
-  var tail = L <= 3 ? w : w.slice(-3);
-  var hasV = false;
-  for (var i = 0; i < tail.length; i++) { if (VOWELS.indexOf(tail.charAt(i)) !== -1) { hasV = true; break; } }
-  if (!hasV) return false;
-  // 禁止结尾 ry/ht/ck
-  var c1 = w.charCodeAt(L - 1), c2 = w.charCodeAt(L - 2);
-  if ((c2 === 114 && c1 === 121) || (c2 === 104 && c1 === 116) || (c2 === 99 && c1 === 107)) return false;
-  return true;
+  return R.hasVowelEnding(w) && !R.forbiddenEnding(w);
 }
 
 var gCnt2, gCmn2, gSum2, gCnt3, gCmn3, gSum3;
@@ -423,7 +429,7 @@ db = db.filter(function (e) {
   // 游戏对专名改用"限额制度"（每人每局最多 N 个），它们仍需留在词库里参与接龙，
   // 只是 AI 会重度降权避开、玩家用量受限。把它们从词库删掉反而会制造新的死路。
   if (e.kind < 0.1) return KEEP.has(e.w);
-  if (e.w.length >= 4 && !/[aeiouy]/.test(e.w)) return false;  // 无元音长串(代码/缩写碎片)
+  if (e.w.length >= 4 && !VOWEL_RE.test(e.w)) return false;  // 无元音长串(代码/缩写碎片)
   // [网络] 标签且无权威佐证(collins/词频)：低质机翻/游戏黑话，剔除
   // 注意：ECDICT 里 [网络] 从不位于释义开头（实际写法是 "n. 野猫\n[网络] 野猫赛；美国原装进口"），
   //       所以必须用【不锚定】的匹配。曾经写成 /^\[网络\]/，结果一个词都匹配不到（规则空转）。
@@ -455,6 +461,19 @@ computeSucc();
 mark('算可接指数');
 
 fs.writeFileSync(OUT_PATH, JSON.stringify(db), 'utf8');
+
+/* 落一份构建元数据（sidecar）。
+ * 关键是 rulesFingerprint：它记录"这份词库是用哪一版规则算出来的"。
+ * 之后若有人改了规则却没重建，check_db.js 会算一遍新指纹并对比，提醒词库已过期 ——
+ * 否则症状是静默的：测试全绿、服务照常启动，只是 AI 以为某个词接得下去、运行时却被拒绝。 */
+fs.writeFileSync(BUILD_META_PATH, JSON.stringify({
+  builtAt: new Date().toISOString(),
+  rawWords: before,
+  finalWords: db.length,
+  rulesFingerprint: fingerprint.compute(),
+  constants: { F_POW: F_POW, COMMON_THRESHOLD: COMMON_THRESHOLD, REF: REF, ECHO_KEEP_F: ECHO_KEEP_F }
+}, null, 2), 'utf8');
+
 mark('序列化+写盘');
 
 function pct(a, p) {

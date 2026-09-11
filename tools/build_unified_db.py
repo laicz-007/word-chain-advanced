@@ -39,8 +39,9 @@ TOFU_URL = 'https://raw.githubusercontent.com/Tofu-Xx/dictionary/main/words.csv'
 # 考试级别(文件名/标签) -> 难度
 LEVEL_DIFF = {'初中': 1, '中考': 1, '高考': 3, '四级': 4, '六级': 6, '考研': 6,
               '雅思': 7, '托福': 8, 'GRE': 9, 'SAT': 9, 'GMAT': 9, '专四': 5, '专八': 8, 'PETS': 2}
-
-VOWELS = 'aeiouy'
+# 注：本步骤【不做】任何"游戏规则"判断（元音结尾 / 禁 ry·ht·ck 之类），只负责整合原始词条。
+# 那些规则只在下一行的下一环 compute_chain_idx.js 里用到，且它直接复用 public/logic.js 的实现。
+# （旧版本这里留过一个没用到的 VOWELS = 'aeiouy'，已删除 —— 死常量容易让人误以为规则有两处。）
 
 
 def download(url, path, expect_min=1000):

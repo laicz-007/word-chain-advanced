@@ -129,7 +129,7 @@ score = 硬门禁(合规+非死路) × (0.30·防疲劳 + 0.23·难度贴合 + 0
 | 4 | **生成物被当成源码入库** | `public/vocab.json`、`tools/hard_ends_report.json` 仍被 git 跟踪（`data/db.lite.json` 已在 2026-09 移除） | 会**静默漂移**：`hard_ends_report.json` 曾长期停留在旧快照，直到被 `check_db.js` 揪出来 | 跟踪的生成物必须写明"由谁生成、何时生成"；能用脚本生成的就别入库 |
 | 5 | ~~**工具链断链**~~ ✅ **已修复** | `print_hard_list.js` 读 `rep.words`/`rep.summary`，实际字段是 `rep.rows`/`rep.meta` | 运行**立即崩溃**（`TypeError: Cannot read properties of undefined`） | 已按真实结构重写，并加了"报告结构不对就给人话提示"的自检；消费方做字段校验是关键 |
 | 6 | ~~**双份前端代码**~~ ✅ **已消除** | 原 `word-chain-standalone.html` 内嵌 `logic.js`/`app.js` 的副本 | 曾发生：便携版缺 `pluralBase`（复数拒绝）和 `turnMsLeft`（倒计时修复） | 2026-09 删除便携版与其打包脚本，前端只剩 `public/` 一份；`app.js` 里的 15 处 `window.__LOCAL_GAME__` 分支也已清掉 |
-| 7 | **规则常量重复** | `aeiouy` 出现在 **4 个文件 6 处**：`logic.js:22`、`analyze_hard_ends.js:23`、`build_unified_db.py:39`、`compute_chain_idx.js:30/40/124` | 改元音集合要改 6 处，极易漏 | 长期：收敛到一处；短期：改前先 grep |
+| 7 | ~~**规则常量重复**~~ ✅ **已修复** | 原 `aeiouy` 在 4 个文件、`ECHO_KEEP_F` 在 2 个文件、末尾元音/禁结尾规则在两处各写一遍 | 改元音集合要改 6 处，极易漏；**最危险的是构建期与运行期分叉**（静默出错） | 构建工具现在**直接调用 `logic.js` 导出的规则**，结构上只剩一份；另加**规则指纹**闸（构建时写进 `data/db.build.json`，`check_db.js` 对比），改了规则没重建会收到 ⚠️ 提醒。详见 `ARCHITECTURE.md` §8 |
 | 8 | **有规则但没测试** | `pluralBase`（复数拒绝）在 `test/` 里出现 **0 次** | 改坏了没人知道 | 新增规则必须配套测试 |
 | 9 | **环境陷阱** | ① PowerShell 下 `npm test` 被执行策略挡住（`npm.ps1` 无法加载）② `python3` 是坏的 Microsoft Store 别名 | 照 README 直接敲命令**会失败**，误判为项目坏了 | 用 `npm.cmd test`；用 `python`（不是 `python3`） |
 | 10 | **链路描述重复 4 处** | `package.json` build / `build-db.sh` / `README.md` / `DEPLOY.md` | 改一步要同步 4 处，必然漂移 | 以 `package.json` 为唯一真相源，其余只做引用 |

@@ -797,5 +797,54 @@ t('AI 裁判: 未注入钩子时完全不介入（离线/旧行为）', function
   assert.strictEqual(g.turn, 1);
 });
 
+/* ---- 防漂移：界面上写死的规则说明，必须与引擎一致 ----
+ * 页面上有两处把规则**抄成了文字**：「查看规则」面板与开局提示。
+ * 引擎改了规则而文字没跟着改，页面就会**对玩家撒谎**，而且没有任何报错。
+ * 这里从引擎**反推**出真相（穷举所有 2 字母组合，看哪些被 forbiddenEnding 拒绝），
+ * 再和界面文字比对。 */
+function forbiddenEndingsFromEngine() {
+  var out = [];
+  for (var i = 0; i < 26; i++) {
+    for (var j = 0; j < 26; j++) {
+      var s = String.fromCharCode(97 + i, 97 + j);
+      if (R.forbiddenEnding('zzz' + s)) out.push(s);
+    }
+  }
+  return out.sort();
+}
+var fs = require('fs');
+var path = require('path');
+var HTML = fs.readFileSync(path.join(__dirname, '..', 'public', 'index.html'), 'utf8');
+var APPJS = fs.readFileSync(path.join(__dirname, '..', 'public', 'app.js'), 'utf8');
+
+t('界面防漂移: index.html 规则说明里的禁结尾 = 引擎实际禁的', function () {
+  var line = HTML.split('\n').filter(function (l) { return l.indexOf('不能以') !== -1 && l.indexOf('<code>') !== -1; })[0];
+  assert.ok(line, 'index.html 里应有一行用 <code> 列出禁结尾的规则说明');
+  var m = line.match(/<code>([a-z]+)<\/code>/g) || [];
+  var inHtml = m.map(function (x) { return x.replace(/<\/?code>/g, ''); }).sort();
+  assert.deepStrictEqual(inHtml, forbiddenEndingsFromEngine(),
+    'index.html 写的禁结尾 [' + inHtml.join(',') + '] 与引擎 [' + forbiddenEndingsFromEngine().join(',') + '] 不一致');
+});
+
+t('界面防漂移: app.js 开局提示里的禁结尾 = 引擎实际禁的', function () {
+  var line = APPJS.split('\n').filter(function (l) { return l.indexOf('非 ry/ht/ck') !== -1 || /给出开局词.*hint/.test(l); })[0];
+  assert.ok(line, 'app.js 里应有一行开局提示写明禁结尾');
+  var m = line.match(/非\s*([a-z]{2}(?:\/[a-z]{2})*)\s*结尾/);
+  assert.ok(m, '开局提示里应写成「非 xx/yy/zz 结尾」的形式');
+  var inApp = m[1].split('/').sort();
+  assert.deepStrictEqual(inApp, forbiddenEndingsFromEngine(),
+    'app.js 写的禁结尾 [' + inApp.join(',') + '] 与引擎 [' + forbiddenEndingsFromEngine().join(',') + '] 不一致');
+});
+
+t('界面防漂移: index.html 列的元音 = 引擎的 VOWELS', function () {
+  var line = HTML.split('\n').filter(function (l) { return l.indexOf('必须含 1 个元音') !== -1; })[0];
+  assert.ok(line, 'index.html 里应有元音规则说明');
+  var m = line.match(/（([a-z\s]+)）/);
+  assert.ok(m, '元音说明应写成「（a e i o u y）」的形式');
+  var inHtml = m[1].split(/\s+/).filter(Boolean).sort().join('');
+  assert.strictEqual(inHtml, R.VOWELS.split('').sort().join(''),
+    'index.html 列的元音「' + inHtml + '」与引擎 VOWELS「' + R.VOWELS + '」不一致');
+});
+
 console.log('\n结果: ' + pass + ' 通过, ' + fail + ' 失败');
 process.exit(fail ? 1 : 0);

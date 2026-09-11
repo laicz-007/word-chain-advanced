@@ -218,6 +218,7 @@ word-chain/
 │   ├── build_data.py         # word.csv -> public/vocab.json（基础词池）
 │   ├── build_unified_db.py   # 下载+整合 3 数据源 -> data/db.raw.json（原始库）
 │   ├── compute_chain_idx.js  # 过滤 + 预计算可接指数：db.raw.json -> db.json（成品库）
+│   ├── rules_fingerprint.js  # 规则指纹（防止"词库与规则脱节"）
 │   ├── check_db.js           # 词库体检（改完词库先跑它，20 项硬指标）
 │   ├── check_echo.js         # 回声规则/词库清理验收
 │   ├── diff_db.js            # 两份词库逐字段对拍（改生成算法后证明结果没变）

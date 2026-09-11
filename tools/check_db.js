@@ -12,6 +12,9 @@
 'use strict';
 var db = require('../src/db.js');
 var R = db.R, store = db.store, list = db.dbVocab;
+var fs = require('fs');
+var path = require('path');
+var fingerprint = require('./rules_fingerprint.js');
 
 // 本词库设计的三个 kind 档位（见 tools/compute_chain_idx.js）
 //   0.05 = 高频缩写档（dna/tv/uk… 有意保留，因为它够常见）
@@ -58,6 +61,29 @@ head('1) 当前词库');
 info('实际加载文件', db.dbPath);
 info('词条总数', list.length.toLocaleString('en-US'));
 info('带精讲(note)的词', db.noteCount.toLocaleString('en-US'));
+
+/* 词库与规则是否同版：
+ * 词库里的 has_succ/chain_idx 是**用某一版规则算出来的**。若规则改了却没重建，
+ * 词库就与运行期判据脱节 —— 而症状是静默的（测试全绿、服务照常启动，
+ * 只是 AI 会以为某个词接得下去、运行时却被拒绝）。
+ * 构建时会把规则指纹写进 data/db.build.json，这里算一遍当前的对比。 */
+var META_PATH = path.join(__dirname, '..', 'data', 'db.build.json');
+var nowPrint = fingerprint.compute();
+if (!fs.existsSync(META_PATH)) {
+  warn('缺构建元数据 data/db.build.json', '无法判断这份词库是否与当前规则同版（老版本构建的产物没有这个文件）');
+} else {
+  var meta = {};
+  try { meta = JSON.parse(fs.readFileSync(META_PATH, 'utf8')); } catch (e) { meta = null; }
+  if (!meta || !meta.rulesFingerprint) {
+    warn('构建元数据不可读', 'data/db.build.json 内容异常');
+  } else if (meta.rulesFingerprint === nowPrint) {
+    ok('词库与规则同版', '指纹一致 ' + nowPrint + '（构建于 ' + String(meta.builtAt).slice(0, 19).replace('T', ' ') + '）');
+  } else {
+    warn('词库是用【旧规则】构建的',
+      '构建时指纹 ' + meta.rulesFingerprint + '，当前代码指纹 ' + nowPrint +
+      ' → 请重跑 npm run build（否则 AI 会按旧规则的可接指数出词）');
+  }
+}
 if (typeof list[0] !== 'object' || list[0] === null) {
   bad('顶层结构', '应该是词条数组，实际拿到 ' + typeof list[0]);
   console.log('\n词库结构不对，后面的检查无法进行。');

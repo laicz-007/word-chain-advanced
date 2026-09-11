@@ -20,7 +20,7 @@ var ROOT = path.join(__dirname, '..');
 var vocab = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'db.json'), 'utf8'));
 var store = new R.WordStore(vocab);
 
-var VOWELS = 'aeiouy';
+var VOWELS = R.VOWELS;   // 元音集合：与运行期共用（logic.js 是唯一真相源）
 function isConsonant(c) { return !!c && /[a-z]/.test(c) && VOWELS.indexOf(c) === -1; }
 function isDoubConsonantEnd(w) { return w.length >= 2 && isConsonant(w[w.length - 1]) && isConsonant(w[w.length - 2]); }
 
