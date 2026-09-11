@@ -8,7 +8,8 @@ module.exports = {
   ROOT: ROOT,
   PUBLIC: path.join(ROOT, 'public'),
   DATA: path.join(ROOT, 'data'),
-  DB_PATH: path.join(ROOT, 'data', 'db.json'),
+  DB_PATH: path.join(ROOT, 'data', 'db.json'),              // 全量词库（npm run build 生成）
+  LITE_DB_PATH: path.join(ROOT, 'data', 'db.lite.json'),    // 轻量词库（随仓库分发，克隆即可玩）
   USAGE_FILE: path.join(ROOT, 'data', 'usage.json'),
   USERS_FILE: path.join(ROOT, 'data', 'users.json'),
   SYNC_DIR: path.join(ROOT, 'data', 'sync'),

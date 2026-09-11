@@ -8,6 +8,9 @@ data/kyle/
 data/sync/
 data/.secret
 
+# 例外：轻量词库随项目分发，让"克隆下来就能直接玩"（不依赖 Python 构建）
+!data/db.lite.json
+
 # 打包产物
 dist-store/
 *.zip

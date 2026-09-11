@@ -28,18 +28,25 @@ word-chain/
 ├── src/            # 8 个逻辑模块
 ├── public/         # 前端（index.html/app.js/style.css/login.css/主题/logic.js）
 └── data/
-    └── db.json     # 统一词库（必须）
+    └── db.json     # 词库（可选，见下方说明）
 ```
 
 用 scp / rsync / git 任一方式上传到 VPS，例如：
 
 ```bash
 # 本机执行（打包上传再解压）
-tar -czf word-chain.tgz server.js package.json src public data/db.json
+tar -czf word-chain.tgz server.js package.json src public data/db.lite.json
+#   想要全量词库：把上面的 data/db.lite.json 换成 data/db.json（需先在本机 npm run build）
 scp word-chain.tgz user@你的VPS:/home/user/
 # VPS 上解压
 cd /home/user && tar -xzf word-chain.tgz
 ```
+
+> **词库要传哪一份？** 服务端会自动选择：`data/db.json`（全量，约 28 万词）存在就用它，否则用 `data/db.lite.json`（轻量，约 3.7 万词）。两份都传则自动用全量。
+> - **省事**：只传 `data/db.lite.json`（12MB，随项目自带，不需要在本机构建）
+> - **要全量**：先在本机跑 `npm run build` 生成 `data/db.json`（84MB，需要 Python 3），再传它
+>
+> **VPS 上不需要安装 Python**：`npm run build` 只在你自己的机器上执行，产物 `db.json` 只是一个普通数据文件。若两份词库都没有上传，服务启动时会直接报错并提示怎么处理。
 
 > `data/usage.json`、`data/users.json`、`data/sync/`、`data/.secret` 会在首次运行时自动生成。
 
@@ -144,7 +151,7 @@ sudo certbot --nginx -d 你的域名
 tar -czf backup-$(date +%F).tgz data/
 ```
 
-`data/db.json`（词库，静态）、`data/users.json`（账户）、`data/sync/`（每人画像/记录）、`data/.secret`（token 密钥，务必一起备份，否则用户 token 全失效）。
+`data/db.json` 或 `data/db.lite.json`（词库，静态，属可重新获取的文件）、`data/users.json`（账户）、`data/sync/`（每人画像/记录）、`data/.secret`（token 密钥，务必一起备份，否则用户 token 全失效）。
 
 ## 8. 更新代码
 

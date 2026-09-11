@@ -23,6 +23,12 @@ if (require.main === module) {
   server.listen(config.PORT, function () {
     console.log('单词接龙(服务端) 已启动: http://localhost:' + config.PORT);
     console.log('词库词条: ' + db.wordCount + '（含知识点: ' + db.noteCount + '）');
+    if (db.isFullDb) {
+      console.log('词库来源: 全量词库 data/db.json');
+    } else {
+      console.log('词库来源: 轻量词库 data/db.lite.json（随项目自带，可直接玩）');
+      console.log('         想要更丰富的词库，可运行 npm run build 生成全量 data/db.json（需 Python 3），之后会自动优先使用。');
+    }
   });
 }
 

@@ -1,6 +1,6 @@
 # 单词接龙 · Word Chain
 
-一个英语单词接龙网页游戏，支持 **人机对战**、**本地同屏** 与 **联机房间**。采用**数据与网页分离**架构：服务端持有统一词库并运行规则/AI，网页只调接口。纯 Node 内置模块，**零第三方依赖**。
+一个英语单词接龙网页游戏，支持 **人机对战**、**本地同屏** 与 **联机房间**。采用**数据与网页分离**架构：服务端持有统一词库并运行规则/AI，网页只调接口。纯 Node 内置模块，**运行时零第三方依赖**——拿到项目直接 `node server.js` 就能玩，无需任何构建（轻量词库随项目提供）；只有「生成全量词库」这个**可选**步骤需要 Python 3，详见下文「运行」。
 
 ## ✨ 核心特色
 
@@ -42,17 +42,52 @@
 
 ## 运行
 
-需要 Node.js（≥14，纯 Node 内置模块，无第三方依赖）。
+只需要 **Node.js（≥14）**。
+
+### 方式一：直接跑（推荐，零构建）
+
+词库有两份，**轻量词库 `data/db.lite.json`（约 3.7 万词）已随项目提供**，所以拿到项目后**不需要任何构建步骤**：
 
 ```bash
-python tools/build_unified_db.py     # 首次：整合 3 数据源 -> data/db.json
-node tools/compute_chain_idx.js      # 预计算每词 词型分/可续性/可接指数
-node server.js                       # 启动服务端
+node server.js        # 启动服务端
 # 浏览器打开 http://localhost:8080
 ```
-> `npm run build` = 上面两步。
 
-Windows 可直接双击 `启动游戏.bat`。其他端口：`PORT=9000 node server.js`。
+Windows 可直接双击 `启动游戏.bat`。换端口：`PORT=9000 node server.js`。
+
+启动时控制台会显示当前用的是哪份词库：
+
+```
+词库词条: 36809（含知识点: 13884）
+词库来源: 轻量词库 data/db.lite.json（随项目自带，可直接玩）
+```
+
+### 方式二：换成全量词库（可选，需要 Python 3）
+
+全量词库 `data/db.json` 约 **28 万词**、文件 **84MB**，**没有随项目分发**（太大），需要自己生成。
+这一步额外需要 **Python 3**：
+
+```bash
+npm run build         # 依次执行下面三步
+#   1. python tools/build_data.py         -> public/vocab.json（基础词库，不联网）
+#   2. python tools/build_unified_db.py   -> data/db.json（全量词库，首次需联网下载约 80MB）
+#   3. node   tools/compute_chain_idx.js  -> 预计算可接指数 + 过滤缩写/专名
+node server.js        # 存在 data/db.json 时会自动优先使用它
+```
+
+> 第 1 步的产物 `public/vocab.json` 已在仓库中，所以通常会自动跳过。
+
+### 词库是怎么选的？
+
+**自动判断，不需要任何配置**：
+
+| 情况 | 使用的词库 | 词量 |
+|---|---|---|
+| `data/db.json` 存在（跑过 `npm run build`） | 全量 `data/db.json` | 约 28 万 |
+| 否则 `data/db.lite.json` 存在（默认情况） | 轻量 `data/db.lite.json` | 约 3.7 万 |
+| 两份都没有 | 启动时报错，并提示你运行 `npm run build` | — |
+
+两份词库都够正常游玩，全量库词更丰富、生僻词更多。
 
 ## 游戏规则
 
@@ -124,7 +159,7 @@ word-chain/
 ├── server.js              # 服务端入口：组装 src/ 各模块，启动 HTTP 服务
 ├── src/                   # 服务端模块（结构拆分，逻辑清晰）
 │   ├── config.js          #   路径/端口/常量/MIME（单一配置入口）
-│   ├── db.js              #   加载 data/db.json → WordStore 规则引擎
+│   ├── db.js              #   加载词库 → WordStore 规则引擎（自动选全量/轻量）
 │   ├── auth.js            #   账号：注册/登录/退出 + scrypt 密码 + HMAC token
 │   ├── userdata.js        #   按账户数据 usage/seen/best/games + 账户画像
 │   ├── usage.js           #   防疲劳（游客=全局；登录=按账户）
@@ -134,11 +169,12 @@ word-chain/
 │   └── api.js             #   HTTP 路由 /api/* + 静态文件服务
 ├── 启动游戏.bat           # Windows 一键启动
 ├── package.json
-├── data/                  # 源数据 + 生成的统一数据库
+├── data/                  # 源数据 + 词库
+│   ├── db.lite.json       # (随项目提供) 轻量词库 3.7万词 —— 克隆下来即可直接运行
 │   ├── ecdict.csv         # (下载) ECDICT
 │   ├── tofu_words.csv     # (下载) Tofu
 │   ├── kyle/              # (下载) Kyle 精讲 jsonl
-│   └── db.json            # (生成) 统一结构化数据库 (服务端加载)
+│   └── db.json            # (生成) 全量词库 28万词 —— npm run build 生成，存在时优先使用
 ├── tools/
 │   ├── build_unified_db.py   # 下载+整合 3 数据源 -> data/db.json
 │   ├── compute_chain_idx.js  # 预计算 词型分/可续性/可接指数 -> data/db.json
@@ -198,12 +234,14 @@ python tools/build_unified_db.py           # 只重新整合全量词库 db.json
 node tools/compute_chain_idx.js            # 只重算可接指数/过滤缩写
 ```
 
-> 说明：`build_unified_db.py` 输出的是**全量** db.json（33万词）；`compute_chain_idx.js` 会剔除缩写/专名（`kind<=0.1` 且不在常用词白名单）并写入可接指数。离线单文件版用的是 `data/db.lite.json`（轻量 3.6万词，由打包脚本自行选取），与此处全量词库不同。
+> 说明：`build_unified_db.py` 输出的是**全量** db.json（约 33 万词）；`compute_chain_idx.js` 会剔除缩写/专名（`kind<=0.1` 且不在常用词白名单）并写入可接指数，最终约 **28 万词**。
+>
+> `data/db.lite.json` 是**另一份独立提供的轻量词库**（约 3.7 万词，随项目分发），离线单文件版与服务端兜底都用它。注意它是早期生成的快照，**不是**全量库按词切出来的子集：两者的词条集合与 `chain_idx` 数值并不一一对应（`chain_idx` 依赖各自词库内的后继词，词库不同则数值不同）。
 
 ## 运行测试
 
 ```bash
-npm test          # 依次运行 单元 / 集成 / API / 账号 / 联机房间 / 我的出词追踪
+npm test          # 依次运行 单元 / 集成 / API / 账号 / 联机房间 / 我的出词追踪 / 安全
 # 或
 node test/test.js
 node test/integration.js
@@ -211,7 +249,10 @@ node test/api-test.js
 node test/account-test.js
 node test/room-test.js
 node test/track-test.js
+node test/security-test.js
 ```
+
+> 跑测试**不需要 Python**：需要词库的几个测试会在两份词库中任一份存在时正常工作 —— 用自带的轻量词库也能跑通全套。只有两份词库都没有时才会提示你先运行 `npm run build`。
 
 ## 关键约定
 
