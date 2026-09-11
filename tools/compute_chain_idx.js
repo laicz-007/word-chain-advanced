@@ -25,7 +25,14 @@ var REF = 18.0;               // 归一化基准(常规数)
 
 var dbPath = path.join(__dirname, '..', 'data', 'db.json');
 var db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
-var store = new R.WordStore(db);
+/* ⚠️ store（前缀索引 by2/by3）**故意不在这里建** —— 它必须建在【过滤之后】，
+ * 即文件末尾 `store = new R.WordStore(db);` 那一行。曾经建在这里（用过滤前的 db），后果是
+ * succ_cnt/has_succ/chain_idx 把**已被删除的词**也算成后继：
+ *   · 29,770 个词的后继数被虚高
+ *   · 20 个词被错标为 has_succ=true，其实一个词都接不上
+ *     （onyx 缟玛瑙 / oryx 剑羚 / coccyx 尾骨 / archaeopteryx 始祖鸟 / calx…，它们唯一的接法是 yx/alx）
+ * 运行时用的是"过滤后"的词库，构建期这份索引必须与它一致，否则 AI 会以为某个词还接得下去。 */
+var store;
 
 var VOWELS = 'aeiouy';
 var PROPER_RE = /\[(地名|人名|姓|音|圣经|宗|国|地|人|城|河|山|岛|族|币)\]/;
@@ -125,35 +132,42 @@ function isChainable(prev, s) {
   return true;
 }
 
-db.forEach(function (e, idx) {
-  var w = e.w;
-  var seen = Object.create(null);
-  var succ_cnt = 0, c_cnt = 0, sum = 0;
-  var p2 = w.slice(-2), p3 = w.length >= 3 ? w.slice(-3) : null;
+/* ★ 可接指数计算（succ_cnt / c_cnt / has_succ / chain_raw / chain_idx）。
+ * ⚠️ 必须在【过滤之后】调用 —— 它依赖 store（前缀索引 by2/by3），而 store 必须由"过滤后"的词库建立。
+ *    曾经的写法是把这段直接跑在文件中间（过滤之前），后果见文件顶部 store 处的说明。 */
+function computeSucc() {
+  maxChain = 0; rawDist = []; total = db.length;
 
-  var bucket = store.by2[p2]; var b, s;
-  if (bucket) for (b = 0; b < bucket.length; b++) { s = bucket[b]; if (!isChainable(w, s)) continue; if (seen[s.w]) continue; seen[s.w] = 1; succ_cnt++; var f = (s.f || 0); if (f >= COMMON_THRESHOLD) c_cnt++; sum += kindMap[s.w] * Math.pow(f, F_POW); }
-  if (p3) { bucket = store.by3[p3]; if (bucket) for (b = 0; b < bucket.length; b++) { s = bucket[b]; if (!isChainable(w, s)) continue; if (seen[s.w]) continue; seen[s.w] = 1; succ_cnt++; var f2 = (s.f || 0); if (f2 >= COMMON_THRESHOLD) c_cnt++; sum += kindMap[s.w] * Math.pow(f2, F_POW); } }
+  db.forEach(function (e, idx) {
+    var w = e.w;
+    var seen = Object.create(null);
+    var succ_cnt = 0, c_cnt = 0, sum = 0;
+    var p2 = w.slice(-2), p3 = w.length >= 3 ? w.slice(-3) : null;
 
-  e.succ_cnt = succ_cnt;
-  e.c_cnt = c_cnt;
-  e.has_succ = succ_cnt > 0;
-  e.chain_raw = sum;
-  rawDist.push(sum);
-  if (sum > maxChain) maxChain = sum;
+    var bucket = store.by2[p2]; var b, s;
+    if (bucket) for (b = 0; b < bucket.length; b++) { s = bucket[b]; if (!isChainable(w, s)) continue; if (seen[s.w]) continue; seen[s.w] = 1; succ_cnt++; var f = (s.f || 0); if (f >= COMMON_THRESHOLD) c_cnt++; sum += kindMap[s.w] * Math.pow(f, F_POW); }
+    if (p3) { bucket = store.by3[p3]; if (bucket) for (b = 0; b < bucket.length; b++) { s = bucket[b]; if (!isChainable(w, s)) continue; if (seen[s.w]) continue; seen[s.w] = 1; succ_cnt++; var f2 = (s.f || 0); if (f2 >= COMMON_THRESHOLD) c_cnt++; sum += kindMap[s.w] * Math.pow(f2, F_POW); } }
 
-  // 进度条：每 1% 打印一次
-  if (idx % 5000 === 0 || idx === total - 1) {
-    var pctDone = ((idx + 1) / total * 100).toFixed(1);
-    process.stdout.write('\r  进度: ' + (idx + 1) + '/' + total + ' (' + pctDone + '%)');
-  }
-});
-process.stdout.write('\n');
+    e.succ_cnt = succ_cnt;
+    e.c_cnt = c_cnt;
+    e.has_succ = succ_cnt > 0;
+    e.chain_raw = sum;
+    rawDist.push(sum);
+    if (sum > maxChain) maxChain = sum;
 
-db.forEach(function (e) {
-  e.chain = e.chain_raw > 0 ? (1 - Math.exp(-e.chain_raw / REF)) : 0;
-  e.chain_idx = e.kind * e.chain;
-});
+    // 进度条：每 1% 打印一次
+    if (idx % 5000 === 0 || idx === total - 1) {
+      var pctDone = ((idx + 1) / total * 100).toFixed(1);
+      process.stdout.write('\r  进度: ' + (idx + 1) + '/' + total + ' (' + pctDone + '%)');
+    }
+  });
+  process.stdout.write('\n');
+
+  db.forEach(function (e) {
+    e.chain = e.chain_raw > 0 ? (1 - Math.exp(-e.chain_raw / REF)) : 0;
+    e.chain_idx = e.kind * e.chain;
+  });
+}
 
 // 过滤缩写/专名：剔除 kind<=0.1 的词，但保留常用词白名单
 var KEEP = new Set([
@@ -205,6 +219,33 @@ db.forEach(function (e) {
 });
 function echoCount(e) { return e.w.length === 3 ? (suf3[e.w.slice(-3)] || 0) : (suf2[e.w.slice(-2)] || 0); }
 
+/* ---- 游戏黑话 / 机场代码 / 文件后缀名（"释义根本不是个词"）----
+ * 与 [网络] 规则同类：这条释义压根不是"一个英文词的意思"。实测全库命中 15 个，删 11 个：
+ *   ony  = [魔兽世界]Onyxia's Lair,黑龙公主奥妮克希亚
+ *   yx   = [暗黑破坏神]you xing,有形的
+ *   kuk  = [暗黑破坏神]Copy item 复制物品
+ *   sheal= [暗黑破坏神]13号神符…          valk = [暗黑破坏神]瓦格雷头盔
+ *   alx  = [魔兽世界]地名，阿拉希盆地        zon  = [暗黑破坏神]见"ama"
+ *   cky  = 科纳克里（城市机场代码）
+ *   bas  = BASIC程序的扩展名              ini  = [计]初始化设置文件的后缀名
+ *   exe  = 可执行程序的扩展名
+ * 它们都属于用户说的"看起来像在偷懒"那类：ony 能被 22 个常见词接出来（harmony/agony/colony…），
+ * cky 能被 11 个接出来（lucky/sticky/rocky…）—— 和当初的 lar 是同一个毛病。
+ *
+ * 豁免条件用 collins（柯林斯星级佐证），【不】用 frq：
+ *   exe(frq=28292) / zon(frq=37017) 在语料里出现得不算少，但释义仍然只是"扩展名 / 见ama"，
+ *   没有独立实际意思，按用户规则应当删掉。
+ * 必须保住的反例（靠 collins 豁免）：
+ *   bat(蝙蝠,collins=3) / bin(箱柜,2) / tar(焦油,1) / extension(延长,2)
+ *   —— 它们的释义里也提到"扩展名"，但它们本身是真词，删了就是误伤。
+ *
+ * 已知代价（有意接受）：删 yx 会让 20 个词变成死路，因为 yx 是它们唯一的接法
+ *   （onyx 缟玛瑙 / oryx 剑羚 / coccyx 尾骨 / archaeopteryx 始祖鸟 / sardonyx 缠丝玛瑙…）。
+ *   全库本来就有 2659 个死路词，20 个不影响平衡；换来的是"onyx → yx"这种偷懒接法消失。
+ */
+var GAME_JARGON_RE = /\[(魔兽世界|暗黑破坏神|梦幻西游|传奇|网游|网络游戏|游戏)[^\]]*\]/;
+var CODE_WORD_RE = /机场代码|后缀名|扩展名/;
+
 db = db.filter(function (e) {
   if (JUNK.has(e.w)) return false;                    // 明确垃圾黑名单
   // 缩写/碎片(kind=0.05)：只留常见词白名单。
@@ -217,6 +258,8 @@ db = db.filter(function (e) {
   // 注意：ECDICT 里 [网络] 从不位于释义开头（实际写法是 "n. 野猫\n[网络] 野猫赛；美国原装进口"），
   //       所以必须用【不锚定】的匹配。曾经写成 /^\[网络\]/，结果一个词都匹配不到（规则空转）。
   if (/\[网络\]/.test(e.zh || '') && !(e.collins > 0) && !((e.frq || 0) > 0)) return false;
+  // 游戏黑话 / 机场代码 / 文件后缀名（详见上方说明；豁免只看 collins，不看 frq）
+  if (!(e.collins > 0) && (GAME_JARGON_RE.test(e.zh || '') || CODE_WORD_RE.test(e.zh || ''))) return false;
   // 依赖型短词 / 生僻回声热词（见上方说明）
   if (e.w.length >= 2 && e.w.length <= 3 && !KEEP.has(e.w) && !isTrusted(e)) {
     var z = String(e.zh || '').trim();
@@ -225,11 +268,18 @@ db = db.filter(function (e) {
   }
   return true;
 });
-console.log('过滤(缩写碎片/无元音/黑名单/[网络]低质/依赖型短词/生僻回声热词；专名保留待限额): ' + before + ' -> ' + db.length + '（保留白名单 ' + KEEP.size + ' 个常用词）');
+console.log('过滤(缩写碎片/无元音/黑名单/[网络]低质/游戏黑话·代码·后缀名/依赖型短词/生僻回声热词；专名保留待限额): ' + before + ' -> ' + db.length + '（保留白名单 ' + KEEP.size + ' 个常用词）');
 console.log('  kind 分布: ' +
   '普通词 ' + db.filter(function (e) { return e.kind >= 0.5; }).length +
   ' / 专名 ' + db.filter(function (e) { return e.kind > 0.06 && e.kind < 0.5; }).length +
   ' / 缩写 ' + db.filter(function (e) { return e.kind <= 0.06; }).length);
+
+/* ★ 过滤完成 —— 现在才建前缀索引、重取 kind、计算可接指数。
+ * 顺序不能颠倒：store 必须与运行时 src/db.js 建的那份是同一套（过滤后的）词库。 */
+store = new R.WordStore(db);
+kindMap = Object.create(null);
+db.forEach(function (e) { kindMap[e.w] = e.kind != null ? e.kind : 0.9; });
+computeSucc();
 
 fs.writeFileSync(dbPath, JSON.stringify(db), 'utf8');
 
