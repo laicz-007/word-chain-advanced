@@ -53,8 +53,27 @@ else
   echo "==> 2/4 下载词库（约 16MB，来自最新 Release）"
   mkdir -p data && cd data
   # 词库不在 git 里（96MB 太大），必须单独取。db.build.json 是它的构建元数据。
-  curl -fLO "$ASSET/db.json.gz"
-  curl -fLO "$ASSET/db.build.json"
+  fetch_asset() {   # $1 = 文件名
+    if command -v curl >/dev/null 2>&1; then
+      curl -fL --retry 3 -o "$1" "$ASSET/$1"
+    elif command -v wget >/dev/null 2>&1; then
+      wget -q -O "$1" "$ASSET/$1"
+    else
+      echo "    ✗ 既没有 curl 也没有 wget。"
+      echo "      Debian/Ubuntu 装一下： sudo apt install -y curl"
+      return 1
+    fi
+  }
+  if ! fetch_asset db.json.gz || ! fetch_asset db.build.json; then
+    cd ..
+    echo ""
+    echo "    ✗ 词库下载失败（原因见上面的报错）。常见三种："
+    echo "      · 网络到 GitHub 不通 —— 手动试： curl -fLO $ASSET/db.json.gz"
+    echo "      · 机房/公司有代理 —— 设好再重跑： export https_proxy=http://代理地址:端口"
+    echo "      · 磁盘满 —— df -h ."
+    echo "      也可以在本机下载后用 scp 传上来，见 DEPLOY.md 8.2 方式二。"
+    exit 1
+  fi
   gunzip -f db.json.gz
   cd ..
   echo "    data/db.json  $(du -h data/db.json | cut -f1)"
